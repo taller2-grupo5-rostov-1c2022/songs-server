@@ -78,10 +78,6 @@ jobs:
       #----------------------------------------------
       - name: Install library
         run: poetry install --no-interaction
-
-      - name: Install requests
-        run: poetry run pip3 install requests
-
       #----------------------------------------------
       #    run test suite and output coverage file
       #----------------------------------------------
