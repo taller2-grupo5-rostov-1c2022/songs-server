@@ -5,14 +5,17 @@ from pydantic import BaseModel
 
 app = FastAPI()
 
+
 class Song(BaseModel):
     name: str
 
-song1 = Song(name = "song1")
 
-song2 = Song(name = "song2")
+song1 = Song(name="song1")
+
+song2 = Song(name="song2")
 
 songs = [song1, song2]
+
 
 class Item(BaseModel):
     name: str
@@ -34,10 +37,12 @@ def read_item(item_id: int, q: Optional[str] = None):
 def update_item(item_id: int, item: Item):
     return {"item_name": item.name, "item_id": item_id}
 
+
 @app.get("/api/v1/songs/")
 def read_songs():
     """Devuelve todas las canciones de la db"""
     return songs
+
 
 @app.get("/api/v1/songs/{song_id}")
 def read_songs_id(song_id: int):
@@ -46,7 +51,8 @@ def read_songs_id(song_id: int):
         raise HTTPException(status_code=404, detail="Song not found")
     return songs[song_id]
 
+
 @app.post("/api/v1/songs/")
 def post_song(song: Song):
     songs.append(song)
-    return {"id": len(songs)-1}
+    return {"id": len(songs) - 1}
