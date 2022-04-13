@@ -1,0 +1,21 @@
+[MASTER]
+
+jobs = 0
+
+[MESSAGES CONTROL]
+
+disable =
+    # Disable conventions and refactors warnings
+    C,
+    R,
+    # Errors
+    import-error,
+    no-name-in-module,
+    # Warnings:
+    fixme,
+    lost-exception,
+    using-constant-test,
+
+[FORMAT]
+
+max-line-length = 88
