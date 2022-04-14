@@ -1,58 +1,52 @@
-from typing import Optional
-
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Depends, Security
+from fastapi.security.api_key import APIKeyHeader, APIKey
 from pydantic import BaseModel
+import os
 
 app = FastAPI()
+
+API_KEY = os.environ.get("API_KEY") or "key"
+API_KEY_NAME = "Authorization"
+
+
+async def get_api_key(
+    api_key_header: str = Security(APIKeyHeader(name=API_KEY_NAME, auto_error=True)),
+):
+    if api_key_header == API_KEY:
+        return api_key_header
+    else:
+        raise HTTPException(status_code=403)
 
 
 class Song(BaseModel):
     name: str
 
 
-song1 = Song(name="song1")
-
-song2 = Song(name="song2")
-
-songs = [song1, song2]
-
-
-class Item(BaseModel):
-    name: str
-    price: float
-    is_offer: Optional[bool] = None
+songs = [Song(name="song1"), Song(name="song2")]
 
 
 @app.get("/")
-def read_root():
-    return {"Hello": "World"}
-
-
-@app.get("/items/{item_id}")
-def read_item(item_id: int, q: Optional[str] = None):
-    return {"item_id": item_id, "q": q}
-
-
-@app.put("/items/{item_id}")
-def update_item(item_id: int, item: Item):
-    return {"item_name": item.name, "item_id": item_id}
+def healthcheck():
+    """Endpoint Healthcheck"""
+    return "ok"
 
 
 @app.get("/api/v1/songs/")
-def read_songs():
-    """Devuelve todas las canciones de la db"""
+def get_all_songs(_api_key: APIKey = Depends(get_api_key)):
+    """Returns all songs"""
     return songs
 
 
 @app.get("/api/v1/songs/{song_id}")
-def read_songs_id(song_id: int):
-    """Devuelve una cancion segun su id, o 404 si no la encuentra"""
+def get_song_by_id(song_id: int, _api_key: APIKey = Depends(get_api_key)):
+    """Returns a song by its id or 404 if not found"""
     if len(songs) <= song_id:
         raise HTTPException(status_code=404, detail="Song not found")
     return songs[song_id]
 
 
 @app.post("/api/v1/songs/")
-def post_song(song: Song):
+def post_song(song: Song, _api_key: APIKey = Depends(get_api_key)):
+    """Creates a song and returns its id"""
     songs.append(song)
     return {"id": len(songs) - 1}

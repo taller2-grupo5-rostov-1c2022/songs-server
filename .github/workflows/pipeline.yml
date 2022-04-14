@@ -90,7 +90,7 @@ jobs:
       - name: Upload coverage
         uses: codecov/codecov-action@v2
         with:
-          token: ${{ secrets.CODECOV_TOKEN }}  # Only required for private repositories
+          token: ${{ secrets.CODECOV_TOKEN }} # Only required for private repositories
           file: ./coverage.xml
           fail_ci_if_error: true
   deploy_container:
@@ -99,8 +99,16 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - uses: akhileshns/heroku-deploy@v3.12.12 # This is the action
+        env:
+          HD_API_KEY: ${{secrets.API_KEY}}
         with:
           heroku_api_key: ${{secrets.HEROKU_API_KEY}}
           heroku_app_name: ${{secrets.HEROKU_APP_NAME}}
           heroku_email: ${{secrets.HEROKU_EMAIL}}
           usedocker: true
+          healthcheck: "https://${{secrets.HEROKU_APP_NAME}}.herokuapp.com/"
+          rollbackonhealthcheckfailed: true
+          delay: 1.5
+          # healthcheck delay in seconds
+          # check might occur before the app is ready
+          # either wait for healthcheck or remove healthcheck

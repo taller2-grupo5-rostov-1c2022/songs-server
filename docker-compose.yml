@@ -5,4 +5,7 @@ services:
     volumes:
       - ./src:/src
     ports:
-      - "8080:8080"
+      - ${PORT}:${PORT}
+    environment:
+      - PORT=${PORT}
+      - API_KEY=${API_KEY}
