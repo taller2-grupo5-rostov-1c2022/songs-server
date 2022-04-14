@@ -96,6 +96,9 @@ jobs:
   deploy_container:
     needs: [linting, tests_and_coverage]
     runs-on: ubuntu-latest
+    environment:
+      name: Production
+      url: "https://rostov-song-server.herokuapp.com/docs"
     steps:
       - uses: actions/checkout@v2
       - uses: akhileshns/heroku-deploy@v3.12.12 # This is the action
