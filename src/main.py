@@ -6,7 +6,7 @@ import os
 app = FastAPI()
 
 API_KEY = os.environ.get("API_KEY") or "key"
-API_KEY_NAME = "Authorization"
+API_KEY_NAME = "api_key"
 
 
 async def get_api_key(
