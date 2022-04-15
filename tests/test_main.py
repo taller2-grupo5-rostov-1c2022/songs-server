@@ -1,4 +1,8 @@
+import os
+
 from fastapi.testclient import TestClient
+os.environ["TESTING"] = "1"
+
 from src.main import app
 
 client = TestClient(app)
@@ -16,7 +20,7 @@ def test_get_songs():
 
 def test_post_song():
     response_post = client.post(
-        "/api/v1/songs/", json={"name": "song123"}, headers={"api_key": "key"}
+        "/api/v1/songs/", json={"info": {"name": "song123", "artist_name": "artist123"}, "file": "file123"}, headers={"api_key": "key"}
     )
     assert response_post.status_code == 200
     response_get = client.get(

@@ -110,3 +110,14 @@ You'll need to set the following actions secrets:
 - `HEROKU_EMAIL`: Account email
 - `HEROKU_API_KEY`: Account [API key](https://dashboard.heroku.com/account)
 - `API_KEY`: This app's api-key, needed to make requests
+
+## Firebase
+
+You'll need to generate a Firebase private key. To do so, go to
+`Project configuration`, then `Service accounts`, then `Generate new private key`.
+Then set the following environment variables:
+
+- `FIREBASE_ID`: corresponds to the `private_key_id` field in the key file
+- `FIREBASE_KEY`: corresponds to the `private_key` field in the key file
+
+You can set them in a `.env` file in the root directory of the repository

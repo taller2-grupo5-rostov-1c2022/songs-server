@@ -81,10 +81,14 @@ ipython_config.py
 __pypackages__/
 
 # Environments
-.env
+.venv/.env
 .venv
+.env
 env/
 venv/
 ENV/
 env.bak/
 venv.bak/
+
+# Credentials
+.credentials/
