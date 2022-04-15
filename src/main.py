@@ -37,7 +37,6 @@ def get_all_songs(_api_key: APIKey = Depends(get_api_key)):
     songs = db.collection("songs").stream()
     songs_dict = {}
     for song in songs:
-        print(songs)
         songs_dict[song.id] = song.to_dict()
     return songs_dict
 
