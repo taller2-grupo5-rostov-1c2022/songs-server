@@ -113,11 +113,9 @@ You'll need to set the following actions secrets:
 
 ## Firebase
 
-You'll need to generate a Firebase private key. To do so, go to
-`Project configuration`, then `Service accounts`, then `Generate new private key`.
-Then set the following environment variables:
+To access the database and storage, you'll need to generate a Firebase private key. To do so, go to 
+**Project configuration**, then **Service accounts**, then **Generate new private key**.
+Save the file as `google-credentials.json` in the root directory of the repository.
 
-- `FIREBASE_ID`: corresponds to the `private_key_id` field in the key file
-- `FIREBASE_KEY`: corresponds to the `private_key` field in the key file
-
-You can set them in a `.env` file in the root directory of the repository
+You can also set `TESTING=1` as an environment variable to use mocks of the database
+and storage for testing purposes.
