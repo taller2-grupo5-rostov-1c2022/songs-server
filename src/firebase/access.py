@@ -8,7 +8,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Use a service account
-cred = credentials.Certificate("google-credentials.json")
+cred = credentials.Certificate("/google-credentials.json")
 
 firebase_admin.initialize_app(cred, {
     'storageBucket': 'rostov-spotifiuby.appspot.com/'
