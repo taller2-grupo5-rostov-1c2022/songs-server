@@ -1,6 +1,3 @@
-from google.api_core.exceptions import NotFound
-
-
 class DocumentMock:
     def __init__(self, document_id):
         self.id = str(document_id)
@@ -16,7 +13,7 @@ class DocumentMock:
 
     def update(self, entry):
         if not self.exists:
-            raise NotFound("Entry not found")
+            raise FileNotFoundError
         self.entry = entry
 
     def delete(self):
