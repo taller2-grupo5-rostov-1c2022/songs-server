@@ -22,6 +22,7 @@
 .idea/**/dynamic.xml
 .idea/**/uiDesigner.xml
 .idea/**/dbnavigator.xml
+google-credentials.json
 
 # Gradle
 .idea/**/gradle.xml
