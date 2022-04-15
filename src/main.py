@@ -3,6 +3,8 @@ from fastapi.security.api_key import APIKeyHeader, APIKey
 import os
 from src.classes import SongUpdate, Song
 
+os.environ["TESTING"] = "1"
+
 if os.environ.get("TESTING") == "1":
     print("RUNNING IN TESTING MODE: MOCKING ACTIVATED")
     from tests.mocks.firebase.database import db
