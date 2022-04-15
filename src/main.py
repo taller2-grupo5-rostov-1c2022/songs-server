@@ -2,7 +2,6 @@ from fastapi import FastAPI, HTTPException, Depends, Security
 from fastapi.security.api_key import APIKeyHeader, APIKey
 import os
 from src.classes import SongUpdate, Song
-from google.api_core.exceptions import NotFound
 
 if os.environ.get("TESTING") == "1":
     print("RUNNING IN TESTING MODE: MOCKING ACTIVATED")
@@ -75,7 +74,8 @@ def delete_song(song_id: str, _api_key: APIKey = Depends(get_api_key)):
         db.collection("songs").document(song_id).delete()
         blob = bucket.blob(song_id)
         blob.delete()
-    except NotFound as entry_not_found:
+    # TODO: catchear solo NotFound
+    except Exception as entry_not_found:
         raise HTTPException(status_code=404, detail="Song not found") from entry_not_found
     return song_id
 
@@ -86,13 +86,13 @@ def update_song(song_id: str, song_update: SongUpdate, _api_key: APIKey = Depend
     if song_update.info is not None:
         try:
             db.collection("songs").document(song_id).update(song_update.info.dict(exclude_unset=True))
-        except NotFound as entry_not_found:
+        except Exception as entry_not_found:
             raise HTTPException(status_code=404, detail="Song not found") from entry_not_found
     if song_update.file is not None:
         try:
             blob = bucket.blob(song_id)
             blob.upload_from_string(song_update.file)
-        except NotFound as entry_not_found:
+        except Exception as entry_not_found:
             raise HTTPException(status_code=404, detail="Song not found") from entry_not_found
 
     return song_id
