@@ -16,6 +16,5 @@ RUN poetry install --no-interaction --no-ansi
 COPY ./src ./src/
 COPY ./docker-entrypoint.sh ./docker-entrypoint.sh
 RUN chmod +x ./docker-entrypoint.sh
-RUN apk add --no-cache bash
 
 CMD ["./docker-entrypoint.sh"]
