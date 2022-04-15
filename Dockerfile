@@ -15,6 +15,9 @@ RUN poetry install --no-interaction --no-ansi
 
 COPY ./src ./src/
 COPY ./docker-entrypoint.sh ./docker-entrypoint.sh
+COPY add-google-credentials.sh /app/add-google-credentials.sh
+ENTRYPOINT ["sh", "/app/add-google-credentials.sh"]
+
 RUN chmod +x ./docker-entrypoint.sh
 
 CMD ["./docker-entrypoint.sh"]
