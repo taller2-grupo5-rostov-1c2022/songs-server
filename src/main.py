@@ -1,7 +1,8 @@
 from fastapi import FastAPI, HTTPException, Depends, Security
 from fastapi.security.api_key import APIKeyHeader, APIKey
-import os
+from fastapi.middleware.cors import CORSMiddleware
 from src.classes import SongUpdate, Song
+import os
 
 
 if os.environ.get("TESTING") == "1":
@@ -18,12 +19,23 @@ API_KEY_NAME = "api_key"
 
 
 async def get_api_key(
-        api_key_header: str = Security(APIKeyHeader(name=API_KEY_NAME, auto_error=True)),
+    api_key_header: str = Security(APIKeyHeader(name=API_KEY_NAME, auto_error=True)),
 ):
     if api_key_header == API_KEY:
         return api_key_header
     else:
         raise HTTPException(status_code=403)
+
+
+origins = ["*"]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 @app.get("/")
@@ -76,23 +88,33 @@ def delete_song(song_id: str, _api_key: APIKey = Depends(get_api_key)):
         blob.delete()
     # TODO: catchear solo NotFound
     except Exception as entry_not_found:
-        raise HTTPException(status_code=404, detail="Song not found") from entry_not_found
+        raise HTTPException(
+            status_code=404, detail="Song not found"
+        ) from entry_not_found
     return song_id
 
 
 @app.put("/api/v1/songs/")
-def update_song(song_id: str, song_update: SongUpdate, _api_key: APIKey = Depends(get_api_key)):
+def update_song(
+    song_id: str, song_update: SongUpdate, _api_key: APIKey = Depends(get_api_key)
+):
     """Updates song and returns its id or 404 if not found"""
     if song_update.info is not None:
         try:
-            db.collection("songs").document(song_id).update(song_update.info.dict(exclude_unset=True))
+            db.collection("songs").document(song_id).update(
+                song_update.info.dict(exclude_unset=True)
+            )
         except Exception as entry_not_found:
-            raise HTTPException(status_code=404, detail="Song not found") from entry_not_found
+            raise HTTPException(
+                status_code=404, detail="Song not found"
+            ) from entry_not_found
     if song_update.file is not None:
         try:
             blob = bucket.blob(song_id)
             blob.upload_from_string(song_update.file)
         except Exception as entry_not_found:
-            raise HTTPException(status_code=404, detail="Song not found") from entry_not_found
+            raise HTTPException(
+                status_code=404, detail="Song not found"
+            ) from entry_not_found
 
     return song_id
