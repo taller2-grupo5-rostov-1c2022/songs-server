@@ -61,7 +61,7 @@ def get_song_by_id(song_id: str, _api_key: APIKey = Depends(get_api_key)):
     if not db_entry.exists:
         raise HTTPException(status_code=404, detail="Song not found")
 
-    blob = bucket.blob(db_entry.id)
+    blob = bucket.blob("songs/"+db_entry.id)
     song_file_bytes = blob.download_as_bytes()
     db_entry_dict = db_entry.to_dict()
     db_entry_dict["file"] = song_file_bytes
@@ -74,7 +74,7 @@ def post_song(song: Song, _api_key: APIKey = Depends(get_api_key)):
     ref = db.collection("songs").document()
     ref.set(song.info.dict())
 
-    blob = bucket.blob(ref.id)
+    blob = bucket.blob("songs/"+ref.id)
     blob.upload_from_string(song.file)
     return {"id": ref.id}
 
@@ -84,7 +84,7 @@ def delete_song(song_id: str, _api_key: APIKey = Depends(get_api_key)):
     """Deletes a song given its id or 404 if not found"""
     try:
         db.collection("songs").document(song_id).delete()
-        blob = bucket.blob(song_id)
+        blob = bucket.blob("songs/"+song_id)
         blob.delete()
     # TODO: catchear solo NotFound
     except Exception as entry_not_found:
@@ -110,7 +110,7 @@ def update_song(
             ) from entry_not_found
     if song_update.file is not None:
         try:
-            blob = bucket.blob(song_id)
+            blob = bucket.blob("songs/"+song_id)
             blob.upload_from_string(song_update.file)
         except Exception as entry_not_found:
             raise HTTPException(
