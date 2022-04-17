@@ -9,7 +9,7 @@ RUN pip install poetry
 WORKDIR /code
 COPY poetry.lock pyproject.toml /code/
 
-COPY scripts/add-google-credentials.sh /app/add-google-credentials.sh
+COPY add-google-credentials.sh /app/add-google-credentials.sh
 ENTRYPOINT ["sh", "/app/add-google-credentials.sh"]
 
 # install runtime deps
@@ -17,7 +17,7 @@ RUN poetry config virtualenvs.create false
 RUN poetry install --no-interaction --no-ansi
 
 COPY ./src ./src/
-COPY ./scripts/docker-entrypoint.sh ./docker-entrypoint.sh
+COPY ./docker-entrypoint.sh ./docker-entrypoint.sh
 
 RUN chmod +x ./docker-entrypoint.sh
 
