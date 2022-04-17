@@ -1,7 +1,9 @@
 version: "3.9"
 services:
   fastapi-server:
-    build: .
+    build:
+      context: ../
+      dockerfile: docker/Dockerfile.local
     volumes:
       - ./src:/src
     ports:
