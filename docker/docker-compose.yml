@@ -3,7 +3,7 @@ services:
   fastapi-server:
     build:
       context: ../
-      dockerfile: docker/Dockerfile.local
+      dockerfile: docker/Dockerfile
     volumes:
       - ./src:/src
     ports:
