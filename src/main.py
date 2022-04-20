@@ -84,7 +84,7 @@ def delete_song(song_id: str, _api_key: APIKey = Depends(get_api_key)):
     """Deletes a song given its id or 404 if not found"""
     try:
         db.collection("songs").document(song_id).delete()
-        blob = bucket.blob(song_id)
+        blob = bucket.blob("songs/" + song_id)
         blob.delete()
     # TODO: catchear solo NotFound
     except Exception as entry_not_found:

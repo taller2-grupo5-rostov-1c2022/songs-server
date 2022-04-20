@@ -14,9 +14,7 @@ with open("google-credentials.json") as json_file:
 
 cred = credentials.Certificate(cert_dict)
 
-firebase_admin.initialize_app(cred, {
-    'storageBucket': 'rostov-spotifiuby.appspot.com/'
-})
+firebase_admin.initialize_app(cred, {"storageBucket": "rostov-spotifiuby.appspot.com/"})
 
 db = firestore.client()
 bucket = storage.bucket("rostov-spotifiuby.appspot.com")

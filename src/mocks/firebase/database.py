@@ -32,7 +32,9 @@ class CollectionMock:
     def document(self, name=None):
         if name is None:
             self.doc_name_id_counter += 1
-            self.documents[str(self.doc_name_id_counter)] = DocumentMock(self.doc_name_id_counter)
+            self.documents[str(self.doc_name_id_counter)] = DocumentMock(
+                self.doc_name_id_counter
+            )
             return self.documents[str(self.doc_name_id_counter)]
 
         if name not in self.documents:
