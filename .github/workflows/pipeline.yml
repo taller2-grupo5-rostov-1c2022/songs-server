@@ -102,13 +102,14 @@ jobs:
       url: "https://rostov-song-server.herokuapp.com/docs"
     steps:
       - uses: actions/checkout@v2
-      - name: 'Copy and rename dockerfile' # workaround
+      - name: "Copy and rename dockerfile" # workaround
         run: |
           chmod +x ./scripts/cp-root.sh
           ./scripts/cp-root.sh
       - uses: akhileshns/heroku-deploy@v3.12.12 # This is the action
         env:
           HD_API_KEY: ${{secrets.API_KEY}}
+          HD_POSTGRES_URL: ${{secrets.POSTGRES_URL}}
         with:
           heroku_api_key: ${{secrets.HEROKU_API_KEY}}
           heroku_app_name: ${{secrets.HEROKU_APP_NAME}}

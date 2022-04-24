@@ -63,6 +63,10 @@ For this purpose, we use:
 flake8 && pylint <module_name>
 ```
 
+```bash
+flake8 . && pylint src
+```
+
 **Formatter**
 
 ```bash
@@ -113,8 +117,9 @@ You'll need to set the following actions secrets:
 
 ## Datadog
 
-The heroku Dockerfile includes the DataDog agent.  Create a new DataDog API Key from [here](https://app.datadoghq.com/organization-settings/api-keys).
+The heroku Dockerfile includes the DataDog agent. Create a new DataDog API Key from [here](https://app.datadoghq.com/organization-settings/api-keys).
 Also, you need to set the following config vars in Heroku (you can use [Heroku CLI](https://devcenter.heroku.com/articles/heroku-cli) if you want):
+
 ```bash
 DD_API_KEY=<api_key_from_datadog>
 DD_DYNO_HOST=false
@@ -159,3 +164,9 @@ and storage for testing purposes.
 #### SQL
 
 - [Tutorial](https://www.w3schools.com/sql/default.asp)
+
+### Environment Variables
+
+```
+POSTGRES_URL="postgresql://{username}:{password}@{host}:{port}/{database}"
+```

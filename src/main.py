@@ -2,6 +2,12 @@ from fastapi import FastAPI, HTTPException, Depends, Security
 from fastapi.security.api_key import APIKeyHeader, APIKey
 from fastapi.middleware.cors import CORSMiddleware
 from src.classes import SongUpdate, Song
+
+from sqlalchemy.orm import Session
+from src.postgres.schemas import CreateSongRequest
+from src.postgres.database import get_db
+from src.postgres.models import SongModel
+
 import os
 
 
@@ -118,3 +124,19 @@ def update_song(
             ) from entry_not_found
 
     return song_id
+
+
+################################################################################
+
+
+@app.post("/api/v2/songs/")
+def post_song_v2(
+    details: CreateSongRequest,
+    pdb: Session = Depends(get_db),
+    _api_key: APIKey = Depends(get_api_key),
+):
+    """Creates a song and returns its id"""
+    to_create = SongModel(name=details.name, artist_id=details.artist_id)
+    pdb.add(to_create)
+    pdb.commit()
+    return {"success": True, "created_id": to_create.id}
