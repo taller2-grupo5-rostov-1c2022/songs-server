@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, Depends, Security
+from fastapi import FastAPI, HTTPException, Depends, Security, UploadFile, Form
 from fastapi.security.api_key import APIKeyHeader, APIKey
 from fastapi.middleware.cors import CORSMiddleware
 from src.classes import SongUpdate, Song
@@ -129,14 +129,38 @@ def update_song(
 ################################################################################
 
 
+@app.get("/api/v2/songs/")
+def get_all_songs2(
+    pdb: Session = Depends(get_db), _api_key: APIKey = Depends(get_api_key)
+):
+    """Returns all songs"""
+    return pdb.query(SongModel).all()
+
+
+@app.get("/api/v2/songs/{song_id}")
+def get_song_by_id2(
+    song_id: int,
+    pdb: Session = Depends(get_db),
+    _api_key: APIKey = Depends(get_api_key),
+):
+    """Returns a song by its id or 404 if not found"""
+    # TODO: Add stream to song file ?
+    return pdb.query(SongModel).filter(SongModel.id == song_id).first()
+
+
 @app.post("/api/v2/songs/")
 def post_song_v2(
-    details: CreateSongRequest,
+    song: str,
+    file: UploadFile,
     pdb: Session = Depends(get_db),
     _api_key: APIKey = Depends(get_api_key),
 ):
     """Creates a song and returns its id"""
-    to_create = SongModel(name=details.name, artist_id=details.artist_id)
-    pdb.add(to_create)
+    newSong = SongModel(name=song, artist_id="quack")
+    pdb.add(newSong)
     pdb.commit()
-    return {"success": True, "created_id": to_create.id}
+
+    blob = bucket.blob(f"songs/{newSong.id}")
+    blob.upload_from_file(file.file)
+
+    return {"success": True, "created_id": newSong.id, "filename": file.filename}
