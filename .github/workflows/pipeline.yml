@@ -94,6 +94,7 @@ jobs:
           file: ./coverage.xml
           fail_ci_if_error: true
   deploy_container:
+    if: github.ref == 'refs/heads/master'
     needs: [linting, tests_and_coverage]
     runs-on: ubuntu-latest
     environment:
@@ -101,8 +102,10 @@ jobs:
       url: "https://rostov-song-server.herokuapp.com/docs"
     steps:
       - uses: actions/checkout@v2
-      - run: chmod +x ./scripts/cp-root.sh
-      - run: ./scripts/cp-root.sh
+      - name: 'Copy and rename dockerfile' # workaround
+        run: |
+          chmod +x ./scripts/cp-root.sh
+          ./scripts/cp-root.sh
       - uses: akhileshns/heroku-deploy@v3.12.12 # This is the action
         env:
           HD_API_KEY: ${{secrets.API_KEY}}
