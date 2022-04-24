@@ -4,7 +4,7 @@ from sqlalchemy.orm import sessionmaker
 from decouple import config
 
 # SQLALCHEMY_DATABASE_URL = f"{dialect}://{username}:{password}@{host}:{port}/{database}"
-POSTGRES_URL = config("POSTGRES_URL")
+POSTGRES_URL = config("POSTGRES_URL", default="")
 
 engine = create_engine(POSTGRES_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)

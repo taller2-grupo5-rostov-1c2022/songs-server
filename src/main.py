@@ -1,10 +1,9 @@
-from fastapi import FastAPI, HTTPException, Depends, Security, UploadFile, Form
+from fastapi import FastAPI, HTTPException, Depends, Security, UploadFile
 from fastapi.security.api_key import APIKeyHeader, APIKey
 from fastapi.middleware.cors import CORSMiddleware
 from src.classes import SongUpdate, Song
 
 from sqlalchemy.orm import Session
-from src.postgres.schemas import CreateSongRequest
 from src.postgres.database import get_db
 from src.postgres.models import SongModel
 
