@@ -1,9 +1,8 @@
 import os
 
-from fastapi.testclient import TestClient
-
 os.environ["TESTING"] = "1"
 
+from fastapi.testclient import TestClient
 from src.main import app
 
 client = TestClient(app)
