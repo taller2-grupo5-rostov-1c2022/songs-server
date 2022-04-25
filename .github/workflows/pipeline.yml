@@ -84,9 +84,9 @@ jobs:
       - name: Test with pytest
         run: ./scripts/coverage-container.sh
       #----------------------------------------------
-      #    move coverage file to output directory
+      #    setup files
       #----------------------------------------------
-      - run: sudo mv ./docker/cov/coverage.xml ./coverage.xml
+      - run: sudo mv ./docker/cov/coverage.xml ./coverage.xml && sudo rm -rf ./docker
       #----------------------------------------------
       #             upload coverage stats
       # (requires CODECOV_TOKEN in repository secrets)
