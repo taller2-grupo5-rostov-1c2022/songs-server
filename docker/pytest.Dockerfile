@@ -9,9 +9,6 @@ RUN pip install poetry
 WORKDIR /code
 COPY poetry.lock pyproject.toml /code/
 
-COPY ./google-credentials.json ./google-credentials.json
-# ENTRYPOINT ["sh", "/app/add-google-credentials.sh"]
-
 # install runtime deps
 RUN poetry config virtualenvs.create false
 RUN poetry install --no-interaction --no-ansi
