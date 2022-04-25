@@ -170,3 +170,8 @@ and storage for testing purposes.
 ```
 POSTGRES_URL="postgresql://{username}:{password}@{host}:{port}/{database}"
 ```
+
+### Links
+
+- https://dev.to/andre347/how-to-easily-create-a-postgres-database-in-docker-4moj
+- https://levelup.gitconnected.com/creating-and-filling-a-postgres-db-with-docker-compose-e1607f6f882f

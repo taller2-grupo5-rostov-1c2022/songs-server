@@ -9,7 +9,6 @@ from src.postgres.models import SongModel
 
 import os
 
-
 if os.environ.get("TESTING") == "1":
     print("RUNNING IN TESTING MODE: MOCKING ACTIVATED")
     from src.mocks.firebase.database import db
@@ -162,4 +161,4 @@ def post_song_v2(
     blob = bucket.blob(f"songs/{newSong.id}")
     blob.upload_from_file(file.file)
 
-    return {"success": True, "created_id": newSong.id, "filename": file.filename}
+    return {"success": True, "created_id": newSong.id}
