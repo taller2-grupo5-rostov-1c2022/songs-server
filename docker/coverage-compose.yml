@@ -22,6 +22,8 @@ services:
       dockerfile: docker/pytest.Dockerfile
     ports:
       - ${PORT}:${PORT}
+    volumes:
+      - ./cov:/code/cov/
     environment:
       - PORT=${PORT}
       - API_KEY=${API_KEY}

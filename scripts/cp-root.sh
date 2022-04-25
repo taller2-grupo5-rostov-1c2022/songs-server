@@ -5,3 +5,5 @@ eval cp docker/heroku-Dockerfile .
 eval mv heroku-Dockerfile Dockerfile
 eval cp scripts/add-google-credentials.sh .
 eval cp scripts/heroku-entrypoint.sh .
+
+eval cp docker/cov/coverage.xml .

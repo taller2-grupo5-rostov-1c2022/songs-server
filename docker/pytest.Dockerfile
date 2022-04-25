@@ -17,8 +17,17 @@ RUN poetry config virtualenvs.create false
 RUN poetry install --no-interaction --no-ansi
 
 COPY ./src ./src/
+COPY ./tests ./tests/
 COPY ./scripts/docker-entrypoint.sh ./docker-entrypoint.sh
 
 RUN chmod +x ./docker-entrypoint.sh
 
-CMD ["sleep 5 && pytest"]
+RUN sleep 5
+
+RUN mkdir cov
+
+RUN poetry run pytest --cov=./ --cov-report=xml
+
+RUN mv coverage.xml cov/coverage.xml
+
+CMD ["./docker-entrypoint.sh"]
