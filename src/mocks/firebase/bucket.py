@@ -9,6 +9,9 @@ class Blob:
     def upload_from_string(self, data_string):
         self.data = data_string
 
+    def upload_from_file(self, data):
+        self.data = data
+
     def delete(self):
         self.data = None
 

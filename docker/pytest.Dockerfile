@@ -18,16 +18,8 @@ RUN poetry install --no-interaction --no-ansi
 
 COPY ./src ./src/
 COPY ./tests ./tests/
-COPY ./scripts/docker-entrypoint.sh ./docker-entrypoint.sh
+COPY ./scripts/docker-pytest.sh ./docker-pytest.sh
 
-RUN chmod +x ./docker-entrypoint.sh
+RUN chmod +x ./docker-pytest.sh
 
-RUN sleep 5
-
-RUN mkdir cov
-
-RUN poetry run pytest --cov=./ --cov-report=xml
-
-RUN mv coverage.xml cov/coverage.xml
-
-CMD ["./docker-entrypoint.sh"]
+CMD ["./docker-pytest.sh"]
