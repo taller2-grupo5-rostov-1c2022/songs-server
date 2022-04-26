@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, Depends, Security, UploadFile
+from fastapi import FastAPI, HTTPException, Depends, Security, UploadFile, File, Form
 from fastapi.security.api_key import APIKeyHeader, APIKey
 from fastapi.middleware.cors import CORSMiddleware
 from src.classes import SongUpdate, Song
@@ -162,11 +162,11 @@ def get_song_by_id2(
 
 @app.post("/api/v2/songs/")
 def post_song_v2(
-    name: str,
-    description: str,
-    creator: str,
-    artists: str,
-    file: UploadFile,
+    name: str = Form(...),
+    description: str = Form(...),
+    creator: str = Form(...),
+    artists: str = Form(...),
+    file: UploadFile = File(...),
     pdb: Session = Depends(get_db),
     _api_key: APIKey = Depends(get_api_key),
 ):
