@@ -49,14 +49,63 @@ def test_post_song2():
     with open("./tests/test.song", "rb") as f:
         response_post = client.post(
             "/api/v2/songs/",
-            params={"song": "song name _test"},
+            params={
+                "name": "test_song",
+                "description": "test_description",
+                "creator": "test_creator",
+                "artists": "test_artists",
+            },
             files={"file": ("song.txt", f, "plain/text")},
             headers={"api_key": "key"},
         )
     assert response_post.status_code == 200
     response_get = client.get(
-        "/api/v2/songs/" + str(response_post.json()["created_id"]),
+        "/api/v2/songs/" + str(response_post.json()["id"]),
         headers={"api_key": "key"},
     )
-    assert response_get.json()["name"] == "song name _test"
-    assert response_get.json()["id"] == response_post.json()["created_id"]
+    assert response_get.json()["id"] == response_post.json()["id"]
+    assert response_get.json()["name"] == "test_song"
+    assert response_get.json()["description"] == "test_description"
+    assert response_get.json()["creator"] == "test_creator"
+    assert response_get.json()["artists"] == "test_artists"
+
+
+def test_put_song2():
+    with open("./tests/test.song", "wb") as f:
+        f.write(b"test")
+    with open("./tests/test.song", "rb") as f:
+        response_post = client.post(
+            "/api/v2/songs/",
+            params={
+                "name": "up_test_song",
+                "description": "up_test_description",
+                "creator": "up_test_creator",
+                "artists": "up_test_artists",
+            },
+            files={"file": ("song.txt", f, "plain/text")},
+            headers={"api_key": "key"},
+        )
+    assert response_post.status_code == 200
+
+    response_update = client.put(
+        "/api/v2/songs/",
+        params={
+            "song_id": response_post.json()["id"],
+            "name": "updated_test_song",
+            "artists": "updated_test_artists",
+        },
+        headers={"api_key": "key"},
+    )
+    assert response_update.status_code == 200
+    assert response_update.json()["id"] == response_post.json()["id"]
+
+    response_get = client.get(
+        "/api/v2/songs/" + str(response_post.json()["id"]),
+        headers={"api_key": "key"},
+    )
+
+    assert response_get.json()["id"] == response_post.json()["id"]
+    assert response_get.json()["name"] == "updated_test_song"
+    assert response_get.json()["description"] == "up_test_description"
+    assert response_get.json()["creator"] == "up_test_creator"
+    assert response_get.json()["artists"] == "updated_test_artists"

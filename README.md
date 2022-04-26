@@ -175,3 +175,28 @@ POSTGRES_URL="postgresql://{username}:{password}@{host}:{port}/{database}"
 
 - https://dev.to/andre347/how-to-easily-create-a-postgres-database-in-docker-4moj
 - https://levelup.gitconnected.com/creating-and-filling-a-postgres-db-with-docker-compose-e1607f6f882f
+
+#### Development
+
+##### Running Test Container and database
+
+```
+./scripts/test-container.sh
+```
+
+server needs to be stopped and rebuilt when making changes, the database persists.
+
+##### Altering database schema
+
+- edit
+  - `docker/sql/create_tables.sql`
+  - `src/postgres/models.py`
+- delete `docker/postgres-data`
+
+##### Running test
+
+```
+./scripts/coverage-container.sh
+```
+
+you can also run a test-container and run the tests from the cli

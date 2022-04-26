@@ -8,4 +8,6 @@ class SongModel(Base):
 
     id = Column(Integer, primary_key=True)
     name = Column(String, nullable=False)
-    artist_id = Column(String, nullable=False)
+    description = Column(String, nullable=False)
+    creator = Column(String, nullable=False)
+    artists = Column(String, nullable=False)

@@ -148,17 +148,62 @@ def get_song_by_id2(
 
 @app.post("/api/v2/songs/")
 def post_song_v2(
-    song: str,
+    name: str,
+    description: str,
+    creator: str,
+    artists: str,
     file: UploadFile,
     pdb: Session = Depends(get_db),
     _api_key: APIKey = Depends(get_api_key),
 ):
     """Creates a song and returns its id"""
-    newSong = SongModel(name=song, artist_id="quack")
+    newSong = SongModel(
+        name=name, description=description, creator=creator, artists=artists
+    )
     pdb.add(newSong)
     pdb.commit()
 
     blob = bucket.blob(f"songs/{newSong.id}")
     blob.upload_from_file(file.file)
 
-    return {"success": True, "created_id": newSong.id}
+    return {"success": True, "id": newSong.id}
+
+
+@app.put("/api/v2/songs/")
+def update_song2(
+    song_id: str,
+    name: str = None,
+    description: str = None,
+    creator: str = None,
+    artists: str = None,
+    file: UploadFile = None,
+    pdb: Session = Depends(get_db),
+    _api_key: APIKey = Depends(get_api_key),
+):
+    """Updates song and returns its id or 404 if not found"""
+    # even though id is an integer, we can compare with a string
+    song = pdb.query(SongModel).filter(SongModel.id == song_id).first()
+    if song is None:
+        raise HTTPException(status_code=404, detail="Song not found")
+
+    if name is not None:
+        song.name = name
+    if description is not None:
+        song.description = description
+    if creator is not None:
+        song.creator = creator
+    if artists is not None:
+        song.artists = artists
+
+    pdb.commit()
+
+    if file is not None:
+        try:
+            blob = bucket.blob("songs/" + id)
+            blob.upload_from_file(file.file)
+        except Exception as entry_not_found:
+            raise HTTPException(
+                status_code=404, detail="Song not found"
+            ) from entry_not_found
+
+    return {"success": True, "id": song.id if song else song_id}
