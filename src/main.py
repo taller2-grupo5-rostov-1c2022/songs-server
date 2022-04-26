@@ -145,13 +145,19 @@ def get_songs2(
 
 @app.get("/api/v2/songs/{song_id}")
 def get_song_by_id2(
-    song_id: int,
+    song_id: str,
     pdb: Session = Depends(get_db),
     _api_key: APIKey = Depends(get_api_key),
 ):
     """Returns a song by its id or 404 if not found"""
-    # TODO: Add stream to song file ?
-    return pdb.query(SongModel).filter(SongModel.id == song_id).first()
+    song = pdb.query(SongModel).filter(SongModel.id == song_id).first().__dict__.copy()
+
+    blob = bucket.blob("songs/" + song_id)
+    blob.make_public()
+
+    song["file"] = blob.public_url
+
+    return song
 
 
 @app.post("/api/v2/songs/")
@@ -173,8 +179,9 @@ def post_song_v2(
 
     blob = bucket.blob(f"songs/{newSong.id}")
     blob.upload_from_file(file.file)
+    blob.make_public()
 
-    return {"success": True, "id": newSong.id}
+    return {"success": True, "id": newSong.id, "file": blob.public_url}
 
 
 @app.put("/api/v2/songs/")
