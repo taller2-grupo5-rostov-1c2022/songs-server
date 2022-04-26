@@ -51,7 +51,7 @@ def post_song2(
     with open(file, "rb") as f:
         response_post = client.post(
             "/api/v2/songs/",
-            params={
+            data={
                 "name": name,
                 "description": description,
                 "creator": creator,
