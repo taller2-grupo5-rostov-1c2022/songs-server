@@ -128,11 +128,19 @@ def update_song(
 
 
 @app.get("/api/v2/songs/")
-def get_all_songs2(
-    pdb: Session = Depends(get_db), _api_key: APIKey = Depends(get_api_key)
+def get_songs2(
+    creator: str = None,
+    pdb: Session = Depends(get_db),
+    _api_key: APIKey = Depends(get_api_key),
 ):
     """Returns all songs"""
-    return pdb.query(SongModel).all()
+
+    if creator is not None:
+        songs = pdb.query(SongModel).filter(SongModel.creator == creator)
+    else:
+        songs = pdb.query(SongModel)
+
+    return songs.all()
 
 
 @app.get("/api/v2/songs/{song_id}")
