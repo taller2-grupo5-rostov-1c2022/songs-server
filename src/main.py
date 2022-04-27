@@ -42,13 +42,16 @@ app.add_middleware(
 )
 
 
+######################################## API V1 ########################################
+
+
 @app.get("/")
 def healthcheck():
     """Endpoint Healthcheck"""
     return "ok"
 
 
-@app.get("/api/v1/songs/")
+@app.get("/api/v1/songs/", tags=["API V1"])
 def get_all_songs(_api_key: APIKey = Depends(get_api_key)):
     """Returns all songs"""
     songs = db.collection("songs").stream()
@@ -58,7 +61,7 @@ def get_all_songs(_api_key: APIKey = Depends(get_api_key)):
     return songs_dict
 
 
-@app.get("/api/v1/songs/{song_id}")
+@app.get("/api/v1/songs/{song_id}", tags=["API V1"])
 def get_song_by_id(song_id: str, _api_key: APIKey = Depends(get_api_key)):
     """Returns a song by its id or 404 if not found"""
     db_entry = db.collection("songs").document(song_id).get()
@@ -72,7 +75,7 @@ def get_song_by_id(song_id: str, _api_key: APIKey = Depends(get_api_key)):
     return db_entry_dict
 
 
-@app.post("/api/v1/songs/")
+@app.post("/api/v1/songs/", tags=["API V1"])
 def post_song(song: Song, _api_key: APIKey = Depends(get_api_key)):
     """Creates a song and returns its id"""
     ref = db.collection("songs").document()
@@ -83,7 +86,7 @@ def post_song(song: Song, _api_key: APIKey = Depends(get_api_key)):
     return {"id": ref.id}
 
 
-@app.delete("/api/v1/songs/")
+@app.delete("/api/v1/songs/", tags=["API V1"])
 def delete_song(song_id: str, _api_key: APIKey = Depends(get_api_key)):
     """Deletes a song given its id or 404 if not found"""
     try:
@@ -98,7 +101,7 @@ def delete_song(song_id: str, _api_key: APIKey = Depends(get_api_key)):
     return song_id
 
 
-@app.put("/api/v1/songs/")
+@app.put("/api/v1/songs/", tags=["API V1"])
 def update_song(
     song_id: str, song_update: SongUpdate, _api_key: APIKey = Depends(get_api_key)
 ):
@@ -124,10 +127,10 @@ def update_song(
     return song_id
 
 
-################################################################################
+######################################## API V2 ########################################
 
 
-@app.get("/api/v2/songs/")
+@app.get("/api/v2/songs/", tags=["API V2"])
 def get_songs2(
     creator: str = None,
     pdb: Session = Depends(get_db),
@@ -143,24 +146,31 @@ def get_songs2(
     return songs.all()
 
 
-@app.get("/api/v2/songs/{song_id}")
+@app.get("/api/v2/songs/{song_id}", tags=["API V2"])
 def get_song_by_id2(
     song_id: str,
     pdb: Session = Depends(get_db),
     _api_key: APIKey = Depends(get_api_key),
 ):
     """Returns a song by its id or 404 if not found"""
-    song = pdb.query(SongModel).filter(SongModel.id == song_id).first().__dict__.copy()
+    try:
+        song = (
+            pdb.query(SongModel).filter(SongModel.id == song_id).first().__dict__.copy()
+        )
 
-    blob = bucket.blob("songs/" + song_id)
-    blob.make_public()
+        blob = bucket.blob("songs/" + song_id)
+        blob.make_public()
 
-    song["file"] = blob.public_url
+        song["file"] = blob.public_url
 
-    return song
+        return song
+    except Exception as entry_not_found:
+        raise HTTPException(
+            status_code=404, detail=f"Song '{song_id}' not found"
+        ) from entry_not_found
 
 
-@app.post("/api/v2/songs/")
+@app.post("/api/v2/songs/", tags=["API V2"])
 def post_song_v2(
     name: str = Form(...),
     description: str = Form(...),
@@ -184,13 +194,13 @@ def post_song_v2(
     return {"success": True, "id": newSong.id, "file": blob.public_url}
 
 
-@app.put("/api/v2/songs/")
+@app.put("/api/v2/songs/{song_id}", tags=["API V2"])
 def update_song2(
     song_id: str,
-    name: str = None,
-    description: str = None,
-    creator: str = None,
-    artists: str = None,
+    name: str = Form(None),
+    description: str = Form(None),
+    creator: str = Form(None),
+    artists: str = Form(None),
     file: UploadFile = None,
     pdb: Session = Depends(get_db),
     _api_key: APIKey = Depends(get_api_key),
@@ -199,7 +209,7 @@ def update_song2(
     # even though id is an integer, we can compare with a string
     song = pdb.query(SongModel).filter(SongModel.id == song_id).first()
     if song is None:
-        raise HTTPException(status_code=404, detail="Song not found")
+        raise HTTPException(status_code=404, detail="Song '{song_id}' not found")
 
     if name is not None:
         song.name = name
@@ -214,11 +224,11 @@ def update_song2(
 
     if file is not None:
         try:
-            blob = bucket.blob("songs/" + id)
+            blob = bucket.blob("songs/" + song_id)
             blob.upload_from_file(file.file)
         except Exception as entry_not_found:
             raise HTTPException(
-                status_code=404, detail="Song not found"
+                status_code=404, detail="Files for Song '{song_id}' not found"
             ) from entry_not_found
 
     return {"success": True, "id": song.id if song else song_id}

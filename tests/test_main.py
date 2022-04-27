@@ -101,9 +101,8 @@ def test_put_song2():
     assert response_post.status_code == 200
 
     response_update = client.put(
-        "/api/v2/songs/",
-        params={
-            "song_id": response_post.json()["id"],
+        "/api/v2/songs/" + str(response_post.json()["id"]),
+        data={
             "name": "updated_test_song",
             "artists": "updated_test_artists",
         },
