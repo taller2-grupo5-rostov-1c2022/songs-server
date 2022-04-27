@@ -2,6 +2,8 @@ from pydantic import BaseModel
 from typing import Optional
 
 ######################################## API V1 ########################################
+
+
 class SongInfo(BaseModel):
     name: str
     artist_name: str
