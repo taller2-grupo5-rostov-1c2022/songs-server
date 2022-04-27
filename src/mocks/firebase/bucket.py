@@ -1,6 +1,7 @@
 class Blob:
     def __init__(self):
         self.data = None
+        self.public_url = "https://example.com"
 
     def download_as_bytes(self):
         assert self.data is not None
@@ -9,8 +10,14 @@ class Blob:
     def upload_from_string(self, data_string):
         self.data = data_string
 
+    def upload_from_file(self, data):
+        self.data = data
+
     def delete(self):
         self.data = None
+
+    def make_public(self):
+        pass
 
 
 class Bucket:

@@ -1,6 +1,8 @@
 from pydantic import BaseModel
 from typing import Optional
 
+######################################## API V1 ########################################
+
 
 class SongInfo(BaseModel):
     name: str
@@ -20,3 +22,12 @@ class SongInfoUpdate(BaseModel):
 class SongUpdate(BaseModel):
     info: Optional[SongInfoUpdate]
     file: Optional[bytes] = None
+
+
+######################################## API V2 ########################################
+
+
+class SongResponse(BaseModel):
+    success: bool
+    id: str
+    file: Optional[str]
