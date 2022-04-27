@@ -1,7 +1,7 @@
 from fastapi import FastAPI, HTTPException, Depends, Security, UploadFile, File, Form
 from fastapi.security.api_key import APIKeyHeader, APIKey
 from fastapi.middleware.cors import CORSMiddleware
-from src.classes import SongUpdate, Song
+from src.classes import SongUpdate, Song, SongResponse
 
 from sqlalchemy.orm import Session
 from src.postgres.database import get_db
@@ -131,7 +131,7 @@ def update_song(
 
 
 @app.get("/api/v2/songs/", tags=["API V2"])
-def get_songs2(
+def get_songs_2(
     creator: str = None,
     pdb: Session = Depends(get_db),
     _api_key: APIKey = Depends(get_api_key),
@@ -147,7 +147,7 @@ def get_songs2(
 
 
 @app.get("/api/v2/songs/{song_id}", tags=["API V2"])
-def get_song_by_id2(
+def get_song_by_id_2(
     song_id: str,
     pdb: Session = Depends(get_db),
     _api_key: APIKey = Depends(get_api_key),
@@ -171,7 +171,7 @@ def get_song_by_id2(
 
 
 @app.post("/api/v2/songs/", tags=["API V2"])
-def post_song_v2(
+def post_song_2(
     name: str = Form(...),
     description: str = Form(...),
     creator: str = Form(...),
@@ -191,11 +191,11 @@ def post_song_v2(
     blob.upload_from_file(file.file)
     blob.make_public()
 
-    return {"success": True, "id": newSong.id, "file": blob.public_url}
+    return SongResponse(success=True, id=newSong.id, file=blob.public_url)
 
 
 @app.put("/api/v2/songs/{song_id}", tags=["API V2"])
-def update_song2(
+def update_song_2(
     song_id: str,
     name: str = Form(None),
     description: str = Form(None),
@@ -205,7 +205,7 @@ def update_song2(
     pdb: Session = Depends(get_db),
     _api_key: APIKey = Depends(get_api_key),
 ):
-    """Updates song and returns its id or 404 if not found"""
+    """Updates song by its id"""
     # even though id is an integer, we can compare with a string
     song = pdb.query(SongModel).filter(SongModel.id == song_id).first()
     if song is None:
@@ -231,4 +231,24 @@ def update_song2(
                 status_code=404, detail="Files for Song '{song_id}' not found"
             ) from entry_not_found
 
-    return {"success": True, "id": song.id if song else song_id}
+    return SongResponse(success=True, id=song.id if song else song_id)
+
+
+@app.delete("/api/v2/songs/{song_id}", tags=["API V2"])
+def delete_song_2(
+    song_id: str,
+    pdb: Session = Depends(get_db),
+    _api_key: APIKey = Depends(get_api_key),
+):
+    """Deletes a song by its id"""
+    try:
+        pdb.query(SongModel).filter(SongModel.id == song_id).delete()
+        pdb.commit()
+        blob = bucket.blob("songs/" + song_id)
+        blob.delete()
+        return SongResponse(success=True, id=song_id)
+
+    except Exception as entry_not_found:
+        raise HTTPException(
+            status_code=404, detail=f"Song '{song_id}' not found"
+        ) from entry_not_found

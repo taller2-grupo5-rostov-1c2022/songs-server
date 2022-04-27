@@ -82,7 +82,7 @@ def test_post_song2():
         "/api/v2/songs/" + str(response_post.json()["id"]),
         headers={"api_key": "key"},
     )
-    assert response_get.json()["id"] == response_post.json()["id"]
+    assert str(response_get.json()["id"]) == str(response_post.json()["id"])
     assert response_get.json()["name"] == "post_test_song"
     assert response_get.json()["description"] == "post_test_description"
     assert response_get.json()["creator"] == "post_test_creator"
@@ -116,7 +116,7 @@ def test_put_song2():
         headers={"api_key": "key"},
     )
 
-    assert response_get.json()["id"] == response_post.json()["id"]
+    assert str(response_get.json()["id"]) == str(response_post.json()["id"])
     assert response_get.json()["name"] == "updated_test_song"
     assert response_get.json()["description"] == "put_test_description"
     assert response_get.json()["creator"] == "put_test_creator"
@@ -154,3 +154,29 @@ def test_get_song_by_creator2():
     assert len(response_get.json()) >= 3  # local runs may use a dirty db
     for song in response_get.json():
         assert song["creator"] == "byCreator_test_creator"
+
+
+def test_delete_song2():
+    response_post = post_song2(
+        "delete_test_song",
+        "delete_test_description",
+        "delete_test_creator",
+        "delete_test_artists",
+        "./tests/test.song",
+        {"api_key": "key"},
+    )
+    assert response_post.status_code == 200
+
+    response_delete = client.delete(
+        "/api/v2/songs/" + str(response_post.json()["id"]),
+        headers={"api_key": "key"},
+    )
+
+    assert response_delete.status_code == 200
+
+    response_get = client.get(
+        "/api/v2/songs/" + str(response_post.json()["id"]),
+        headers={"api_key": "key"},
+    )
+
+    assert response_get.status_code == 404
