@@ -1,4 +1,13 @@
-from fastapi import FastAPI, HTTPException, Depends, Security, UploadFile, File, Form
+from fastapi import (
+    FastAPI,
+    HTTPException,
+    Depends,
+    Security,
+    UploadFile,
+    File,
+    Form,
+    Request,
+)
 from fastapi.security.api_key import APIKeyHeader, APIKey
 from fastapi.middleware.cors import CORSMiddleware
 from src.postgres import models
@@ -44,6 +53,13 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+@app.middleware("http")
+async def add_process_time_header(request: Request, call_next):
+    response = await call_next(request)
+    response.headers["Access-Control-Allow-Origin"] = str("*")
+    return response
+    
+
 ###### IMPORTANTE: SACAR ESTA LINEA AL HACER EL DEPLOY ##############
 models.Base.metadata.drop_all(bind=engine)
 
@@ -51,3 +67,4 @@ models.Base.metadata.create_all(bind=engine)
 app.include_router(songs.router, prefix="/api/v3")
 app.include_router(albums.router, prefix="/api/v3")
 app.include_router(users.router, prefix="/api/v3")
+
