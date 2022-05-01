@@ -30,4 +30,4 @@ class Bucket:
         return self.files[file_id]
 
 
-bucket = Bucket()
+bucket_mock = Bucket()

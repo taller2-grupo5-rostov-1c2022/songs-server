@@ -10,14 +10,6 @@ from sqlalchemy.orm import Session
 from src.postgres.database import get_db
 from src.postgres.models import SongModel, AlbumModel, ArtistAlbumModel, ArtistSongModel
 
-import os
-
-if os.environ.get("TESTING") == "1":
-    print("RUNNING IN TESTING MODE: MOCKING ACTIVATED")
-    from src.mocks.firebase.bucket import bucket
-else:
-    from src.firebase.access import bucket
-
 router = APIRouter(tags=["albums"])
 
 
@@ -42,13 +34,12 @@ def get_album_by_id(
     pdb: Session = Depends(get_db),
 ):
     """Returns an album by its id or 404 if not found"""
-    try:
-        album = pdb.query(AlbumModel).filter(AlbumModel.id == album_id).first()
-        return album
-    except Exception as entry_not_found:
+    album = pdb.query(AlbumModel).filter(AlbumModel.id == album_id).first()
+    if album is None:
         raise HTTPException(
             status_code=404, detail=f"Album '{album}' not found"
-        ) from entry_not_found
+        )
+    return album
 
 
 @router.post("/albums/")
@@ -128,17 +119,23 @@ def update_album(
     return {"id": album_id}
 
 
-@router.delete("/album/{album_id}")
+@router.delete("/albums/{album_id}")
 def delete_album(
+    user_id: str,
     album_id: str,
     pdb: Session = Depends(get_db),
 ):
     """Deletes an album by its id"""
-    try:
-        pdb.query(AlbumModel).filter(AlbumModel.id == album_id).delete()
-        pdb.commit()
-
-    except Exception as entry_not_found:
+    album = pdb.query(AlbumModel).filter(AlbumModel.id == album_id).first()
+    if album is None:
         raise HTTPException(
             status_code=404, detail=f"Song '{album_id}' not found"
-        ) from entry_not_found
+        )
+
+    if user_id != album.creator_id:
+        raise HTTPException(
+            status_code=403,
+            detail=f"User '{user_id} attempted to delete album of user with ID {album.creator_id}",
+        )
+    pdb.query(AlbumModel).filter(AlbumModel.id == album_id).delete()
+    pdb.commit()

@@ -5,14 +5,6 @@ from typing import Optional
 from fastapi import HTTPException
 from src.postgres import schemas
 
-import os
-
-if os.environ.get("TESTING") == "1":
-    print("RUNNING IN TESTING MODE: MOCKING ACTIVATED")
-    from src.mocks.firebase.bucket import bucket
-else:
-    from src.firebase.access import bucket
-
 
 def create_song(pdb: Session, song: schemas.SongBase):
     db_song = SongModel(**song.dict())

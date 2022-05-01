@@ -4,18 +4,10 @@ from fastapi import APIRouter
 from fastapi import FastAPI, HTTPException, Depends, Security, UploadFile, File, Form
 import json
 from src.crud import songs as crud_songs
-
+from src.firebase.access import get_bucket
 from sqlalchemy.orm import Session
 from src.postgres.database import get_db
 from src.postgres.models import SongModel, ArtistSongModel, UserModel
-
-import os
-
-if os.environ.get("TESTING") == "1":
-    print("RUNNING IN TESTING MODE: MOCKING ACTIVATED")
-    from src.mocks.firebase.bucket import bucket
-else:
-    from src.firebase.access import bucket
 
 router = APIRouter(tags=["songs"])
 
@@ -34,6 +26,7 @@ def get_songs(
 def get_song_by_id(
     song_id: int,
     pdb: Session = Depends(get_db),
+    bucket = Depends(get_bucket)
 ):
     """Returns a song by its id or 404 if not found"""
     song = crud_songs.get_song_by_id(pdb, song_id).__dict__
@@ -54,6 +47,7 @@ def update_song(
     artists: str = Form(None),
     file: UploadFile = None,
     pdb: Session = Depends(get_db),
+    bucket = Depends(get_bucket)
 ):
     """Updates song by its id"""
 
@@ -100,6 +94,7 @@ def post_song(
     genre: str = Form(...),
     file: UploadFile = File(...),
     pdb: Session = Depends(get_db),
+    bucket = Depends(get_bucket)
 ):
     """Creates a song and returns its id. Artists form is encoded like '["artist1", "artist2", ...]'"""
 
@@ -135,6 +130,7 @@ def delete_song(
     user_id: str,
     song_id: str,
     pdb: Session = Depends(get_db),
+    bucket = Depends(get_bucket)
 ):
     """Deletes a song by its id"""
 
