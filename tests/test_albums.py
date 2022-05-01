@@ -92,7 +92,10 @@ def test_delete_album(client):
     response_post = post_album(client)
 
     response_delete = client.delete(
-        API_VERSION_PREFIX + "/albums/" + str(response_post.json()["id"]) + "?user_id=album_creator_id",
+        API_VERSION_PREFIX
+        + "/albums/"
+        + str(response_post.json()["id"])
+        + "?user_id=album_creator_id",
         headers={"api_key": "key"},
     )
     assert response_delete.status_code == 200
@@ -112,7 +115,10 @@ def test_cannot_delete_album_of_another_user(client):
     response_post = post_album(client)
 
     response_delete = client.delete(
-        API_VERSION_PREFIX + "/albums/" + str(response_post.json()["id"]) + "?user_id=another_creator_id",
+        API_VERSION_PREFIX
+        + "/albums/"
+        + str(response_post.json()["id"])
+        + "?user_id=another_creator_id",
         headers={"api_key": "key"},
     )
     assert response_delete.status_code == 403
@@ -132,9 +138,12 @@ def test_cannot_delete_album_that_does_not_exist(client):
 def test_delete_album_should_not_delete_songs(client):
     create_user(client, "album_creator_id", "album_creator_name")
     response_post_song = post_song(client, user_id="album_creator_id")
-    response_post = post_album(client, songs_ids = [response_post_song.json()["id"]])
+    response_post = post_album(client, songs_ids=[response_post_song.json()["id"]])
     client.delete(
-        API_VERSION_PREFIX + "/albums/" + str(response_post.json()["id"]) + "?user_id=another_creator_id",
+        API_VERSION_PREFIX
+        + "/albums/"
+        + str(response_post.json()["id"])
+        + "?user_id=another_creator_id",
         headers={"api_key": "key"},
     )
 
@@ -145,4 +154,3 @@ def test_delete_album_should_not_delete_songs(client):
 
     assert response_get.status_code == 200
     assert response_get.json()["album_info"] is None
-

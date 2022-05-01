@@ -1,5 +1,4 @@
 from typing import List, Optional
-from fastapi import UploadFile, Form, UploadFile
 from pydantic import BaseModel
 
 # Classes used to provide type checking

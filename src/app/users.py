@@ -1,12 +1,11 @@
 from src.postgres import schemas
 from typing import List
 from fastapi import APIRouter
-from fastapi import FastAPI, HTTPException, Depends, Security, UploadFile, File, Form
-import json
+from fastapi import Depends, HTTPException
 
 from sqlalchemy.orm import Session
 from src.postgres.database import get_db
-from src.postgres.models import SongModel, ArtistSongModel, UserModel
+from src.postgres.models import UserModel
 
 router = APIRouter(tags=["users"])
 
@@ -39,13 +38,11 @@ def post_user(user_id: str, user_name: str, pdb: Session = Depends(get_db)):
 @router.delete("/users/")
 def delete_user(user_id: str, pdb: Session = Depends(get_db)):
     """Deletes a user given its id or 404 if not found"""
-    try:
-        pdb.query(UserModel).filter_by(UserModel.id == user_id).delete()
-        pdb.commit()
 
-    except Exception as entry_not_found:
+    user = pdb.query(UserModel).filter_by(UserModel.id == user_id).first()
+    if user is None:
         raise HTTPException(
             status_code=404, detail=f"User '{user_id}' not found"
-        ) from entry_not_found
-
-    return {"user_id": user_id}
+        )
+    pdb.query(UserModel).filter_by(UserModel.id == user_id).delete()
+    pdb.commit()

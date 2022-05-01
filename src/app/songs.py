@@ -1,7 +1,7 @@
 from src.postgres import schemas
 from typing import List
 from fastapi import APIRouter
-from fastapi import FastAPI, HTTPException, Depends, Security, UploadFile, File, Form
+from fastapi import Depends, File, Form, HTTPException, UploadFile
 import json
 from src.crud import songs as crud_songs
 from src.firebase.access import get_bucket
@@ -24,9 +24,7 @@ def get_songs(
 
 @router.get("/songs/{song_id}", response_model=schemas.SongBase)
 def get_song_by_id(
-    song_id: int,
-    pdb: Session = Depends(get_db),
-    bucket = Depends(get_bucket)
+    song_id: int, pdb: Session = Depends(get_db), bucket=Depends(get_bucket)
 ):
     """Returns a song by its id or 404 if not found"""
     song = crud_songs.get_song_by_id(pdb, song_id).__dict__
@@ -47,7 +45,7 @@ def update_song(
     artists: str = Form(None),
     file: UploadFile = None,
     pdb: Session = Depends(get_db),
-    bucket = Depends(get_bucket)
+    bucket=Depends(get_bucket),
 ):
     """Updates song by its id"""
 
@@ -94,7 +92,7 @@ def post_song(
     genre: str = Form(...),
     file: UploadFile = File(...),
     pdb: Session = Depends(get_db),
-    bucket = Depends(get_bucket)
+    bucket=Depends(get_bucket),
 ):
     """Creates a song and returns its id. Artists form is encoded like '["artist1", "artist2", ...]'"""
 
@@ -130,7 +128,7 @@ def delete_song(
     user_id: str,
     song_id: str,
     pdb: Session = Depends(get_db),
-    bucket = Depends(get_bucket)
+    bucket=Depends(get_bucket),
 ):
     """Deletes a song by its id"""
 

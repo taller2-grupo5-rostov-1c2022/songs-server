@@ -138,8 +138,7 @@ def test_cannot_delete_song_of_another_user(client):
 def test_cannot_delete_song_that_does_not_exist(client):
     create_user(client, "song_creator_id", "song_creator")
     response_delete = client.delete(
-        API_VERSION_PREFIX
-        + f"/songs/1?user_id=another_creator_id",
+        API_VERSION_PREFIX + "/songs/1?user_id=another_creator_id",
         headers={"api_key": "key"},
     )
 

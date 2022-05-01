@@ -8,14 +8,12 @@ from fastapi import (
 from fastapi.security.api_key import APIKeyHeader
 from fastapi.middleware.cors import CORSMiddleware
 from src.postgres import models
-from src.postgres.database import engine
 from src.app import songs, albums, users
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from src.postgres.database import Base
 from src.mocks.firebase.bucket import bucket_mock
 from src.firebase.access import get_bucket
-
 from src.postgres.database import get_db
 
 import os
@@ -57,7 +55,7 @@ if os.environ.get("TESTING") == "1":
 
     def override_get_bucket():
         yield bucket_mock
-        
+
     app.dependency_overrides[get_db] = override_get_db
     app.dependency_overrides[get_bucket] = override_get_bucket
 

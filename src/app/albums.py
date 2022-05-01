@@ -1,14 +1,12 @@
 from src.postgres import schemas
 from src.postgres import models
-from typing import List
 from fastapi import APIRouter
-from fastapi import FastAPI, HTTPException, Depends, Security, UploadFile, File, Form
-from src import crud
+from fastapi import Depends, Form, HTTPException
 import json
 
 from sqlalchemy.orm import Session
 from src.postgres.database import get_db
-from src.postgres.models import SongModel, AlbumModel, ArtistAlbumModel, ArtistSongModel
+from src.postgres.models import AlbumModel, ArtistAlbumModel, SongModel
 
 router = APIRouter(tags=["albums"])
 
@@ -36,9 +34,7 @@ def get_album_by_id(
     """Returns an album by its id or 404 if not found"""
     album = pdb.query(AlbumModel).filter(AlbumModel.id == album_id).first()
     if album is None:
-        raise HTTPException(
-            status_code=404, detail=f"Album '{album}' not found"
-        )
+        raise HTTPException(status_code=404, detail=f"Album '{album}' not found")
     return album
 
 
@@ -128,9 +124,7 @@ def delete_album(
     """Deletes an album by its id"""
     album = pdb.query(AlbumModel).filter(AlbumModel.id == album_id).first()
     if album is None:
-        raise HTTPException(
-            status_code=404, detail=f"Song '{album_id}' not found"
-        )
+        raise HTTPException(status_code=404, detail=f"Song '{album_id}' not found")
 
     if user_id != album.creator_id:
         raise HTTPException(

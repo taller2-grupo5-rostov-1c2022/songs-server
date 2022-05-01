@@ -1,5 +1,4 @@
 from sqlalchemy.orm import Session
-from src.postgres import schemas
 from src.postgres.models import SongModel
 from typing import Optional
 from fastapi import HTTPException
