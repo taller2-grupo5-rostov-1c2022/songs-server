@@ -18,7 +18,7 @@ from src.postgres.database import get_db
 
 import os
 
-API_KEY = os.environ.get("API_KEY") or "key"
+API_KEY = os.environ.get("API_KEY", "key")
 API_KEY_NAME = "api_key"
 
 
@@ -77,11 +77,10 @@ async def add_process_time_header(request: Request, call_next):
     response.headers["Access-Control-Allow-Origin"] = str("*")
     return response
 
+app.include_router(songs.router, prefix="/api/v3")
+app.include_router(albums.router, prefix="/api/v3")
+app.include_router(users.router, prefix="/api/v3")
 
-###### IMPORTANTE: SACAR ESTA LINEA AL HACER EL DEPLOY ##############
 if os.environ.get("TESTING") == "1":
     models.Base.metadata.drop_all(bind=engine)
     models.Base.metadata.create_all(bind=engine)
-    app.include_router(songs.router, prefix="/api/v3")
-    app.include_router(albums.router, prefix="/api/v3")
-    app.include_router(users.router, prefix="/api/v3")
