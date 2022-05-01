@@ -79,9 +79,9 @@ async def add_process_time_header(request: Request, call_next):
 
 
 ###### IMPORTANTE: SACAR ESTA LINEA AL HACER EL DEPLOY ##############
-models.Base.metadata.drop_all(bind=engine)
-
-models.Base.metadata.create_all(bind=engine)
-app.include_router(songs.router, prefix="/api/v3")
-app.include_router(albums.router, prefix="/api/v3")
-app.include_router(users.router, prefix="/api/v3")
+if os.environ.get("TESTING") == "1":
+    models.Base.metadata.drop_all(bind=engine)
+    models.Base.metadata.create_all(bind=engine)
+    app.include_router(songs.router, prefix="/api/v3")
+    app.include_router(albums.router, prefix="/api/v3")
+    app.include_router(users.router, prefix="/api/v3")
