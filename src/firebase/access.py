@@ -8,7 +8,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Use a service account
-with open("google-credentials.json") as json_file:
+with open("/code/src/google-credentials.json") as json_file:
     cert_dict = json.load(json_file, strict=False)
 
 cred = credentials.Certificate(cert_dict)
