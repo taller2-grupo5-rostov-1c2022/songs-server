@@ -22,6 +22,8 @@ services:
       dockerfile: docker/Dockerfile
     ports:
       - ${PORT}:${PORT}
+    volumes:
+      - ../src:/code/src
     environment:
       - PORT=${PORT}
       - API_KEY=${API_KEY}
