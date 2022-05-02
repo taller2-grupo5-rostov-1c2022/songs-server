@@ -24,6 +24,8 @@ services:
       - ${PORT}:${PORT}
     volumes:
       - ../src:/code/src
+    depends_on:
+      - postgres
     environment:
       - PORT=${PORT}
       - API_KEY=${API_KEY}

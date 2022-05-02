@@ -24,6 +24,8 @@ services:
       - ${PORT}:${PORT}
     volumes:
       - ./cov:/code/cov/
+    depends_on:
+      - postgres
     environment:
       - PORT=${PORT}
       - API_KEY=${API_KEY}

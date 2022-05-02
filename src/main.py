@@ -6,17 +6,16 @@ from src.app import songs, albums, users
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
+from src.constants import TESTING
 from src.middleware.utils import get_api_key
 from src.postgres.database import Base
 from src.mocks.firebase.bucket import bucket_mock
 from src.firebase.access import get_bucket
 from src.postgres.database import get_db
 
-import os
-
 app = FastAPI(dependencies=[Depends(get_api_key)])
 
-if os.environ.get("TESTING") == "1":
+if TESTING:
     print("RUNNING IN TESTING MODE: MOCKING ACTIVATED")
 
     SQLALCHEMY_DATABASE_URL = "sqlite:///./test.db"
