@@ -2,7 +2,6 @@ from src.postgres import schemas
 from typing import List
 from fastapi import APIRouter
 from fastapi import Depends, HTTPException
-
 from sqlalchemy.orm import Session
 from src.postgres.database import get_db
 from src.postgres.models import UserModel
@@ -41,8 +40,6 @@ def delete_user(user_id: str, pdb: Session = Depends(get_db)):
 
     user = pdb.query(UserModel).filter_by(UserModel.id == user_id).first()
     if user is None:
-        raise HTTPException(
-            status_code=404, detail=f"User '{user_id}' not found"
-        )
+        raise HTTPException(status_code=404, detail=f"User '{user_id}' not found")
     pdb.query(UserModel).filter_by(UserModel.id == user_id).delete()
     pdb.commit()
