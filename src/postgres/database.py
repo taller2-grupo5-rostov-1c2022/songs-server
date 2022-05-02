@@ -1,18 +1,20 @@
+import os
+
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
-from decouple import config
 import time
-import os
 
-if os.environ.get("TESTING") == "1":
+from src.constants import TESTING
+
+if TESTING:
     print("TEST DB")
-    POSTGRES_URL = config(
-        "TEST_POSTGRES_URL", default="postgresql://test:test@localhost:5438/test"
+    POSTGRES_URL = os.environ.get(
+        "TEST_POSTGRES_URL", "postgresql://test:test@localhost:5438/test"
     )
-
 else:
-    POSTGRES_URL = config("POSTGRES_URL", default="")
+    print("PROD DB")
+    POSTGRES_URL = os.environ.get("POSTGRES_URL", "")
 
 engine = create_engine(POSTGRES_URL)
 
