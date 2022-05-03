@@ -20,20 +20,12 @@ class AlbumModel(Base):
     name = Column(String, nullable=False, index=True)
     description = Column(String, nullable=False, index=True)
     genre = Column(String, nullable=False, index=True)
+    sub_level = Column(Integer, nullable=False)
 
     creator = relationship("UserModel", back_populates="albums")
     creator_id = Column(String, ForeignKey("users.id"))
 
-    artists = relationship("ArtistAlbumModel", back_populates="album")
     songs = relationship("SongModel", back_populates="album")
-
-
-class ArtistAlbumModel(Base):
-    __tablename__ = "artists_album"
-
-    artist_name = Column(String, primary_key=True, nullable=False, index=True)
-    album_id = Column(Integer, ForeignKey("albums.id"))
-    album = relationship("AlbumModel", back_populates="artists")
 
 
 class ArtistSongModel(Base):

@@ -22,16 +22,10 @@ def test_post_empty_album(client):
         headers={"api_key": "key"},
     )
 
-    print(response_get.json())
-
     assert str(response_get.json()["id"]) == str(response_post.json()["id"])
     assert response_get.json()["name"] == "album_name"
     assert response_get.json()["description"] == "album_desc"
     assert response_get.json()["genre"] == "album_genre"
-    assert response_get.json()["artists"] == [
-        {"artist_name": "artist_name_1"},
-        {"artist_name": "artist_name_2"},
-    ]
     assert response_get.json()["songs"] == []
 
 
@@ -50,6 +44,8 @@ def test_post_album_with_song(client):
     )
     assert response_get.json()["songs"][0]["name"] == "song_name"
     assert len(response_get.json()["songs"]) == 1
+    assert response_get.json()["cover"] == "https://example.com"
+    assert response_get.json()["sub_level"] == 1
 
 
 def test_put_album(client):
@@ -59,7 +55,7 @@ def test_put_album(client):
 
     response_update = client.put(
         API_VERSION_PREFIX + "/albums/" + str(response_post.json()["id"]),
-        data={"user_id": "album_creator_id", "name": "updated_test_album"},
+        data={"user_id": "album_creator_id", "name": "updated_test_album", "sub_level": 5},
         headers={"api_key": "key"},
     )
     assert response_update.status_code == 200
@@ -71,6 +67,7 @@ def test_put_album(client):
 
     assert str(response_get.json()["id"]) == str(response_post.json()["id"])
     assert response_get.json()["name"] == "updated_test_album"
+    assert response_get.json()["sub_level"] == 5
     assert response_get.json()["description"] == "album_desc"
 
 

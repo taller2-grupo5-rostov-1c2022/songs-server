@@ -25,6 +25,7 @@ def test_post_song(client):
     assert response_get.json()["description"] == "song_desc"
     assert response_get.json()["artists"] == [{"artist_name": "song_artist_name"}]
     assert response_get.json()["genre"] == "song_genre"
+    assert response_get.json()["file"] == "https://example.com"
 
 
 def test_cannot_post_song_with_not_created_user(client):

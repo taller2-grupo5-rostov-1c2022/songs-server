@@ -22,7 +22,7 @@ def get_songs(
     return crud_songs.get_songs(pdb, creator)
 
 
-@router.get("/songs/{song_id}", response_model=schemas.SongBase)
+@router.get("/songs/{song_id}")
 def get_song_by_id(
     song_id: int, pdb: Session = Depends(get_db), bucket=Depends(get_bucket)
 ):
@@ -77,7 +77,7 @@ def update_song(
             blob.upload_from_file(file.file)
         except Exception as entry_not_found:
             raise HTTPException(
-                status_code=404, detail="Files for Song '{song_id}' not found"
+                status_code=404, detail=f"Files for Song '{song_id}' not found"
             ) from entry_not_found
 
     return schemas.SongResponse(success=True, id=song.id if song else song_id)
@@ -148,3 +148,11 @@ def delete_song(
     blob.delete()
 
     return {"song_id": song_id}
+
+
+@router.get("/my_songs/")
+def get_my_songs(
+        user_id: str,
+        pdb: Session = Depends(get_db)
+):
+    return crud_songs.get_songs(pdb, user_id)

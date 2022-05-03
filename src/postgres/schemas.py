@@ -31,6 +31,10 @@ class SongBase(BaseModel):
         orm_mode = True
 
 
+class SongGet(SongBase):
+    file: str
+
+
 class SongResponse(BaseModel):
     success: bool
     id: str
@@ -42,13 +46,17 @@ class AlbumBase(BaseModel):
     name: str
     description: str
     creator_id: str
-    artists: List[ArtistBase]
     genre: str
+    sub_level: int
 
     songs: List[SongBase]
 
     class Config:
         orm_mode = True
+
+
+class AlbumGet(AlbumBase):
+    cover: str
 
 
 class AlbumCreate(BaseModel):
