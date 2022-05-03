@@ -13,7 +13,7 @@ def test_get_songs(client):
 
 
 def test_post_song(client):
-    create_user(client, "song_creator_id", "song_creator")
+    a = create_user(client, "song_creator_id", "song_creator")
     response_post = post_song(client)
     assert response_post.status_code == 200
     response_get = client.get(
@@ -41,7 +41,7 @@ def test_put_song(client):
     response_update = client.put(
         API_VERSION_PREFIX + "/songs/" + str(response_post.json()["id"]),
         data={
-            "user_id": "song_creator_id",
+            "uid": "song_creator_id",
             "name": "updated_test_song",
             "artists": '["updated_test_artists"]',
         },
@@ -69,7 +69,7 @@ def test_cannot_put_song_of_another_user(client):
     response_update = client.put(
         API_VERSION_PREFIX + "/songs/" + str(response_post.json()["id"]),
         data={
-            "user_id": "another_creator_id",
+            "uid": "another_creator_id",
             "name": "updated_test_song",
         },
         headers={"api_key": "key"},
@@ -109,7 +109,7 @@ def test_delete_song(client):
 
     response_delete = client.delete(
         API_VERSION_PREFIX
-        + f"/songs/{str(response_post.json()['id'])}?user_id=song_creator_id",
+        + f"/songs/{str(response_post.json()['id'])}?uid=song_creator_id",
         headers={"api_key": "key"},
     )
 
@@ -129,7 +129,7 @@ def test_cannot_delete_song_of_another_user(client):
     response_post = post_song(client)
     response_delete = client.delete(
         API_VERSION_PREFIX
-        + f"/songs/{str(response_post.json()['id'])}?user_id=another_creator_id",
+        + f"/songs/{str(response_post.json()['id'])}?uid=another_creator_id",
         headers={"api_key": "key"},
     )
 
@@ -139,7 +139,7 @@ def test_cannot_delete_song_of_another_user(client):
 def test_cannot_delete_song_that_does_not_exist(client):
     create_user(client, "song_creator_id", "song_creator")
     response_delete = client.delete(
-        API_VERSION_PREFIX + "/songs/1?user_id=another_creator_id",
+        API_VERSION_PREFIX + "/songs/1?uid=another_creator_id",
         headers={"api_key": "key"},
     )
 

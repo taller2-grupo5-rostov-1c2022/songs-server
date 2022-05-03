@@ -4,9 +4,9 @@ import json
 API_VERSION_PREFIX = "/api/v3"
 
 
-def create_user(client, user_id, user_name):
+def create_user(client, uid, user_name):
     response_post = client.post(
-        API_VERSION_PREFIX + f"/users/?user_id={user_id}&user_name={user_name}",
+        API_VERSION_PREFIX + f"/users/?uid={uid}&user_name={user_name}",
         headers={"api_key": "key"},
     )
     return response_post
@@ -14,7 +14,7 @@ def create_user(client, user_id, user_name):
 
 def post_song(
     client,
-    user_id: Optional[str] = "song_creator_id",
+    uid: Optional[str] = "song_creator_id",
     name: Optional[str] = "song_name",
     description: Optional[str] = "song_desc",
     artists: Optional[List[str]] = None,
@@ -33,7 +33,7 @@ def post_song(
         response_post = client.post(
             API_VERSION_PREFIX + "/songs/",
             data={
-                "user_id": user_id,
+                "uid": uid,
                 "name": name,
                 "description": description,
                 "artists": json.dumps(artists),
@@ -47,7 +47,7 @@ def post_song(
 
 def post_album(
     client,
-    user_id: Optional[str] = "album_creator_id",
+    uid: Optional[str] = "album_creator_id",
     name: Optional[str] = "album_name",
     description: Optional[str] = "album_desc",
     genre: Optional[str] = "album_genre",
@@ -67,7 +67,7 @@ def post_album(
         response_post = client.post(
             API_VERSION_PREFIX + "/albums/",
             data={
-                "user_id": user_id,
+                "uid": uid,
                 "name": name,
                 "description": description,
                 "sub_level": sub_level,

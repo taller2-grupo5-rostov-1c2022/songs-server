@@ -25,9 +25,7 @@ def get_albums(
 
 @router.get("/albums/{album_id}", response_model=schemas.AlbumGet)
 def get_album_by_id(
-    album_id: str,
-    pdb: Session = Depends(get_db),
-    bucket = Depends(get_bucket)
+    album_id: str, pdb: Session = Depends(get_db), bucket=Depends(get_bucket)
 ):
     """Returns an album by its id or 404 if not found"""
 
@@ -43,7 +41,7 @@ def get_album_by_id(
 
 @router.post("/albums/")
 def post_album(
-    user_id: str = Form(...),
+    uid: str = Form(...),
     name: str = Form(...),
     description: str = Form(...),
     genre: str = Form(...),
@@ -63,7 +61,7 @@ def post_album(
     album = models.AlbumModel(
         name=name,
         description=description,
-        creator_id=user_id,
+        creator_id=uid,
         genre=genre,
         sub_level=sub_level,
         songs=songs,
@@ -80,7 +78,7 @@ def post_album(
 @router.put("/albums/{album_id}")
 def update_album(
     album_id: str,
-    user_id: str = Form(...),
+    uid: str = Form(...),
     name: str = Form(None),
     description: str = Form(None),
     genre: str = Form(None),
@@ -88,17 +86,17 @@ def update_album(
     sub_level: int = Form(None),
     cover: UploadFile = File(None),
     pdb: Session = Depends(get_db),
-    bucket = Depends(get_bucket)
+    bucket=Depends(get_bucket),
 ):
     """Updates album by its id"""
     # even though id is an integer, we can compare with a string
     album = pdb.query(AlbumModel).filter(AlbumModel.id == album_id).first()
     if album is None:
         raise HTTPException(status_code=404, detail=f"Song '{album_id}' not found")
-    if album.creator_id != user_id:
+    if album.creator_id != uid:
         raise HTTPException(
             status_code=403,
-            detail=f"User '{user_id} attempted to edit album of user with ID {album.creator_id}",
+            detail=f"User '{uid} attempted to edit album of user with ID {album.creator_id}",
         )
 
     if name is not None:
@@ -134,7 +132,7 @@ def update_album(
 
 @router.delete("/albums/{album_id}")
 def delete_album(
-    user_id: str,
+    uid: str,
     album_id: str,
     pdb: Session = Depends(get_db),
 ):
@@ -143,10 +141,10 @@ def delete_album(
     if album is None:
         raise HTTPException(status_code=404, detail=f"Song '{album_id}' not found")
 
-    if user_id != album.creator_id:
+    if uid != album.creator_id:
         raise HTTPException(
             status_code=403,
-            detail=f"User '{user_id} attempted to delete album of user with ID {album.creator_id}",
+            detail=f"User '{uid} attempted to delete album of user with ID {album.creator_id}",
         )
     pdb.query(AlbumModel).filter(AlbumModel.id == album_id).delete()
     pdb.commit()

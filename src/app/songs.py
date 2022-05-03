@@ -39,7 +39,7 @@ def get_song_by_id(
 @router.put("/songs/{song_id}")
 def update_song(
     song_id: str,
-    user_id: str = Form(...),
+    uid: str = Form(...),
     name: str = Form(None),
     description: str = Form(None),
     artists: str = Form(None),
@@ -53,10 +53,10 @@ def update_song(
     song = pdb.query(SongModel).filter(SongModel.id == song_id).first()
     if song is None:
         raise HTTPException(status_code=404, detail=f"Song '{song_id}' not found")
-    if song.creator_id != user_id:
+    if song.creator_id != uid:
         raise HTTPException(
             status_code=403,
-            detail=f"User '{user_id} attempted to edit song of user with ID {song.creator_id}",
+            detail=f"User '{uid} attempted to edit song of user with ID {song.creator_id}",
         )
 
     if name is not None:
@@ -85,7 +85,7 @@ def update_song(
 
 @router.post("/songs/")
 def post_song(
-    user_id: str = Form(...),
+    uid: str = Form(...),
     name: str = Form(...),
     description: str = Form(...),
     artists: str = Form(...),
@@ -97,8 +97,8 @@ def post_song(
     """Creates a song and returns its id. Artists form is encoded like '["artist1", "artist2", ...]'"""
 
     # The user is not in the database
-    if not pdb.query(UserModel).filter(UserModel.id == user_id).all():
-        raise HTTPException(status_code=403, detail=f"User with ID {user_id} not found")
+    if not pdb.query(UserModel).filter(UserModel.id == uid).all():
+        raise HTTPException(status_code=403, detail=f"User with ID {uid} not found")
 
     parsed_artists = json.loads(artists)
     artists_models = []
@@ -108,7 +108,7 @@ def post_song(
     new_song = SongModel(
         name=name,
         description=description,
-        creator_id=user_id,
+        creator_id=uid,
         artists=artists_models,
         genre=genre,
     )
@@ -125,7 +125,7 @@ def post_song(
 
 @router.delete("/songs/{song_id}")
 def delete_song(
-    user_id: str,
+    uid: str,
     song_id: str,
     pdb: Session = Depends(get_db),
     bucket=Depends(get_bucket),
@@ -136,10 +136,10 @@ def delete_song(
     if song is None:
         raise HTTPException(status_code=404, detail=f"Song '{song_id}' not found")
 
-    if user_id != song.creator_id:
+    if uid != song.creator_id:
         raise HTTPException(
             status_code=403,
-            detail=f"User with ID {user_id} attempted to delete song of creator with ID {song.creator_id}",
+            detail=f"User with ID {uid} attempted to delete song of creator with ID {song.creator_id}",
         )
 
     pdb.query(SongModel).filter(SongModel.id == song_id).delete()
@@ -151,8 +151,5 @@ def delete_song(
 
 
 @router.get("/my_songs/")
-def get_my_songs(
-        user_id: str,
-        pdb: Session = Depends(get_db)
-):
-    return crud_songs.get_songs(pdb, user_id)
+def get_my_songs(uid: str, pdb: Session = Depends(get_db)):
+    return crud_songs.get_songs(pdb, uid)
