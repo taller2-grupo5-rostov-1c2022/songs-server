@@ -4,7 +4,7 @@ import json
 API_VERSION_PREFIX = "/api/v3"
 
 
-def create_user(client, uid, user_name):
+def post_user(client, uid, user_name):
     response_post = client.post(
         API_VERSION_PREFIX + f"/users/?uid={uid}&user_name={user_name}",
         headers={"api_key": "key"},

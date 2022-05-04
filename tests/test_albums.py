@@ -1,4 +1,4 @@
-from tests.utils import create_user, post_song, post_album
+from tests.utils import post_user, post_song, post_album
 from tests.utils import API_VERSION_PREFIX
 
 
@@ -13,7 +13,7 @@ def test_get_albums(client):
 
 
 def test_post_empty_album(client):
-    create_user(client, "album_creator_id", "album_creator_name")
+    post_user(client, "album_creator_id", "album_creator_name")
     response_post = post_album(client)
     assert response_post.status_code == 200
 
@@ -30,7 +30,7 @@ def test_post_empty_album(client):
 
 
 def test_post_album_with_song(client):
-    create_user(client, "album_creator_id", "album_creator_name")
+    post_user(client, "album_creator_id", "album_creator_name")
     response_post_song = post_song(client, "album_creator_id")
 
     response_post_album = post_album(
@@ -49,7 +49,7 @@ def test_post_album_with_song(client):
 
 
 def test_put_album(client):
-    create_user(client, "album_creator_id", "album_creator_name")
+    post_user(client, "album_creator_id", "album_creator_name")
     response_post = post_album(client)
     assert response_post.status_code == 200
 
@@ -72,7 +72,7 @@ def test_put_album(client):
 
 
 def test_cannot_put_album_of_another_user(client):
-    create_user(client, "album_creator_id", "album_creator_name")
+    post_user(client, "album_creator_id", "album_creator_name")
     response_post = post_album(client)
     assert response_post.status_code == 200
 
@@ -85,7 +85,7 @@ def test_cannot_put_album_of_another_user(client):
 
 
 def test_delete_album(client):
-    create_user(client, "album_creator_id", "album_creator_name")
+    post_user(client, "album_creator_id", "album_creator_name")
     response_post = post_album(client)
 
     response_delete = client.delete(
@@ -106,8 +106,8 @@ def test_delete_album(client):
 
 
 def test_cannot_delete_album_of_another_user(client):
-    create_user(client, "album_creator_id", "album_creator_name")
-    create_user(client, "another_creator_id", "another_creator_name")
+    post_user(client, "album_creator_id", "album_creator_name")
+    post_user(client, "another_creator_id", "another_creator_name")
 
     response_post = post_album(client)
 
@@ -122,7 +122,7 @@ def test_cannot_delete_album_of_another_user(client):
 
 
 def test_cannot_delete_album_that_does_not_exist(client):
-    create_user(client, "album_creator_id", "album_creator_name")
+    post_user(client, "album_creator_id", "album_creator_name")
 
     response_delete = client.delete(
         API_VERSION_PREFIX + "/albums/1?uid=another_creator_id",
@@ -133,7 +133,7 @@ def test_cannot_delete_album_that_does_not_exist(client):
 
 
 def test_delete_album_should_not_delete_songs(client):
-    create_user(client, "album_creator_id", "album_creator_name")
+    post_user(client, "album_creator_id", "album_creator_name")
     response_post_song = post_song(client, uid="album_creator_id")
     response_post = post_album(client, songs_ids=[response_post_song.json()["id"]])
     client.delete(
