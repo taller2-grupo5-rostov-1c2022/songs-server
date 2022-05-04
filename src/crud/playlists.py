@@ -12,7 +12,11 @@ def get_playlists(pdb: Session, creator_id: Optional[str]):
                 status_code=404, detail=f"User with id {creator_id} not found"
             )
 
-        return pdb.query(PlaylistModel).filter(PlaylistModel.creator_id == creator_id).all()
+        return (
+            pdb.query(PlaylistModel)
+            .filter(PlaylistModel.creator_id == creator_id)
+            .all()
+        )
     else:
         return pdb.query(PlaylistModel).all()
 

@@ -13,7 +13,7 @@ def test_get_albums(client):
 
 
 def test_get_album_of_user_without_albums(client):
-    create_user(client, "album_creator_id", "album_creator_name")
+    post_user(client, "album_creator_id", "album_creator_name")
     response = client.get(
         API_VERSION_PREFIX + "/my_albums/",
         headers={"uid": "album_creator_id", "api_key": "key"},
@@ -87,6 +87,26 @@ def test_put_album(client):
     assert response_get.json()["name"] == "updated_test_album"
     assert response_get.json()["sub_level"] == 5
     assert response_get.json()["description"] == "album_desc"
+
+
+def test_update_songs_in_album(client):
+    post_user(client, "album_creator_id", "album_creator_name")
+    response_post_song = post_song(client, uid="album_creator_id")
+    response_post_album = post_album(client, songs_ids=response_post_song.json()["id"])
+
+    response_update = client.put(
+        API_VERSION_PREFIX + "/albums/" + str(response_post_album.json()["id"]),
+        data={"uid": "album_creator_id", "songs_ids": "[]"},
+        headers={"api_key": "key"},
+    )
+    assert response_update.status_code == 200
+
+    response_get = client.get(
+        API_VERSION_PREFIX + "/albums/" + str(response_post_album.json()["id"]),
+        headers={"api_key": "key"},
+    )
+    assert response_get.status_code == 200
+    assert len(response_get.json()["songs"]) == 0
 
 
 def test_cannot_put_album_of_another_user(client):

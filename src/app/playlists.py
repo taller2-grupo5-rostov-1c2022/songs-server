@@ -29,9 +29,7 @@ def get_my_playlists(uid: str = Header(...), pdb: Session = Depends(get_db)):
 
 
 @router.get("/playlists/{playlist_id}", response_model=schemas.PlaylistBase)
-def get_playlist_by_id(
-    playlist_id: str, pdb: Session = Depends(get_db)
-):
+def get_playlist_by_id(playlist_id: str, pdb: Session = Depends(get_db)):
     """Returns a playlist by its id or 404 if not found"""
 
     playlist = crud_playlists.get_playlist_by_id(pdb, playlist_id).__dict__
@@ -87,7 +85,9 @@ def update_playlist(
     # even though id is an integer, we can compare with a string
     playlist = pdb.query(PlaylistModel).filter(PlaylistModel.id == playlist_id).first()
     if playlist is None:
-        raise HTTPException(status_code=404, detail=f"Playlist '{playlist_id}' not found")
+        raise HTTPException(
+            status_code=404, detail=f"Playlist '{playlist_id}' not found"
+        )
     if uid not in playlist.colabs and uid != playlist.creator_id:
         raise HTTPException(
             status_code=403,
@@ -121,7 +121,9 @@ def delete_playlist(
     """Deletes a playlist by its id"""
     playlist = pdb.query(PlaylistModel).filter(PlaylistModel.id == playlist_id).first()
     if playlist is None:
-        raise HTTPException(status_code=404, detail=f"Playlist '{playlist_id}' not found")
+        raise HTTPException(
+            status_code=404, detail=f"Playlist '{playlist_id}' not found"
+        )
 
     if uid != playlist.creator_id:
         raise HTTPException(
