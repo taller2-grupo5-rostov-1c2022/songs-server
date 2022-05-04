@@ -77,6 +77,7 @@ def update_playlist(
     playlist_id: str,
     uid: str = Form(...),
     name: str = Form(None),
+    colabs_ids: str = Form(None),
     description: str = Form(None),
     songs_ids: str = Form(None),
     pdb: Session = Depends(get_db),
@@ -98,6 +99,17 @@ def update_playlist(
         playlist.name = name
     if description is not None:
         playlist.description = description
+    if colabs_ids is not None:
+        if uid != playlist.creator_id:
+            raise HTTPException(
+                status_code=403,
+                detail=f"User '{uid} attempted to edit playlist colaborator in which is not the creator",
+            )
+        colabs = []
+        for colab_id in json.loads(colabs_ids):
+            colab = pdb.query(UserModel).filter(UserModel.id == colab_id).first()
+            colabs.append(colab)
+        playlist.colabs = colabs
 
     if songs_ids is not None:
         songs = []
