@@ -1,4 +1,4 @@
-from tests.utils import post_song, create_user
+from tests.utils import post_song, post_user
 from tests.utils import API_VERSION_PREFIX
 
 
@@ -13,7 +13,7 @@ def test_get_songs(client):
 
 
 def test_post_song(client):
-    a = create_user(client, "song_creator_id", "song_creator")
+    post_user(client, "song_creator_id", "song_creator")
     response_post = post_song(client)
     assert response_post.status_code == 200
     response_get = client.get(
@@ -34,7 +34,7 @@ def test_cannot_post_song_with_not_created_user(client):
 
 
 def test_put_song(client):
-    create_user(client, "song_creator_id", "song_creator")
+    post_user(client, "song_creator_id", "song_creator")
     response_post = post_song(client)
     assert response_post.status_code == 200
 
@@ -62,8 +62,8 @@ def test_put_song(client):
 
 
 def test_cannot_put_song_of_another_user(client):
-    create_user(client, "song_creator_id", "song_creator")
-    create_user(client, "another_creator_id", "another_creator_name")
+    post_user(client, "song_creator_id", "song_creator")
+    post_user(client, "another_creator_id", "another_creator_name")
     response_post = post_song(client)
 
     response_update = client.put(
@@ -78,8 +78,8 @@ def test_cannot_put_song_of_another_user(client):
 
 
 def test_get_song_by_creator(client):
-    create_user(client, "byCreator_test_user_id", "byCreator_test_user_name")
-    create_user(client, "notByCreator_test_user_id", "notByCreator_test_user_name")
+    post_user(client, "byCreator_test_user_id", "byCreator_test_user_name")
+    post_user(client, "notByCreator_test_user_id", "notByCreator_test_user_name")
 
     for i in range(3):
         response_post = post_song(
@@ -103,7 +103,7 @@ def test_get_song_by_creator(client):
 
 
 def test_delete_song(client):
-    create_user(client, "song_creator_id", "song_creator")
+    post_user(client, "song_creator_id", "song_creator")
     response_post = post_song(client)
     assert response_post.status_code == 200
 
@@ -124,8 +124,8 @@ def test_delete_song(client):
 
 
 def test_cannot_delete_song_of_another_user(client):
-    create_user(client, "song_creator_id", "song_creator")
-    create_user(client, "another_creator_id", "another_creator_name")
+    post_user(client, "song_creator_id", "song_creator")
+    post_user(client, "another_creator_id", "another_creator_name")
     response_post = post_song(client)
     response_delete = client.delete(
         API_VERSION_PREFIX
@@ -137,10 +137,28 @@ def test_cannot_delete_song_of_another_user(client):
 
 
 def test_cannot_delete_song_that_does_not_exist(client):
-    create_user(client, "song_creator_id", "song_creator")
+    post_user(client, "song_creator_id", "song_creator")
     response_delete = client.delete(
         API_VERSION_PREFIX + "/songs/1?uid=another_creator_id",
         headers={"api_key": "key"},
     )
 
     assert response_delete.status_code == 404
+
+
+def test_get_my_songs_should_retrieve_two_songs(client):
+    post_user(client, "song_creator_id", "song_creator")
+    post_song(client, uid="song_creator_id", name="happy_song")
+    post_song(client, uid="song_creator_id", name="sad_song")
+
+    response_get = client.get(
+        API_VERSION_PREFIX + "/my_songs/",
+        headers={"api_key": "key", "uid": "song_creator_id"},
+    )
+
+    body_songs = response_get.json()
+
+    assert response_get.status_code == 200
+    assert len(body_songs) == 2
+    assert body_songs[0]["name"] == "happy_song"
+    assert body_songs[1]["name"] == "sad_song"

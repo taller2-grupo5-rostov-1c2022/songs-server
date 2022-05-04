@@ -1,6 +1,6 @@
 from src.postgres import schemas
 from typing import List
-from fastapi import APIRouter
+from fastapi import APIRouter, Header
 from fastapi import Depends, File, Form, HTTPException, UploadFile
 import json
 from src.crud import songs as crud_songs
@@ -151,5 +151,5 @@ def delete_song(
 
 
 @router.get("/my_songs/")
-def get_my_songs(uid: str, pdb: Session = Depends(get_db)):
+def get_my_songs(uid: str = Header(None), pdb: Session = Depends(get_db)):
     return crud_songs.get_songs(pdb, uid)

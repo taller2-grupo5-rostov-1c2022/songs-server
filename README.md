@@ -181,7 +181,7 @@ POSTGRES_URL="postgresql://{username}:{password}@{host}:{port}/{database}"
 ##### Running Test Container and database
 
 ```
-./scripts/test-container.sh
+sudo ./scripts/test-container.sh
 ```
 
 server needs to be stopped and rebuilt when making changes, the database persists.
@@ -196,7 +196,7 @@ server needs to be stopped and rebuilt when making changes, the database persist
 ##### Running test
 
 ```
-./scripts/coverage-container.sh
+sudo ./scripts/coverage-container.sh
 ```
 
 you can also run a test-container and run the tests from the cli
