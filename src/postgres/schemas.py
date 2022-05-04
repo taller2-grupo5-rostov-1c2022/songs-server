@@ -85,3 +85,10 @@ class UserBase(BaseModel):
 
     class Config:
         orm_mode = True
+
+
+class PlaylistBase(BaseModel):
+    id: int
+    name: str
+    description: str
+    songs: List[SongBase]

@@ -12,6 +12,24 @@ def test_get_albums(client):
     assert response.status_code == 200
 
 
+def test_get_album_of_user_without_albums(client):
+    create_user(client, "album_creator_id", "album_creator_name")
+    response = client.get(
+        API_VERSION_PREFIX + "/my_albums/",
+        headers={"uid": "album_creator_id", "api_key": "key"},
+    )
+    assert response.status_code == 200
+    assert len(response.json()) == 0
+
+
+def test_get_album_of_invalid_user(client):
+    response = client.get(
+        API_VERSION_PREFIX + "/my_albums/",
+        headers={"uid": "album_creator_id", "api_key": "key"},
+    )
+    assert response.status_code == 404
+
+
 def test_post_empty_album(client):
     create_user(client, "album_creator_id", "album_creator_name")
     response_post = post_album(client)

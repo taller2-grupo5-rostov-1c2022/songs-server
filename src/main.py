@@ -2,7 +2,7 @@ from fastapi import (
     FastAPI,
     Depends,
 )
-from src.app import songs, albums, users
+from src.app import songs, albums, users, playlists
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
@@ -44,3 +44,4 @@ if TESTING:
 app.include_router(songs.router, prefix="/api/v3")
 app.include_router(albums.router, prefix="/api/v3")
 app.include_router(users.router, prefix="/api/v3")
+app.include_router(playlists.router, prefix="/api/v3")

@@ -1,7 +1,7 @@
 from src.postgres import schemas
 from src.postgres import models
 from fastapi import APIRouter
-from fastapi import Depends, Form, HTTPException, UploadFile, File
+from fastapi import Depends, Form, HTTPException, UploadFile, File, Header
 from src.firebase.access import get_bucket
 from src.crud import albums as crud_albums
 import json
@@ -21,6 +21,11 @@ def get_albums(
     """Returns all Albums"""
 
     return crud_albums.get_albums(pdb, creator)
+
+
+@router.get("/my_albums/")
+def get_my_albums(uid: str = Header(...), pdb: Session = Depends(get_db)):
+    return crud_albums.get_albums(pdb, uid)
 
 
 @router.get("/albums/{album_id}", response_model=schemas.AlbumGet)
@@ -92,7 +97,7 @@ def update_album(
     # even though id is an integer, we can compare with a string
     album = pdb.query(AlbumModel).filter(AlbumModel.id == album_id).first()
     if album is None:
-        raise HTTPException(status_code=404, detail=f"Song '{album_id}' not found")
+        raise HTTPException(status_code=404, detail=f"Album '{album_id}' not found")
     if album.creator_id != uid:
         raise HTTPException(
             status_code=403,
@@ -119,7 +124,7 @@ def update_album(
 
     if songs_ids is not None:
         songs = []
-        for song_id in songs_ids:
+        for song_id in json.loads(songs_ids):
             # TODO: sacar codigo repetido con app/songs
             song = pdb.query(SongModel).filter(SongModel.id == song_id).first()
 
@@ -139,7 +144,7 @@ def delete_album(
     """Deletes an album by its id"""
     album = pdb.query(AlbumModel).filter(AlbumModel.id == album_id).first()
     if album is None:
-        raise HTTPException(status_code=404, detail=f"Song '{album_id}' not found")
+        raise HTTPException(status_code=404, detail=f"Album '{album_id}' not found")
 
     if uid != album.creator_id:
         raise HTTPException(
