@@ -151,5 +151,5 @@ def delete_song(
 
 
 @router.get("/my_songs/")
-def get_my_songs(uid: str = Header(None), pdb: Session = Depends(get_db)):
+def get_my_songs(uid: str = Header(...), pdb: Session = Depends(get_db)):
     return crud_songs.get_songs(pdb, uid)

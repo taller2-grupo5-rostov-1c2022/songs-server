@@ -18,7 +18,7 @@ def get_playlists(
     creator: str = None,
     pdb: Session = Depends(get_db),
 ):
-    """Returns all Albums"""
+    """Returns all playlists either filtered by creator or all playlists"""
 
     return crud_playlists.get_playlists(pdb, creator)
 
@@ -47,7 +47,7 @@ def post_playlist(
     pdb: Session = Depends(get_db),
 ):
     """Creates a playlist and returns its id. Songs_ids form is encoded like '["song_id_1", "song_id_2", ...]'.
-    Colabs_ids form is encoded like '["colab_id_1, "colab_id_2, ...]''"""
+    Colabs_ids form is encoded like '["colab_id_1", "colab_id_2", ...]'"""
 
     songs = []
     for song_id in json.loads(songs_ids):
@@ -92,7 +92,7 @@ def update_playlist(
     if uid not in playlist.colabs and uid != playlist.creator_id:
         raise HTTPException(
             status_code=403,
-            detail=f"User '{uid} attempted to edit playlist in which is not a colaborator",
+            detail=f"User '{uid} attempted to edit playlist in which is not a collaborator",
         )
 
     if name is not None:
@@ -103,7 +103,7 @@ def update_playlist(
         if uid != playlist.creator_id:
             raise HTTPException(
                 status_code=403,
-                detail=f"User '{uid} attempted to edit playlist colaborator in which is not the creator",
+                detail=f"User '{uid} attempted to edit playlist collaborator in which is not the creator",
             )
         colabs = []
         for colab_id in json.loads(colabs_ids):

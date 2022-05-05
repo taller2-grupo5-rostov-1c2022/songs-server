@@ -79,3 +79,35 @@ def post_album(
         )
 
     return response_post
+
+
+def post_playlist(
+    client,
+    uid: Optional[str] = "playlist_creator_id",
+    playlist_name: Optional[str] = "playlist_name",
+    description: Optional[str] = "playlist_desc",
+    songs_ids: Optional[List[str]] = None,
+    colabs_ids: Optional[List[str]] = None,
+    headers: Optional[dict] = None,
+):
+
+    if headers is None:
+        headers = {"api_key": "key"}
+    if songs_ids is None:
+        songs_ids = []
+    if colabs_ids is None:
+        colabs_ids = []
+
+    response_post = client.post(
+        f"{API_VERSION_PREFIX}/playlists/",
+        data={
+            "uid": uid,
+            "name": playlist_name,
+            "description": description,
+            "songs_ids": json.dumps(songs_ids),
+            "colabs_ids": json.dumps(colabs_ids),
+        },
+        headers=headers,
+    )
+
+    return response_post
