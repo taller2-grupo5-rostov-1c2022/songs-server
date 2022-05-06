@@ -24,6 +24,7 @@ services:
       - ${PORT}:${PORT}
     volumes:
       - ../src:/code/src
+      - ../tests:/code/tests
     depends_on:
       - postgres
     environment:
