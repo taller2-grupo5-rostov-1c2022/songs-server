@@ -165,26 +165,32 @@ def test_owner_should_be_able_to_edit_its_own_playlist(client):
     assert playlist["description"] == "playlist_description_updated"
 
 
-# def test_colab_should_be_able_to_edit_playlist(client):
-#
-#     response_post = wrap_post_playlist(client)
-#
-#     response_put = client.put(f"{API_VERSION_PREFIX}/playlists/{response_post.json()['id']}",
-#                               data={"name": "playlist_name_updated",
-#                                     "description": "playlist_description_updated",
-#                                     },
-#                               headers={"api_key": "key"})
-#
-#
-#     response_get = client.get(f"{API_VERSION_PREFIX}/playlists/{response_put.json()['id']}", headers={"api_key": "key"})
-#
-#     playlist = response_get.json()
-#     print(playlist)
-#
-#     assert response_get.status_code == 200
-#     assert playlist["id"] == 1
-#     assert playlist["name"] == "playlist_name_updated"
-#     assert playlist["description"] == "playlist_description_updated"
+def test_colab_should_be_able_to_edit_playlist(client):
+
+    response_post = wrap_post_playlist(client)
+
+    response_put = client.put(
+        f"{API_VERSION_PREFIX}/playlists/{response_post.json()['id']}",
+        data={
+            "uid": "user_playlist_colab",
+            "name": "playlist_name_updated",
+            "description": "playlist_description_updated",
+        },
+        headers={"api_key": "key"},
+    )
+
+    response_get = client.get(
+        f"{API_VERSION_PREFIX}/playlists/{response_put.json()['id']}",
+        headers={"api_key": "key"},
+    )
+
+    playlist = response_get.json()
+    print(playlist)
+
+    assert response_get.status_code == 200
+    assert playlist["id"] == 1
+    assert playlist["name"] == "playlist_name_updated"
+    assert playlist["description"] == "playlist_description_updated"
 
 
 def test_owner_should_be_able_to_delete_its_own_playlist(client):

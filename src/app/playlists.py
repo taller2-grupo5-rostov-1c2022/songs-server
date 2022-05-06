@@ -89,7 +89,11 @@ def update_playlist(
         raise HTTPException(
             status_code=404, detail=f"Playlist '{playlist_id}' not found"
         )
-    if uid not in playlist.colabs and uid != playlist.creator_id:
+    print([colab.id for colab in playlist.colabs])
+    if (
+        uid not in [colab.id for colab in playlist.colabs]
+        and uid != playlist.creator_id
+    ):
         raise HTTPException(
             status_code=403,
             detail=f"User '{uid} attempted to edit playlist in which is not a collaborator",
