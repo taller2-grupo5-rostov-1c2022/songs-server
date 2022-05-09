@@ -113,7 +113,7 @@ def post_song(
         parsed_artists = json.loads(artists.copy())
         for artist_name in parsed_artists:
             artists_models.append(ArtistSongModel(artist_name=artist_name))
-    except Exception:
+    except Exception:  # pylint: disable=W0703
         artists_models.append(ArtistSongModel(artist_name=artists))
 
     new_song = SongModel(
