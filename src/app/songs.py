@@ -12,6 +12,13 @@ from src.postgres.models import SongModel, ArtistSongModel, UserModel
 router = APIRouter(tags=["songs"])
 
 
+# if it does not exist
+def _createUser(uid, pdb):
+    new_user = UserModel(id=uid, name="fixme")
+    pdb.add(new_user)
+    pdb.commit()
+
+
 @router.get("/songs/", response_model=List[schemas.SongBase])
 def get_songs(
     creator: str = None,
@@ -39,7 +46,7 @@ def get_song_by_id(
 @router.put("/songs/{song_id}")
 def update_song(
     song_id: str,
-    uid: str = Form(...),
+    uid: str = Header(...),
     name: str = Form(None),
     description: str = Form(None),
     artists: str = Form(None),
@@ -85,7 +92,7 @@ def update_song(
 
 @router.post("/songs/")
 def post_song(
-    uid: str = Form(...),
+    uid: str = Header(...),
     name: str = Form(...),
     description: str = Form(...),
     artists: str = Form(...),
@@ -98,12 +105,16 @@ def post_song(
 
     # The user is not in the database
     if not pdb.query(UserModel).filter(UserModel.id == uid).all():
-        raise HTTPException(status_code=403, detail=f"User with ID {uid} not found")
+        _createUser(uid, pdb)
+        # raise HTTPException(status_code=403, detail=f"User with ID {uid} not found")
 
-    parsed_artists = json.loads(artists)
     artists_models = []
-    for artist_name in parsed_artists:
-        artists_models.append(ArtistSongModel(artist_name=artist_name))
+    try:
+        parsed_artists = json.loads(artists.copy())
+        for artist_name in parsed_artists:
+            artists_models.append(ArtistSongModel(artist_name=artist_name))
+    except Exception:
+        artists_models.append(ArtistSongModel(artist_name=artists))
 
     new_song = SongModel(
         name=name,
@@ -125,8 +136,8 @@ def post_song(
 
 @router.delete("/songs/{song_id}")
 def delete_song(
-    uid: str,
     song_id: str,
+    uid: str = Header(...),
     pdb: Session = Depends(get_db),
     bucket=Depends(get_bucket),
 ):
