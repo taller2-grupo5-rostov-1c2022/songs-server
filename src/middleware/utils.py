@@ -10,4 +10,4 @@ async def get_api_key(
     if api_key_header == API_KEY:
         return api_key_header
     else:
-        raise HTTPException(status_code=403)
+        raise HTTPException(status_code=403, detail="API key is not valid")
