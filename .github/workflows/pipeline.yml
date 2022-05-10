@@ -119,9 +119,9 @@ jobs:
           heroku_app_name: ${{secrets.HEROKU_APP_NAME}}
           heroku_email: ${{secrets.HEROKU_EMAIL}}
           usedocker: true
-          healthcheck: "https://${{secrets.HEROKU_APP_NAME}}.herokuapp.com/"
-          rollbackonhealthcheckfailed: true
-          delay: 1.5
+          # healthcheck: "https://${{secrets.HEROKU_APP_NAME}}.herokuapp.com/"
+          # rollbackonhealthcheckfailed: true
+          # delay: 1.5
           # healthcheck delay in seconds
           # check might occur before the app is ready
           # either wait for healthcheck or remove healthcheck

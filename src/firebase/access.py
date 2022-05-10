@@ -11,7 +11,7 @@ load_dotenv()
 if not TESTING:
     # Use a service account
     # Si tira error porque no encuentra el archivo, copiar el google-credentials.json a /src
-    with open("/code/src/google-credentials.json") as json_file:
+    with open("google-credentials.json") as json_file:
         cert_dict = json.load(json_file, strict=False)
 
     cred = credentials.Certificate(cert_dict)
