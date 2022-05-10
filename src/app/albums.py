@@ -75,7 +75,7 @@ def post_album(
     pdb.commit()
 
     blob = bucket.blob(f"covers/{album.id}")
-    blob.upload_from_file(cover)
+    blob.upload_from_file(cover.file)
 
     return {"id": album.id}
 
