@@ -128,7 +128,7 @@ def post_song(
     pdb.refresh(new_song)
 
     blob = bucket.blob(f"songs/{new_song.id}")
-    blob.upload_from_file(file)
+    blob.upload_from_file(file.file)
     blob.make_public()
 
     return schemas.SongResponse(success=True, id=new_song.id, file=blob.public_url)
