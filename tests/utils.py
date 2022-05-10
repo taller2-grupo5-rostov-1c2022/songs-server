@@ -23,7 +23,10 @@ def post_song(
     headers: Optional[dict] = None,
 ):
     if headers is None:
-        headers = {"api_key": "key"}
+        headers = {
+            "api_key": "key",
+            "uid": uid,
+        }
     if artists is None:
         artists = ["song_artist_name"]
 
@@ -33,7 +36,6 @@ def post_song(
         response_post = client.post(
             API_VERSION_PREFIX + "/songs/",
             data={
-                "uid": uid,
                 "name": name,
                 "description": description,
                 "artists": json.dumps(artists),

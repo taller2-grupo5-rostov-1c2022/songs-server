@@ -1,3 +1,5 @@
+import json
+
 from tests.utils import API_VERSION_PREFIX, post_song, post_user, post_playlist
 
 
@@ -213,3 +215,78 @@ def test_user_should_not_be_able_to_delete_other_users_playlist(client):
     )
 
     assert response_delete.status_code == 403
+
+
+def test_owner_should_be_able_to_add_songs_to_its_own_playlist(client):
+    res_post_playlist = wrap_post_playlist(client)
+    res_post_song = post_song(
+        client, uid="user_playlist_owner", name="new_song_for_playlist"
+    )
+
+    client.post(
+        f"{API_VERSION_PREFIX}/playlists/{res_post_playlist.json()['id']}/songs/?uid=user_playlist_owner&song_id={res_post_song.json()['id']}",
+        headers={"api_key": "key"},
+    )
+
+    response_get = client.get(
+        f"{API_VERSION_PREFIX}/playlists/{res_post_playlist.json()['id']}",
+        headers={"api_key": "key"},
+    )
+
+    playlist = response_get.json()
+
+    assert response_get.status_code == 200
+    assert playlist["id"] == 1
+    assert playlist["name"] == "playlist_name"
+    assert playlist["description"] == "playlist_description"
+    assert playlist["songs"][0]["name"] == "song_for_playlist1"
+    assert playlist["songs"][1]["name"] == "song_for_playlist2"
+    assert playlist["songs"][2]["name"] == "new_song_for_playlist"
+
+
+def test_user_should_not_be_able_to_add_songs_to_other_users_playlist_if_not_collaborator(
+    client,
+):
+
+    res_post_playlist = wrap_post_playlist(client)
+    post_user(client, uid="other_user", user_name="other_user_name")
+    res_post_song = post_song(client, uid="other_user", name="new_song_for_playlist")
+
+    res_post = client.post(
+        f"{API_VERSION_PREFIX}/playlists/{res_post_playlist.json()['id']}/songs/?uid=other_user&song_id={res_post_song.json()['id']}",
+        headers={"api_key": "key"},
+    )
+
+    assert res_post.status_code == 403
+
+
+def test_user_can_not_add_songs_to_playlist_if_song_does_not_exist(client):
+    res_post_playlist = wrap_post_playlist(client)
+
+    res_post = client.post(
+        f"{API_VERSION_PREFIX}/playlists/{res_post_playlist.json()['id']}/songs/?uid=user_playlist_owner&song_id=20",
+        headers={"api_key": "key"},
+    )
+
+    assert res_post.status_code == 404
+
+
+def test_owner_can_delete_song_from_playlist(client):
+    res_post_playlist = wrap_post_playlist(client)
+    res_post_song = post_song(
+        client, uid="user_playlist_owner", name="new_song_for_playlist"
+    )
+
+    # add song to playlist
+    client.post(
+        f"{API_VERSION_PREFIX}/playlists/{res_post_playlist.json()['id']}/songs/?uid=user_playlist_owner&song_id={res_post_song.json()['id']}",
+        headers={"api_key": "key"},
+    )
+
+    # delete song from playlist
+    res_delete = client.delete(
+        f"{API_VERSION_PREFIX}/playlists/{res_post_playlist.json()['id']}/songs/{res_post_song.json()['id']}/?uid=user_playlist_owner",
+        headers={"api_key": "key"},
+    )
+
+    assert res_delete.status_code == 200

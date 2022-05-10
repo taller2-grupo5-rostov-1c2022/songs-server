@@ -2,7 +2,6 @@ from src.postgres import schemas
 from src.postgres import models
 from fastapi import APIRouter
 from fastapi import Depends, Form, HTTPException, Header
-from src.firebase.access import get_bucket
 from src.crud import playlists as crud_playlists
 import json
 
@@ -18,7 +17,7 @@ def get_playlists(
     creator: str = None,
     pdb: Session = Depends(get_db),
 ):
-    """Returns all playlists either filtered by creator or all playlists"""
+    """Returns playlists either filtered by creator or all playlists"""
 
     return crud_playlists.get_playlists(pdb, creator)
 
@@ -89,7 +88,7 @@ def update_playlist(
         raise HTTPException(
             status_code=404, detail=f"Playlist '{playlist_id}' not found"
         )
-    print([colab.id for colab in playlist.colabs])
+
     if (
         uid not in [colab.id for colab in playlist.colabs]
         and uid != playlist.creator_id
@@ -120,7 +119,6 @@ def update_playlist(
         for song_id in json.loads(songs_ids):
             # TODO: sacar codigo repetido con app/songs
             song = pdb.query(SongModel).filter(SongModel.id == song_id).first()
-
             songs.append(song)
         playlist.songs = songs
 
@@ -147,4 +145,62 @@ def delete_playlist(
             detail=f"User '{uid} attempted to delete playlist of user with ID {playlist.creator_id}",
         )
     pdb.query(PlaylistModel).filter(PlaylistModel.id == playlist_id).delete()
+    pdb.commit()
+
+
+@router.post("/playlists/{playlist_id}/songs/")
+def add_song_to_playlist(
+    uid: str, playlist_id: str, song_id: str, pdb: Session = Depends(get_db)
+):
+    """Adds a song to a playlist"""
+    playlist = pdb.query(PlaylistModel).filter(PlaylistModel.id == playlist_id).first()
+
+    if playlist is None:
+        raise HTTPException(
+            status_code=404, detail=f"Playlist '{playlist_id}' not found"
+        )
+
+    if uid != playlist.creator_id and uid not in [
+        colab.id for colab in playlist.colabs
+    ]:
+        raise HTTPException(
+            status_code=403,
+            detail=f"User {uid} attempted to add a song to playlist of user with ID {playlist.creator_id}",
+        )
+
+    song = pdb.query(SongModel).filter(SongModel.id == song_id).first()
+    if song is None:
+        raise HTTPException(status_code=404, detail=f"Song '{song_id}' not found")
+
+    playlist.songs.append(song)
+    pdb.commit()
+
+    return {"id": playlist_id}
+
+
+@router.delete("/playlists/{playlist_id}/songs/{song_id}/")
+def remove_song_from_playlist(
+    uid: str, playlist_id: str, song_id: str, pdb: Session = Depends(get_db)
+):
+    """Removes a song from a playlist"""
+    playlist = pdb.query(PlaylistModel).filter(PlaylistModel.id == playlist_id).first()
+
+    if playlist is None:
+        raise HTTPException(
+            status_code=404, detail=f"Playlist '{playlist_id}' not found"
+        )
+
+    if uid != playlist.creator_id and uid not in [
+        colab.id for colab in playlist.colabs
+    ]:
+        raise HTTPException(
+            status_code=403,
+            detail=f"User {uid} attempted to remove a song from playlist of user with ID {playlist.creator_id}",
+        )
+
+    song = pdb.query(SongModel).filter(SongModel.id == song_id).first()
+    if song is None:
+        raise HTTPException(status_code=404, detail=f"Song '{song_id}' not found")
+
+    playlist.songs.remove(song)
     pdb.commit()

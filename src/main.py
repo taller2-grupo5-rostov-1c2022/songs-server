@@ -11,6 +11,7 @@ from src.middleware.utils import get_api_key
 from src.postgres.database import Base
 from src.mocks.firebase.bucket import bucket_mock
 from src.firebase.access import get_bucket
+
 from src.postgres.database import get_db
 
 app = FastAPI(dependencies=[Depends(get_api_key)])

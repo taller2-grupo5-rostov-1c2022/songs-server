@@ -94,3 +94,6 @@ venv.bak/
 
 # Credentials
 .credentials/
+
+# Other
+.DS_Store
