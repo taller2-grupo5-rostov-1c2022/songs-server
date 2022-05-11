@@ -5,9 +5,7 @@ from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from src.firebase.access import get_bucket
 from src.main import app
-from src.mocks.firebase.bucket import bucket_mock
 from src.postgres.database import get_db, Base
 
 import os
@@ -58,10 +56,5 @@ def client(session):
             session.close()
 
     app.dependency_overrides[get_db] = override_get_db
-    app.dependency_overrides[get_bucket] = override_get_bucket
 
     yield TestClient(app)
-
-
-def override_get_bucket():
-    yield bucket_mock
