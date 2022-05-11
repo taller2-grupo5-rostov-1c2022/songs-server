@@ -168,3 +168,24 @@ def test_get_my_songs_should_retrieve_two_songs(client):
     assert len(body_songs) == 2
     assert body_songs[0]["name"] == "happy_song"
     assert body_songs[1]["name"] == "sad_song"
+
+
+def test_post_with_invalid_artists_format_should_fail(client):
+    post_user(client, "song_creator_id", "song_creator")
+
+    with open("./tests/test.song", "wb") as f:
+        f.write(b"test")
+    with open("./tests/test.song", "rb") as f:
+        response_post = client.post(
+            API_VERSION_PREFIX + "/songs/",
+            data={
+                "name": "test_song",
+                "description": "test_desc",
+                "artists": "invalid artists format",
+                "genre": "test_genre",
+            },
+            files={"file": ("song.txt", f, "plain/text")},
+            headers={"uid": "song_creator_id", "api_key": "key"},
+        )
+
+    assert response_post.status_code == 422

@@ -72,9 +72,16 @@ def update_song(
         song.description = description
     if artists is not None:
         artists_list = []
-        for artist_name in json.loads(artists):
-            artists_list.append(ArtistModel(name=artist_name))
-        song.artists = artists_list
+        try:
+            parsed_artists = json.loads(artists)
+            if len(parsed_artists) == 0:
+                raise ValueError
+            for artist_name in json.loads(artists):
+                artists_list.append(ArtistModel(name=artist_name))
+            song.artists = artists_list
+
+        except Exception:
+            raise HTTPException(status_code=422, detail="Artists string is not well encoded")
 
     pdb.commit()
 
@@ -111,11 +118,12 @@ def post_song(
     artists_models = []
     try:
         parsed_artists = json.loads(artists)
+        if len(parsed_artists) == 0:
+            raise ValueError
         for artist_name in parsed_artists:
-            print(artist_name)
             artists_models.append(ArtistModel(name=artist_name))
     except Exception:  # pylint: disable=W0703
-        assert HTTPException(status_code=422, detail="Artists string is not well encoded")
+        raise HTTPException(status_code=422, detail="Artists string is not well encoded")
 
     new_song = SongModel(
         name=name,
