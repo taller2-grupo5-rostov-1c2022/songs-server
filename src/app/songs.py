@@ -12,13 +12,6 @@ from src.postgres.models import SongModel, UserModel, ArtistModel
 router = APIRouter(tags=["songs"])
 
 
-# if it does not exist
-def _createUser(uid, pdb):
-    new_user = UserModel(id=uid, name="fixme")
-    pdb.add(new_user)
-    pdb.commit()
-
-
 @router.get("/songs/", response_model=List[schemas.SongBase])
 def get_songs(
     creator: str = None,
@@ -114,8 +107,7 @@ def post_song(
 
     # The user is not in the database
     if not pdb.query(UserModel).filter(UserModel.id == uid).all():
-        _createUser(uid, pdb)
-        # raise HTTPException(status_code=403, detail=f"User with ID {uid} not found")
+        raise HTTPException(status_code=403, detail=f"User with ID {uid} not found")
 
     artists_models = []
     try:
