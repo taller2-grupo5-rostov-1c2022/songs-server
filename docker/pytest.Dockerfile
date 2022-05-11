@@ -16,7 +16,6 @@ RUN poetry install --no-interaction --no-ansi
 COPY ./src ./src/
 COPY ./tests ./tests/
 COPY ./scripts/docker-pytest.sh ./docker-pytest.sh
-COPY ./google-credentials.json ./google-credentials.json
 
 RUN chmod +x ./docker-pytest.sh
 
