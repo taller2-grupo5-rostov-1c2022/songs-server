@@ -38,8 +38,8 @@ def post_user(uid: str, user_name: str, pdb: Session = Depends(get_db)):
 def delete_user(uid: str, pdb: Session = Depends(get_db)):
     """Deletes a user given its id or 404 if not found"""
 
-    user = pdb.query(UserModel).filter_by(UserModel.id == uid).first()
+    user = pdb.query(UserModel).filter(UserModel.id == uid).first()
     if user is None:
         raise HTTPException(status_code=404, detail=f"User '{uid}' not found")
-    pdb.query(UserModel).filter_by(UserModel.id == uid).delete()
+    pdb.query(UserModel).filter(UserModel.id == uid).delete()
     pdb.commit()

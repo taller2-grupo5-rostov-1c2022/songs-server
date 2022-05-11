@@ -174,6 +174,6 @@ def delete_song(
     return {"song_id": song_id}
 
 
-@router.get("/my_songs/")
+@router.get("/my_songs/", response_model=List[schemas.SongBase])
 def get_my_songs(uid: str = Header(...), pdb: Session = Depends(get_db)):
     return crud_songs.get_songs(pdb, uid)
