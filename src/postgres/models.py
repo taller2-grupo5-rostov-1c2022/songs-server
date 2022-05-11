@@ -52,6 +52,11 @@ class UserModel(Base):
 
     id = Column(String, primary_key=True, index=True, autoincrement=False)
     name = Column(String, index=True)
+
+    wallet = Column(String, nullable=True, index=True)
+    location = Column(String, nullable=False, index=True)
+    interests = Column(String, nullable=False, index=True)
+
     songs = relationship("SongModel", back_populates="creator")
     albums = relationship("AlbumModel", back_populates="creator")
 

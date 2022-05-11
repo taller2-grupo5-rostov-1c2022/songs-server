@@ -80,6 +80,10 @@ class AlbumUpdate(BaseModel):
 class UserBase(BaseModel):
     id: str
     name: str
+    wallet: Optional[str] = None
+    location: str
+    interests: str
+    pfp: Optional[str] = None
     songs: List[SongBase]
     albums: List[AlbumBase]
 
