@@ -1,5 +1,3 @@
-import json
-
 from tests.utils import API_VERSION_PREFIX, post_song, post_user, post_playlist
 
 

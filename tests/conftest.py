@@ -23,7 +23,7 @@ def connect_to_database():
             print("Trying to connect to DB - " + str(x))
             engine.connect()
             break
-        except:  # noqa: E722 # Want to catch all exceptions
+        except Exception:  # noqa: E722 # Want to catch all exceptions
             time.sleep(1)
             engine = create_engine(SQLALCHEMY_DATABASE_URL)
     yield engine
