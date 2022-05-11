@@ -6,8 +6,14 @@ API_VERSION_PREFIX = "/api/v3"
 
 def post_user(client, uid, user_name):
     response_post = client.post(
-        API_VERSION_PREFIX + f"/users/?uid={uid}&user_name={user_name}",
-        headers={"api_key": "key"},
+        API_VERSION_PREFIX + "/users/",
+        headers={"api_key": "key", "uid": uid},
+        data={
+            "name": user_name,
+            "wallet": "wallet",
+            "location": "location",
+            "interests": "interests",
+        },
     )
     return response_post
 
