@@ -3,7 +3,7 @@ from src.postgres import models
 from fastapi import APIRouter
 from fastapi import Depends, Form, HTTPException, UploadFile, File, Header
 from src.firebase.access import get_bucket
-from src.crud import albums as crud_albums
+from src.repositories import albums_repository as crud_albums
 import json
 
 from sqlalchemy.orm import Session

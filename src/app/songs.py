@@ -3,7 +3,7 @@ from typing import List
 from fastapi import APIRouter, Header
 from fastapi import Depends, File, Form, HTTPException, UploadFile
 import json
-from src.crud import songs as crud_songs
+from src.repositories import songs_repository as crud_songs
 from src.firebase.access import get_bucket
 from sqlalchemy.orm import Session
 from src.postgres.database import get_db
