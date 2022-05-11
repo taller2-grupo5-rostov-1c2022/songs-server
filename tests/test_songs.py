@@ -167,6 +167,7 @@ def test_get_my_songs_should_retrieve_two_songs(client):
     assert response_get.status_code == 200
     assert len(body_songs) == 2
     assert body_songs[0]["name"] == "happy_song"
+    assert body_songs[0]["artists"] == [{"name": "song_artist_name"}]
     assert body_songs[1]["name"] == "sad_song"
 
 
