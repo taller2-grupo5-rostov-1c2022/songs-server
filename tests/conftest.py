@@ -4,8 +4,8 @@ import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-
 from src.main import app
+from src.mocks.firebase.bucket import bucket_mock
 from src.postgres.database import get_db, Base
 
 import os
