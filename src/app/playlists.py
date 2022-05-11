@@ -2,7 +2,7 @@ from src.postgres import schemas
 from src.postgres import models
 from fastapi import APIRouter
 from fastapi import Depends, Form, HTTPException, Header
-from src.crud import playlists as crud_playlists
+from src.repositories import playlists_repository as crud_playlists
 import json
 
 from sqlalchemy.orm import Session

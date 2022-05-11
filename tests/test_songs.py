@@ -23,7 +23,7 @@ def test_post_song(client):
     assert str(response_get.json()["id"]) == str(response_post.json()["id"])
     assert response_get.json()["name"] == "song_name"
     assert response_get.json()["description"] == "song_desc"
-    # assert response_get.json()["artists"] == [{"artist_name": "song_artist_name"}]
+    assert response_get.json()["artists"] == [{"name": "song_artist_name"}]
     assert response_get.json()["genre"] == "song_genre"
     assert response_get.json()["file"] == "https://example.com"
 
@@ -61,7 +61,7 @@ def test_put_song(client):
     assert str(response_get.json()["id"]) == str(response_post.json()["id"])
     assert response_get.json()["name"] == "updated_test_song"
     assert response_get.json()["description"] == "song_desc"
-    assert response_get.json()["artists"] == [{"artist_name": "updated_test_artists"}]
+    assert response_get.json()["artists"] == [{"name": "updated_test_artists"}]
 
 
 def test_cannot_put_song_of_another_user(client):
@@ -168,3 +168,24 @@ def test_get_my_songs_should_retrieve_two_songs(client):
     assert len(body_songs) == 2
     assert body_songs[0]["name"] == "happy_song"
     assert body_songs[1]["name"] == "sad_song"
+
+
+def test_post_with_invalid_artists_format_should_fail(client):
+    post_user(client, "song_creator_id", "song_creator")
+
+    with open("./tests/test.song", "wb") as f:
+        f.write(b"test")
+    with open("./tests/test.song", "rb") as f:
+        response_post = client.post(
+            API_VERSION_PREFIX + "/songs/",
+            data={
+                "name": "test_song",
+                "description": "test_desc",
+                "artists": "invalid artists format",
+                "genre": "test_genre",
+            },
+            files={"file": ("song.txt", f, "plain/text")},
+            headers={"uid": "song_creator_id", "api_key": "key"},
+        )
+
+    assert response_post.status_code == 422

@@ -3,11 +3,11 @@ from typing import List
 from fastapi import APIRouter, Header
 from fastapi import Depends, File, Form, HTTPException, UploadFile
 import json
-from src.crud import songs as crud_songs
+from src.repositories import songs_repository as crud_songs
 from src.firebase.access import get_bucket
 from sqlalchemy.orm import Session
 from src.postgres.database import get_db
-from src.postgres.models import SongModel, ArtistSongModel, UserModel
+from src.postgres.models import SongModel, UserModel, ArtistModel
 
 router = APIRouter(tags=["songs"])
 
@@ -72,9 +72,18 @@ def update_song(
         song.description = description
     if artists is not None:
         artists_list = []
-        for artist_name in json.loads(artists):
-            artists_list.append(ArtistSongModel(artist_name=artist_name))
-        song.artists = artists_list
+        try:
+            parsed_artists = json.loads(artists)
+            if len(parsed_artists) == 0:
+                raise ValueError
+            for artist_name in json.loads(artists):
+                artists_list.append(ArtistModel(name=artist_name))
+            song.artists = artists_list
+
+        except ValueError as e:
+            raise HTTPException(
+                status_code=422, detail="Artists string is not well encoded"
+            ) from e
 
     pdb.commit()
 
@@ -110,11 +119,15 @@ def post_song(
 
     artists_models = []
     try:
-        parsed_artists = json.loads(artists.copy())
+        parsed_artists = json.loads(artists)
+        if len(parsed_artists) == 0:
+            raise ValueError
         for artist_name in parsed_artists:
-            artists_models.append(ArtistSongModel(artist_name=artist_name))
-    except Exception:  # pylint: disable=W0703
-        artists_models.append(ArtistSongModel(artist_name=artists))
+            artists_models.append(ArtistModel(name=artist_name))
+    except ValueError as e:
+        raise HTTPException(
+            status_code=422, detail="Artists string is not well encoded"
+        ) from e
 
     new_song = SongModel(
         name=name,
@@ -128,7 +141,7 @@ def post_song(
     pdb.refresh(new_song)
 
     blob = bucket.blob(f"songs/{new_song.id}")
-    blob.upload_from_file(file)
+    blob.upload_from_file(file.file)
     blob.make_public()
 
     return schemas.SongResponse(success=True, id=new_song.id, file=blob.public_url)
