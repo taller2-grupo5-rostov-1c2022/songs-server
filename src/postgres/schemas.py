@@ -5,7 +5,7 @@ from pydantic import BaseModel
 
 
 class ArtistBase(BaseModel):
-    artist_name: str
+    name: str
 
     class Config:
         orm_mode = True

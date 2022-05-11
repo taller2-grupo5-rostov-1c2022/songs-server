@@ -31,6 +31,21 @@ song_playlist_association_table = Table(
     ),
 )
 
+song_artist_association_table = Table(
+    "song_artist_association",
+    Base.metadata,
+    Column(
+        "artist_id",
+        ForeignKey("artists.id", ondelete="CASCADE", onupdate="CASCADE"),
+        primary_key=True,
+    ),
+    Column(
+        "song_id",
+        ForeignKey("songs.id", ondelete="CASCADE", onupdate="CASCADE"),
+        primary_key=True,
+    ),
+)
+
 
 class UserModel(Base):
     __tablename__ = "users"
@@ -41,7 +56,6 @@ class UserModel(Base):
     albums = relationship("AlbumModel", back_populates="creator")
 
     my_playlists = relationship("PlaylistModel", back_populates="creator")
-    other_playlists = relationship("PlaylistModel", back_populates="creator")
     other_playlists = relationship(
         "PlaylistModel",
         secondary=colab_playlist_association_table,
@@ -64,15 +78,16 @@ class AlbumModel(Base):
     songs = relationship("SongModel", back_populates="album")
 
 
-class ArtistSongModel(Base):
-    __tablename__ = "artists_song"
+class ArtistModel(Base):
+    __tablename__ = "artists"
 
     id = Column(Integer, primary_key=True, nullable=False, index=True)
-    artist_name = Column(String, nullable=False, index=True)
-    song_id = Column(
-        Integer, ForeignKey("songs.id", ondelete="CASCADE", onupdate="CASCADE")
+    name = Column(String, nullable=False)
+    songs = relationship(
+        "SongModel",
+        secondary=song_artist_association_table,
+        back_populates="artists",
     )
-    song = relationship("SongModel", back_populates="artists")
 
 
 class SongModel(Base):
@@ -83,7 +98,11 @@ class SongModel(Base):
     description = Column(String, nullable=False, index=True)
     genre = Column(String, nullable=False, index=True)
 
-    artists = relationship("ArtistSongModel", back_populates="song")
+    artists = relationship(
+        "ArtistModel",
+        secondary=song_artist_association_table,
+        back_populates="songs",
+    )
 
     album = relationship("AlbumModel", back_populates="songs")
     album_id = Column(Integer, ForeignKey("albums.id"))

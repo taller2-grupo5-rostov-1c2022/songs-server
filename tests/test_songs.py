@@ -23,7 +23,7 @@ def test_post_song(client):
     assert str(response_get.json()["id"]) == str(response_post.json()["id"])
     assert response_get.json()["name"] == "song_name"
     assert response_get.json()["description"] == "song_desc"
-    # assert response_get.json()["artists"] == [{"artist_name": "song_artist_name"}]
+    assert response_get.json()["artists"] == [{"name": "song_artist_name"}]
     assert response_get.json()["genre"] == "song_genre"
     assert response_get.json()["file"] == "https://example.com"
 
@@ -61,7 +61,7 @@ def test_put_song(client):
     assert str(response_get.json()["id"]) == str(response_post.json()["id"])
     assert response_get.json()["name"] == "updated_test_song"
     assert response_get.json()["description"] == "song_desc"
-    assert response_get.json()["artists"] == [{"artist_name": "updated_test_artists"}]
+    assert response_get.json()["artists"] == [{"name": "updated_test_artists"}]
 
 
 def test_cannot_put_song_of_another_user(client):
