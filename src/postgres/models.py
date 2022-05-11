@@ -9,14 +9,26 @@ colab_playlist_association_table = Table(
     "colab_playlist_association",
     Base.metadata,
     Column("user_id", ForeignKey("users.id"), primary_key=True),
-    Column("playlist_id", ForeignKey("playlists.id"), primary_key=True),
+    Column(
+        "playlist_id",
+        ForeignKey("playlists.id", ondelete="CASCADE", onupdate="CASCADE"),
+        primary_key=True,
+    ),
 )
 
 song_playlist_association_table = Table(
     "song_playlist_association",
     Base.metadata,
-    Column("playlist_id", ForeignKey("playlists.id"), primary_key=True),
-    Column("song_id", ForeignKey("songs.id"), primary_key=True),
+    Column(
+        "playlist_id",
+        ForeignKey("playlists.id", ondelete="CASCADE", onupdate="CASCADE"),
+        primary_key=True,
+    ),
+    Column(
+        "song_id",
+        ForeignKey("songs.id", ondelete="CASCADE", onupdate="CASCADE"),
+        primary_key=True,
+    ),
 )
 
 
@@ -57,7 +69,9 @@ class ArtistSongModel(Base):
 
     id = Column(Integer, primary_key=True, nullable=False, index=True)
     artist_name = Column(String, nullable=False, index=True)
-    song_id = Column(Integer, ForeignKey("songs.id"))
+    song_id = Column(
+        Integer, ForeignKey("songs.id", ondelete="CASCADE", onupdate="CASCADE")
+    )
     song = relationship("SongModel", back_populates="artists")
 
 
@@ -83,7 +97,7 @@ class ColabPlaylistModel(Base):
 
     id = Column(Integer, primary_key=True, nullable=False, index=True)
 
-    colab_id = Column(Integer, ForeignKey("users.id"))
+    colab_id = Column(String, ForeignKey("users.id"))
     playlist_id = Column(Integer, ForeignKey("playlists.id"))
 
 

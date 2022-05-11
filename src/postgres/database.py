@@ -6,11 +6,17 @@ from sqlalchemy.orm import sessionmaker
 import time
 
 from src.constants import TESTING
+from src.mocks.firebase.bucket import bucket_mock
+
+
+def override_get_bucket():
+    yield bucket_mock
+
 
 if TESTING:
     print("TEST DB")
     POSTGRES_URL = os.environ.get(
-        "TEST_POSTGRES_URL", "postgresql://test:test@localhost:5438/test"
+        "TEST_POSTGRES_URL", "postgresql://test:test@test:5438/test"
     )
 else:
     print("PROD DB")
