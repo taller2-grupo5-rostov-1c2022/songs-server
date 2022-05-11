@@ -81,7 +81,9 @@ def update_song(
             song.artists = artists_list
 
         except Exception:
-            raise HTTPException(status_code=422, detail="Artists string is not well encoded")
+            raise HTTPException(
+                status_code=422, detail="Artists string is not well encoded"
+            )
 
     pdb.commit()
 
@@ -123,7 +125,9 @@ def post_song(
         for artist_name in parsed_artists:
             artists_models.append(ArtistModel(name=artist_name))
     except Exception:  # pylint: disable=W0703
-        raise HTTPException(status_code=422, detail="Artists string is not well encoded")
+        raise HTTPException(
+            status_code=422, detail="Artists string is not well encoded"
+        )
 
     new_song = SongModel(
         name=name,
