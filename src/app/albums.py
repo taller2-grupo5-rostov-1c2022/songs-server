@@ -4,6 +4,7 @@ from fastapi import APIRouter
 from fastapi import Depends, Form, HTTPException, UploadFile, File, Header
 from src.firebase.access import get_bucket
 from src.repositories import albums_repository as crud_albums
+from typing import List
 import json
 
 from sqlalchemy.orm import Session
@@ -13,7 +14,7 @@ from src.postgres.models import AlbumModel, SongModel, UserModel
 router = APIRouter(tags=["albums"])
 
 
-@router.get("/albums/")
+@router.get("/albums/", response_model=List[schemas.AlbumBase])
 def get_albums(
     creator: str = None,
     pdb: Session = Depends(get_db),
@@ -23,7 +24,7 @@ def get_albums(
     return crud_albums.get_albums(pdb, creator)
 
 
-@router.get("/my_albums/")
+@router.get("/my_albums/", response_model=List[schemas.AlbumBase])
 def get_my_albums(uid: str = Header(...), pdb: Session = Depends(get_db)):
     return crud_albums.get_albums(pdb, uid)
 
@@ -36,7 +37,7 @@ def get_album_by_id(
 
     album = crud_albums.get_album_by_id(pdb, album_id).__dict__
 
-    blob = bucket.blob("albums/" + str(album_id))
+    blob = bucket.blob("covers/" + str(album_id))
     blob.make_public()
 
     album["cover"] = blob.public_url
@@ -68,7 +69,7 @@ def post_album(
         if song.creator_id != uid:
             raise HTTPException(
                 status_code=403,
-                detail=f"User with id {uid} attempted to create an album with songs of user with id {uid}",
+                detail=f"User with id {uid} attempted to create an album with songs of user with id {song.creator_id}",
             )
         songs.append(song)
 
@@ -139,7 +140,7 @@ def update_album(
             if song.creator_id != uid:
                 raise HTTPException(
                     status_code=403,
-                    detail=f"User with id {uid} attempted to update an album with songs of user with id {uid}",
+                    detail=f"User with id {uid} attempted to update an album with songs of user with id {song.creator_id}",
                 )
 
             songs.append(song)
@@ -151,9 +152,7 @@ def update_album(
 
 @router.delete("/albums/{album_id}")
 def delete_album(
-    uid: str,
-    album_id: str,
-    pdb: Session = Depends(get_db),
+    uid: str, album_id: str, pdb: Session = Depends(get_db), bucket=Depends(get_bucket)
 ):
     """Deletes an album by its id"""
     album = pdb.query(AlbumModel).filter(AlbumModel.id == album_id).first()
@@ -166,4 +165,5 @@ def delete_album(
             detail=f"User '{uid} attempted to delete album of user with ID {album.creator_id}",
         )
     pdb.query(AlbumModel).filter(AlbumModel.id == album_id).delete()
+    bucket.blob("covers/" + str(album_id)).delete()
     pdb.commit()

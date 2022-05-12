@@ -58,6 +58,9 @@ class AlbumBase(BaseModel):
 class AlbumGet(AlbumBase):
     cover: str
 
+    class Config:
+        orm_mode = True
+
 
 class AlbumCreate(BaseModel):
     name: str
