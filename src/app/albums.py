@@ -136,6 +136,11 @@ def update_album(
         for song_id in json.loads(songs_ids):
             # TODO: sacar codigo repetido con app/songs
             song = pdb.query(SongModel).filter(SongModel.id == song_id).first()
+            if song.creator_id != uid:
+                raise HTTPException(
+                    status_code=403,
+                    detail=f"User with id {uid} attempted to update an album with songs of user with id {uid}",
+                )
 
             songs.append(song)
         album.songs = songs

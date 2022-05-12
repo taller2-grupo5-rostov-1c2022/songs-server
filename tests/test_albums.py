@@ -104,6 +104,29 @@ def test_put_album(client):
     assert response_get.json()["description"] == "album_desc"
 
 
+def test_update_songs_in_album_with_songs_of_another_user_should_fail(client):
+    post_user(client, "foo_id", "foo_name")
+    post_user(client, "bar_id", "bar_name")
+
+    bar_song_id = post_song(client, uid="bar_id").json()["id"]
+
+    response_post_album = post_album(
+        client, uid="foo_id"
+    )
+    assert response_post_album.status_code == 200
+
+    response_update_album = client.put(
+        f"{API_VERSION_PREFIX}/albums/{response_post_album.json()['id']}",
+        headers={"api_key": "key"},
+        data={
+            "uid": "foo_id",
+            "songs_ids": f'["{bar_song_id}"]'
+        }
+    )
+    print(response_update_album.json())
+    assert response_update_album.status_code == 403
+
+
 def test_update_songs_in_album(client):
     post_user(client, "album_creator_id", "album_creator_name")
     response_post_song = post_song(client, uid="album_creator_id")
