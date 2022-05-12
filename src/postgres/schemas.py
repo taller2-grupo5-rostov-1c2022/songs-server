@@ -5,7 +5,7 @@ from pydantic import BaseModel
 
 
 class ArtistBase(BaseModel):
-    artist_name: str
+    name: str
 
     class Config:
         orm_mode = True
@@ -80,6 +80,10 @@ class AlbumUpdate(BaseModel):
 class UserBase(BaseModel):
     id: str
     name: str
+    wallet: Optional[str] = None
+    location: str
+    interests: str
+    pfp: Optional[str] = None
     songs: List[SongBase]
     albums: List[AlbumBase]
 

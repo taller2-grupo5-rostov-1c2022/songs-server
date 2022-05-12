@@ -7,10 +7,11 @@ import time
 
 from src.constants import TESTING
 
+
 if TESTING:
     print("TEST DB")
     POSTGRES_URL = os.environ.get(
-        "TEST_POSTGRES_URL", "postgresql://test:test@localhost:5438/test"
+        "TEST_POSTGRES_URL", "postgresql://test:test@test:5438/test"
     )
 else:
     print("PROD DB")
