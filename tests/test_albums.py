@@ -123,7 +123,6 @@ def test_update_songs_in_album_with_songs_of_another_user_should_fail(client):
             "songs_ids": f'["{bar_song_id}"]'
         }
     )
-    print(response_update_album.json())
     assert response_update_album.status_code == 403
 
 
