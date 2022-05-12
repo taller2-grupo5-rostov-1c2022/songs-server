@@ -47,6 +47,11 @@ def test_post_empty_album(client):
     assert response_get.json()["songs"] == []
 
 
+def test_post_album_of_invalid_user_should_fail(client):
+    response = post_album(client, "invalid_creator_id")
+    assert response.status_code == 404
+
+
 def test_post_album_with_song(client):
     post_user(client, "album_creator_id", "album_creator_name")
     response_post_song = post_song(client, "album_creator_id")
@@ -64,6 +69,16 @@ def test_post_album_with_song(client):
     assert len(response_get.json()["songs"]) == 1
     assert response_get.json()["cover"] == "https://example.com"
     assert response_get.json()["sub_level"] == 1
+
+
+def test_post_album_with_songs_of_other_creator_should_fail(client):
+    post_user(client, "album_creator_id", "album_creator_name")
+    post_user(client, "song_creator_id", "song_creator_name")
+    response_post_song = post_song(client)
+    response_post_album = post_album(
+        client, songs_ids=[response_post_song.json()["id"]]
+    )
+    assert response_post_album.status_code == 403
 
 
 def test_put_album(client):
