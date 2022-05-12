@@ -33,6 +33,9 @@ def get_my_user(
     """Returns own user"""
     user = pdb.query(UserModel).filter(UserModel.id == uid).first()
 
+    if user is None:
+        raise HTTPException(status_code=404, detail="User not found")
+
     blob = bucket.blob(f"pfp/{uid}")
     if blob.exists():
         blob.make_public()
