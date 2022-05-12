@@ -8,7 +8,7 @@ import json
 
 from sqlalchemy.orm import Session
 from src.postgres.database import get_db
-from src.postgres.models import AlbumModel, SongModel
+from src.postgres.models import AlbumModel, SongModel, UserModel
 
 router = APIRouter(tags=["albums"])
 
@@ -58,15 +58,24 @@ def post_album(
 ):
     """Creates an album and returns its id. Songs_ids form is encoded like '["song_id_1", "song_id_2", ...]'"""
 
+    creator = pdb.query(UserModel).filter(UserModel.id == uid).first()
+    if creator is None:
+        raise HTTPException(status_code=404, detail=f"User with id {uid} not found")
+
     songs = []
     for song_id in json.loads(songs_ids):
         song = pdb.query(SongModel).filter(SongModel.id == song_id).first()
+        if song.creator_id != uid:
+            raise HTTPException(
+                status_code=403,
+                detail=f"User with id {uid} attempted to create an album with songs of user with id {uid}",
+            )
         songs.append(song)
 
     album = models.AlbumModel(
         name=name,
         description=description,
-        creator_id=uid,
+        creator=creator,
         genre=genre,
         sub_level=sub_level,
         songs=songs,
