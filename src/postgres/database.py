@@ -6,11 +6,6 @@ from sqlalchemy.orm import sessionmaker
 import time
 
 from src.constants import TESTING
-from src.mocks.firebase.bucket import bucket_mock
-
-
-def override_get_bucket():
-    yield bucket_mock
 
 
 if TESTING:

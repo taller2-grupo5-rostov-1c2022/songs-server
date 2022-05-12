@@ -28,10 +28,9 @@ def test_post_song(client):
     assert response_get.json()["file"] == "https://example.com"
 
 
-# FIXME: IT NOW CAN
-# def test_cannot_post_song_with_not_created_user(client):
-#     response_post = post_song(client)
-#     assert response_post.status_code == 403
+def test_cannot_post_song_with_not_created_user(client):
+    response_post = post_song(client)
+    assert response_post.status_code == 403
 
 
 def test_put_song(client):

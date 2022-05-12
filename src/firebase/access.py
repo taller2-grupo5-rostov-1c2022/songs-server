@@ -3,10 +3,13 @@ import json
 from src.constants import TESTING
 from firebase_admin import credentials
 from firebase_admin import storage
+from src.mocks.firebase.bucket import bucket_mock
 
 from dotenv import load_dotenv
 
 load_dotenv()
+
+bucket = bucket_mock
 
 if not TESTING:
     # Use a service account
