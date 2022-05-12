@@ -27,7 +27,7 @@ def test_get_playlist_by_id_should_return_404_if_playlist_not_found(client):
     assert response.status_code == 404
 
 
-def test_get_playlist_by_id_should_return_401_if_not_authorized(client):
+def test_get_playlist_by_id_should_return_403_if_not_authorized(client):
     response = client.get(
         f"{API_VERSION_PREFIX}/playlists/1", headers={"api_key": "wrong_key"}
     )

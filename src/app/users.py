@@ -19,7 +19,7 @@ def get_all_users(pdb: Session = Depends(get_db)):
 
 @router.get("/users/{uid}", response_model=schemas.UserBase)
 def get_user_by_id(uid: str, pdb: Session = Depends(get_db)):
-    """Returns an user by its id or 404 if not found"""
+    """Returns a user by its id or 404 if not found"""
     user = pdb.query(UserModel).filter(UserModel.id == uid).first()
     return user
 
@@ -51,7 +51,7 @@ def post_user(
     pdb: Session = Depends(get_db),
     bucket=Depends(get_bucket),
 ):
-    """Creates an user and returns its id"""
+    """Creates a user and returns its id"""
     new_user = UserModel(
         id=uid, name=name, wallet=wallet, location=location, interests=interests
     )
@@ -83,7 +83,7 @@ def put_user(
     pdb: Session = Depends(get_db),
     bucket=Depends(get_bucket),
 ):
-    """Updates an user and returns its id"""
+    """Updates a user and returns its id"""
     user = pdb.query(UserModel).filter(UserModel.id == uid).first()
     if user is None:
         raise HTTPException(status_code=404, detail=f"User '{uid}' not found")
@@ -117,7 +117,7 @@ def put_user(
 
 @router.delete("/users/")
 def delete_user(uid: str, pdb: Session = Depends(get_db)):
-    """Deletes an user given its id or 404 if not found"""
+    """Deletes a user given its id or 404 if not found"""
 
     user = pdb.query(UserModel).filter(UserModel.id == uid).first()
     if user is None:

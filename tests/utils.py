@@ -4,10 +4,14 @@ import json
 API_VERSION_PREFIX = "/api/v3"
 
 
+def header(uid):
+    return {"api_key": "key", "uid": uid}
+
+
 def post_user(client, uid, user_name):
     response_post = client.post(
         API_VERSION_PREFIX + "/users/",
-        headers={"api_key": "key", "uid": uid},
+        headers=header(uid),
         data={
             "name": user_name,
             "wallet": "wallet",
@@ -29,10 +33,7 @@ def post_song(
     headers: Optional[dict] = None,
 ):
     if headers is None:
-        headers = {
-            "api_key": "key",
-            "uid": uid,
-        }
+        headers = header(uid)
     if artists is None:
         artists = ["song_artist_name"]
 
