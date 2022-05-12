@@ -19,6 +19,9 @@ class Blob:
     def make_public(self):
         pass
 
+    def exists(self):
+        return True
+
 
 class Bucket:
     def __init__(self):

@@ -34,8 +34,9 @@ def get_my_user(
     user = pdb.query(UserModel).filter(UserModel.id == uid).first()
 
     blob = bucket.blob(f"pfp/{uid}")
-    blob.make_public()
-    user.pfp = blob.public_url
+    if blob.exists():
+        blob.make_public()
+        user.pfp = blob.public_url
 
     return user
 
