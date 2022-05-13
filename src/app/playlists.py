@@ -38,7 +38,7 @@ def get_playlist_by_id(playlist_id: str, pdb: Session = Depends(get_db)):
 
 @router.post("/playlists/")
 def post_playlist(
-    uid: str = Form(...),
+    uid: str = Header(...),
     name: str = Form(...),
     description: str = Form(...),
     colabs_ids: str = Form(...),
@@ -74,7 +74,7 @@ def post_playlist(
 @router.put("/playlists/{playlist_id}")
 def update_playlist(
     playlist_id: str,
-    uid: str = Form(...),
+    uid: str = Header(...),
     name: str = Form(None),
     colabs_ids: str = Form(None),
     description: str = Form(None),
@@ -128,8 +128,8 @@ def update_playlist(
 
 @router.delete("/playlists/{playlist_id}")
 def delete_playlist(
-    uid: str,
     playlist_id: str,
+    uid: str = Header(...),
     pdb: Session = Depends(get_db),
 ):
     """Deletes a playlist by its id"""
@@ -150,7 +150,10 @@ def delete_playlist(
 
 @router.post("/playlists/{playlist_id}/songs/")
 def add_song_to_playlist(
-    uid: str, playlist_id: str, song_id: str, pdb: Session = Depends(get_db)
+    playlist_id: str,
+    song_id: str = Form(...),
+    uid: str = Header(...),
+    pdb: Session = Depends(get_db),
 ):
     """Adds a song to a playlist"""
     playlist = pdb.query(PlaylistModel).filter(PlaylistModel.id == playlist_id).first()
@@ -180,7 +183,10 @@ def add_song_to_playlist(
 
 @router.delete("/playlists/{playlist_id}/songs/{song_id}/")
 def remove_song_from_playlist(
-    uid: str, playlist_id: str, song_id: str, pdb: Session = Depends(get_db)
+    playlist_id: str,
+    song_id: str,
+    uid: str = Header(...),
+    pdb: Session = Depends(get_db),
 ):
     """Removes a song from a playlist"""
     playlist = pdb.query(PlaylistModel).filter(PlaylistModel.id == playlist_id).first()

@@ -184,7 +184,10 @@ def update_album(
 
 @router.delete("/albums/{album_id}")
 def delete_album(
-    uid: str, album_id: int, pdb: Session = Depends(get_db), bucket=Depends(get_bucket)
+    album_id: int,
+    uid: str = Header(...),
+    pdb: Session = Depends(get_db),
+    bucket=Depends(get_bucket),
 ):
     """Deletes an album by its id"""
     album = pdb.query(AlbumModel).filter(AlbumModel.id == album_id).first()
