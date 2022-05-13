@@ -19,9 +19,25 @@ def get_all_users(pdb: Session = Depends(get_db)):
 
 
 @router.get("/users/{uid}", response_model=schemas.UserBase)
-def get_user_by_id(uid: str, pdb: Session = Depends(get_db)):
+def get_user_by_id(
+    uid: str,
+    pdb: Session = Depends(get_db),
+    bucket=Depends(get_bucket),
+):
     """Returns an user by its id or 404 if not found"""
     user = pdb.query(UserModel).filter(UserModel.id == uid).first()
+
+    if user is None:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    blob = bucket.blob(f"pfp/{uid}")
+    if blob.exists():
+        user.pfp = blob.generate_signed_url(
+            version="v4",
+            expiration=datetime.timedelta(days=1),
+            method="GET",
+        )
+
     return user
 
 
