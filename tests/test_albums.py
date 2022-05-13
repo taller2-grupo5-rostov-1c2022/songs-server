@@ -160,8 +160,8 @@ def test_update_songs_in_album_with_songs_of_another_user_should_fail(client):
 
     response_update_album = client.put(
         f"{API_VERSION_PREFIX}/albums/{response_post_album.json()['id']}",
-        headers={"api_key": "key"},
-        data={"uid": "foo_id", "songs_ids": f'["{bar_song_id}"]'},
+        headers={"api_key": "key", "uid": "foo_id"},
+        data={"songs_ids": f'["{bar_song_id}"]'},
     )
     assert response_update_album.status_code == 403
 
