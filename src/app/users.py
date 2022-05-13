@@ -1,10 +1,11 @@
+import datetime
 from src.postgres import schemas
 from typing import List
 from fastapi import APIRouter
 from fastapi import Depends, HTTPException, Form, Header, UploadFile
 from sqlalchemy.orm import Session
 from src.postgres.database import get_db
-from src.firebase.access import get_bucket
+from src.firebase.access import get_bucket, get_auth
 from src.postgres.models import UserModel
 
 router = APIRouter(tags=["users"])
@@ -33,9 +34,16 @@ def get_my_user(
     """Returns own user"""
     user = pdb.query(UserModel).filter(UserModel.id == uid).first()
 
+    if user is None:
+        raise HTTPException(status_code=404, detail="User not found")
+
     blob = bucket.blob(f"pfp/{uid}")
-    blob.make_public()
-    user.pfp = blob.public_url
+    if blob.exists():
+        user.pfp = blob.generate_signed_url(
+            version="v4",
+            expiration=datetime.timedelta(days=1),
+            method="GET",
+        )
 
     return user
 
@@ -50,6 +58,7 @@ def post_user(
     img: UploadFile = None,
     pdb: Session = Depends(get_db),
     bucket=Depends(get_bucket),
+    auth=Depends(get_auth),
 ):
     """Creates an user and returns its id"""
     new_user = UserModel(
@@ -59,11 +68,12 @@ def post_user(
     pdb.commit()
     pdb.refresh(new_user)
 
+    auth.update_user(uid=uid, display_name=name)
+
     if img is not None:
         try:
             blob = bucket.blob("pfp/" + uid)
             blob.upload_from_file(img.file)
-            blob.make_public()
         except Exception as entry_not_found:
             raise HTTPException(
                 status_code=404, detail=f"Image for User '{uid}' not found"
@@ -82,6 +92,7 @@ def put_user(
     img: UploadFile = None,
     pdb: Session = Depends(get_db),
     bucket=Depends(get_bucket),
+    auth=Depends(get_auth),
 ):
     """Updates an user and returns its id"""
     user = pdb.query(UserModel).filter(UserModel.id == uid).first()
@@ -90,6 +101,7 @@ def put_user(
 
     if name is not None:
         user.name = name
+        auth.update_user(uid=uid, display_name=name)
 
     if wallet is not None:
         user.wallet = wallet
@@ -106,7 +118,6 @@ def put_user(
         try:
             blob = bucket.blob("pfp/" + uid)
             blob.upload_from_file(img.file)
-            blob.make_public()
         except Exception as entry_not_found:
             raise HTTPException(
                 status_code=404, detail=f"Image for User '{uid}' not found"

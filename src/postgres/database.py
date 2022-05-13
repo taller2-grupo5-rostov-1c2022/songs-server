@@ -6,7 +6,9 @@ from sqlalchemy.orm import sessionmaker
 import time
 
 from src.constants import TESTING
+from dotenv import load_dotenv
 
+load_dotenv()
 
 if TESTING:
     print("TEST DB")
@@ -36,5 +38,8 @@ def get_db():
     db = SessionLocal()
     try:
         yield db
-    except:  # noqa: E722 # Want to catch all exceptions
+    except Exception as e:
+        db.close()
+        raise e
+    finally:
         db.close()
