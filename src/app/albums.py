@@ -54,7 +54,7 @@ def get_my_albums(
 
     return albums
 
-  
+
 @router.get("/albums/{album_id}", response_model=schemas.AlbumGet)
 def get_album_by_id(
     album_id: int, pdb: Session = Depends(get_db), bucket=Depends(get_bucket)
