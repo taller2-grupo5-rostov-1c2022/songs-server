@@ -5,7 +5,7 @@ from fastapi import APIRouter
 from fastapi import Depends, HTTPException, Form, Header, UploadFile
 from sqlalchemy.orm import Session
 from src.postgres.database import get_db
-from src.firebase.access import get_bucket
+from src.firebase.access import get_bucket, get_auth
 from src.postgres.models import UserModel
 
 router = APIRouter(tags=["users"])
@@ -58,6 +58,7 @@ def post_user(
     img: UploadFile = None,
     pdb: Session = Depends(get_db),
     bucket=Depends(get_bucket),
+    auth=Depends(get_auth),
 ):
     """Creates an user and returns its id"""
     new_user = UserModel(
@@ -66,6 +67,8 @@ def post_user(
     pdb.add(new_user)
     pdb.commit()
     pdb.refresh(new_user)
+
+    auth.update_user(uid=uid, display_name=name)
 
     if img is not None:
         try:
@@ -89,6 +92,7 @@ def put_user(
     img: UploadFile = None,
     pdb: Session = Depends(get_db),
     bucket=Depends(get_bucket),
+    auth=Depends(get_auth),
 ):
     """Updates an user and returns its id"""
     user = pdb.query(UserModel).filter(UserModel.id == uid).first()
@@ -97,6 +101,7 @@ def put_user(
 
     if name is not None:
         user.name = name
+        auth.update_user(uid=uid, display_name=name)
 
     if wallet is not None:
         user.wallet = wallet
