@@ -1,3 +1,4 @@
+import datetime
 from src.postgres import schemas
 from typing import List
 from fastapi import APIRouter
@@ -38,8 +39,11 @@ def get_my_user(
 
     blob = bucket.blob(f"pfp/{uid}")
     if blob.exists():
-        blob.make_public()
-        user.pfp = blob.public_url
+        user.pfp = blob.generate_signed_url(
+            version="v4",
+            expiration=datetime.timedelta(days=1),
+            method="GET",
+        )
 
     return user
 
@@ -67,7 +71,6 @@ def post_user(
         try:
             blob = bucket.blob("pfp/" + uid)
             blob.upload_from_file(img.file)
-            blob.make_public()
         except Exception as entry_not_found:
             raise HTTPException(
                 status_code=404, detail=f"Image for User '{uid}' not found"
@@ -110,7 +113,6 @@ def put_user(
         try:
             blob = bucket.blob("pfp/" + uid)
             blob.upload_from_file(img.file)
-            blob.make_public()
         except Exception as entry_not_found:
             raise HTTPException(
                 status_code=404, detail=f"Image for User '{uid}' not found"
