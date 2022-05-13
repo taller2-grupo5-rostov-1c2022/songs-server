@@ -88,8 +88,8 @@ def test_put_album(client):
 
     response_update = client.put(
         API_VERSION_PREFIX + "/albums/" + str(response_post.json()["id"]),
-        data={"uid": "album_creator_id", "name": "updated_test_album", "sub_level": 5},
-        headers={"api_key": "key"},
+        data={"name": "updated_test_album", "sub_level": 5},
+        headers={"api_key": "key", "uid": "album_creator_id"},
     )
     assert response_update.status_code == 200
 
@@ -111,8 +111,8 @@ def test_update_songs_in_album(client):
 
     response_update = client.put(
         API_VERSION_PREFIX + "/albums/" + str(response_post_album.json()["id"]),
-        data={"uid": "album_creator_id", "songs_ids": "[]"},
-        headers={"api_key": "key"},
+        data={"songs_ids": "[]"},
+        headers={"api_key": "key", "uid": "album_creator_id"},
     )
     assert response_update.status_code == 200
 
@@ -131,8 +131,8 @@ def test_cannot_put_album_of_another_user(client):
 
     response_update = client.put(
         API_VERSION_PREFIX + "/albums/" + str(response_post.json()["id"]),
-        data={"uid": "another_creator_id", "name": "updated_test_album"},
-        headers={"api_key": "key"},
+        data={"name": "updated_test_album"},
+        headers={"api_key": "key", "uid": "another_creator_id"},
     )
     assert response_update.status_code == 403
 

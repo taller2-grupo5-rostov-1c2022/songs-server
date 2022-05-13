@@ -46,7 +46,7 @@ def get_album_by_id(
 
 @router.post("/albums/")
 def post_album(
-    uid: str = Form(...),
+    uid: str = Header(...),
     name: str = Form(...),
     description: str = Form(...),
     genre: str = Form(...),
@@ -92,7 +92,7 @@ def post_album(
 @router.put("/albums/{album_id}")
 def update_album(
     album_id: str,
-    uid: str = Form(...),
+    uid: str = Header(...),
     name: str = Form(None),
     description: str = Form(None),
     genre: str = Form(None),
