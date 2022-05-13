@@ -25,6 +25,7 @@ class SongBase(BaseModel):
     description: str
     artists: List[ArtistBase]
     genre: str
+    album: Optional[AlbumInfoBase] = None
 
     class Config:
         orm_mode = True

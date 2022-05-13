@@ -85,6 +85,10 @@ def post_album(
     pdb.add(album)
     pdb.commit()
 
+    for song in songs:
+        song.album = album
+        pdb.refresh(song)
+
     blob = bucket.blob(f"covers/{album.id}")
     blob.upload_from_file(cover.file)
 
