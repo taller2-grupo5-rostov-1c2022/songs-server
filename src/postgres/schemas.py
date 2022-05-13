@@ -12,8 +12,8 @@ class ArtistBase(BaseModel):
 
 
 class AlbumInfoBase(BaseModel):
-    album_id: int
-    album_name: str
+    id: int
+    name: str
 
     class Config:
         orm_mode = True
@@ -25,7 +25,6 @@ class SongBase(BaseModel):
     description: str
     artists: List[ArtistBase]
     genre: str
-    album_info: Optional[AlbumInfoBase]
 
     class Config:
         orm_mode = True

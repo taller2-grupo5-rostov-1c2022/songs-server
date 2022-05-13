@@ -26,12 +26,13 @@ def get_albums(
 
 @router.get("/my_albums/", response_model=List[schemas.AlbumBase])
 def get_my_albums(uid: str = Header(...), pdb: Session = Depends(get_db)):
+    """Returns all Albums of a user given its UID"""
     return crud_albums.get_albums(pdb, uid)
 
 
 @router.get("/albums/{album_id}", response_model=schemas.AlbumGet)
 def get_album_by_id(
-    album_id: str, pdb: Session = Depends(get_db), bucket=Depends(get_bucket)
+    album_id: int, pdb: Session = Depends(get_db), bucket=Depends(get_bucket)
 ):
     """Returns an album by its id or 404 if not found"""
 
@@ -92,7 +93,7 @@ def post_album(
 
 @router.put("/albums/{album_id}")
 def update_album(
-    album_id: str,
+    album_id: int,
     uid: str = Form(...),
     name: str = Form(None),
     description: str = Form(None),
@@ -152,7 +153,7 @@ def update_album(
 
 @router.delete("/albums/{album_id}")
 def delete_album(
-    uid: str, album_id: str, pdb: Session = Depends(get_db), bucket=Depends(get_bucket)
+    uid: str, album_id: int, pdb: Session = Depends(get_db), bucket=Depends(get_bucket)
 ):
     """Deletes an album by its id"""
     album = pdb.query(AlbumModel).filter(AlbumModel.id == album_id).first()

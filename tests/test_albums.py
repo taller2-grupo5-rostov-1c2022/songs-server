@@ -250,4 +250,3 @@ def test_delete_album_should_not_delete_songs(client):
     )
 
     assert response_get.status_code == 200
-    assert response_get.json()["album_info"] is None

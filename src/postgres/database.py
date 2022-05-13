@@ -6,7 +6,9 @@ from sqlalchemy.orm import sessionmaker
 import time
 
 from src.constants import TESTING
+from dotenv import load_dotenv
 
+load_dotenv()
 
 if TESTING:
     print("TEST DB")
