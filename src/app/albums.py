@@ -6,7 +6,7 @@ from src.firebase.access import get_bucket
 from src.repositories import albums_repository as crud_albums
 from typing import List
 import json
-
+import datetime
 from sqlalchemy.orm import Session
 from src.postgres.database import get_db
 from src.postgres.models import AlbumModel, SongModel, UserModel
@@ -14,22 +14,47 @@ from src.postgres.models import AlbumModel, SongModel, UserModel
 router = APIRouter(tags=["albums"])
 
 
-@router.get("/albums/", response_model=List[schemas.AlbumBase])
+@router.get("/albums/", response_model=List[schemas.AlbumGet])
 def get_albums(
     creator: str = None,
     pdb: Session = Depends(get_db),
+    bucket=Depends(get_bucket),
 ):
     """Returns all Albums"""
 
-    return crud_albums.get_albums(pdb, creator)
+    albums = crud_albums.get_albums(pdb, creator)
+
+    for album in albums:
+        blob = bucket.blob("covers/" + str(album.id))
+        album.cover = blob.generate_signed_url(
+            version="v4",
+            expiration=datetime.timedelta(days=1),
+            method="GET",
+        )
+
+    return albums
 
 
-@router.get("/my_albums/", response_model=List[schemas.AlbumBase])
-def get_my_albums(uid: str = Header(...), pdb: Session = Depends(get_db)):
-    """Returns all Albums of a user given its UID"""
-    return crud_albums.get_albums(pdb, uid)
+@router.get("/my_albums/", response_model=List[schemas.AlbumGet])
+def get_my_albums(
+    uid: str = Header(...),
+    pdb: Session = Depends(get_db),
+    bucket=Depends(get_bucket),
+):
 
+    albums = crud_albums.get_albums(pdb, uid)
 
+    for album in albums:
+        blob = bucket.blob("covers/" + str(album.id))
+        album.cover = blob.generate_signed_url(
+            version="v4",
+            expiration=datetime.timedelta(days=1),
+            method="GET",
+        )
+
+    return albums
+
+  
 @router.get("/albums/{album_id}", response_model=schemas.AlbumGet)
 def get_album_by_id(
     album_id: int, pdb: Session = Depends(get_db), bucket=Depends(get_bucket)
@@ -39,9 +64,11 @@ def get_album_by_id(
     album = crud_albums.get_album_by_id(pdb, album_id).__dict__
 
     blob = bucket.blob("covers/" + str(album_id))
-    blob.make_public()
-
-    album["cover"] = blob.public_url
+    album["cover"] = blob.generate_signed_url(
+        version="v4",
+        expiration=datetime.timedelta(days=1),
+        method="GET",
+    )
 
     return album
 

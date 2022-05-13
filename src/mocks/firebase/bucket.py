@@ -19,6 +19,15 @@ class Blob:
     def make_public(self):
         pass
 
+    def generate_signed_url(
+        self, version, expiration, method
+    ):  # pylint: disable=unused-argument
+
+        return self.public_url
+
+    def exists(self):
+        return True
+
 
 class Bucket:
     def __init__(self):

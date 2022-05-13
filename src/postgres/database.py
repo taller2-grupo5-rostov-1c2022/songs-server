@@ -38,5 +38,8 @@ def get_db():
     db = SessionLocal()
     try:
         yield db
-    except:  # noqa: E722 # Want to catch all exceptions
+    except Exception as e:
+        db.close()
+        raise e
+    finally:
         db.close()
