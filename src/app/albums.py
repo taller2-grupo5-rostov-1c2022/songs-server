@@ -57,14 +57,13 @@ def get_my_albums(
 
 @router.get("/albums/{album_id}", response_model=schemas.AlbumGet)
 def get_album_by_id(
-    album_id: str, pdb: Session = Depends(get_db), bucket=Depends(get_bucket)
+    album_id: int, pdb: Session = Depends(get_db), bucket=Depends(get_bucket)
 ):
     """Returns an album by its id or 404 if not found"""
 
     album = crud_albums.get_album_by_id(pdb, album_id).__dict__
 
     blob = bucket.blob("covers/" + str(album_id))
-
     album["cover"] = blob.generate_signed_url(
         version="v4",
         expiration=datetime.timedelta(days=1),
@@ -113,6 +112,10 @@ def post_album(
     pdb.add(album)
     pdb.commit()
 
+    for song in songs:
+        song.album = album
+        pdb.refresh(song)
+
     blob = bucket.blob(f"covers/{album.id}")
     blob.upload_from_file(cover.file)
 
@@ -121,7 +124,7 @@ def post_album(
 
 @router.put("/albums/{album_id}")
 def update_album(
-    album_id: str,
+    album_id: int,
     uid: str = Form(...),
     name: str = Form(None),
     description: str = Form(None),
@@ -181,7 +184,7 @@ def update_album(
 
 @router.delete("/albums/{album_id}")
 def delete_album(
-    uid: str, album_id: str, pdb: Session = Depends(get_db), bucket=Depends(get_bucket)
+    uid: str, album_id: int, pdb: Session = Depends(get_db), bucket=Depends(get_bucket)
 ):
     """Deletes an album by its id"""
     album = pdb.query(AlbumModel).filter(AlbumModel.id == album_id).first()

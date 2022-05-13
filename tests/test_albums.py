@@ -101,6 +101,21 @@ def test_post_album_with_song(client):
     assert response_get.json()["sub_level"] == 1
 
 
+def test_post_album_associates_song_to_such_album(client):
+    post_user(client, "album_creator_id", "album_creator_name")
+    response_post_song = post_song(client, "album_creator_id")
+    response_post_album = post_album(
+        client, songs_ids=[response_post_song.json()["id"]]
+    )
+    response_get_song = client.get(
+        API_VERSION_PREFIX + "/songs/" + str(response_post_song.json()["id"]),
+        headers={"api_key": "key"},
+    )
+    print(response_get_song.json())
+    assert response_get_song.json()["album"]["id"] == response_post_album.json()["id"]
+    assert response_get_song.json()["album"]["name"] == "album_name"
+
+
 def test_post_album_with_songs_of_other_creator_should_fail(client):
     post_user(client, "album_creator_id", "album_creator_name")
     post_user(client, "song_creator_id", "song_creator_name")
@@ -236,13 +251,14 @@ def test_delete_album_should_not_delete_songs(client):
     post_user(client, "album_creator_id", "album_creator_name")
     response_post_song = post_song(client, uid="album_creator_id")
     response_post = post_album(client, songs_ids=[response_post_song.json()["id"]])
-    client.delete(
+    response_delete = client.delete(
         API_VERSION_PREFIX
         + "/albums/"
         + str(response_post.json()["id"])
-        + "?uid=another_creator_id",
+        + "?uid=album_creator_id",
         headers={"api_key": "key"},
     )
+    assert response_delete.status_code == 200
 
     response_get = client.get(
         API_VERSION_PREFIX + "/songs/" + str(response_post_song.json()["id"]),
@@ -250,4 +266,4 @@ def test_delete_album_should_not_delete_songs(client):
     )
 
     assert response_get.status_code == 200
-    assert response_get.json()["album_info"] is None
+    assert response_get.json()["album"] is None

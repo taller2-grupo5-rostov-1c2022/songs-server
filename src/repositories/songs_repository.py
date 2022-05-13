@@ -16,6 +16,7 @@ def create_song(pdb: Session, song: schemas.SongBase):
 def get_songs(pdb: Session, creator_id: Optional[str]):
     if creator_id is not None:
         return pdb.query(SongModel).filter(SongModel.creator_id == creator_id).all()
+
     else:
         return pdb.query(SongModel).all()
 

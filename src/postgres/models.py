@@ -109,8 +109,10 @@ class SongModel(Base):
         back_populates="songs",
     )
 
-    album = relationship("AlbumModel", back_populates="songs")
-    album_id = Column(Integer, ForeignKey("albums.id"))
+    album = relationship("AlbumModel", back_populates="songs", lazy="joined")
+    album_id = Column(
+        Integer, ForeignKey("albums.id", ondelete="SET NULL"), nullable=True
+    )
 
     creator = relationship("UserModel", back_populates="songs")
     creator_id = Column(String, ForeignKey("users.id"))
