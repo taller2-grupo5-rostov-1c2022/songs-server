@@ -22,6 +22,8 @@ def get_all_users(pdb: Session = Depends(get_db)):
 def get_user_by_id(uid: str, pdb: Session = Depends(get_db)):
     """Returns an user by its id or 404 if not found"""
     user = pdb.query(UserModel).filter(UserModel.id == uid).first()
+    if user is None:
+        raise HTTPException(status_code=404, detail=f"User with id {uid} not found")
     return user
 
 
@@ -60,7 +62,7 @@ def post_user(
     bucket=Depends(get_bucket),
     auth=Depends(get_auth),
 ):
-    """Creates an user and returns its id"""
+    """Creates a user and returns its id"""
     new_user = UserModel(
         id=uid, name=name, wallet=wallet, location=location, interests=interests
     )
@@ -82,8 +84,9 @@ def post_user(
     return new_user
 
 
-@router.put("/users/{uid}", response_model=schemas.UserBase)
+@router.put("/users/{uid_to_modify}", response_model=schemas.UserBase)
 def put_user(
+    uid_to_modify: str,
     uid: str = Header(...),
     name: str = Form(None),
     wallet: str = Form(None),
@@ -94,8 +97,14 @@ def put_user(
     bucket=Depends(get_bucket),
     auth=Depends(get_auth),
 ):
-    """Updates an user and returns its id"""
-    user = pdb.query(UserModel).filter(UserModel.id == uid).first()
+    """Updates a user and returns its id or 404 if not found or 403 if not authorized to update"""
+    if uid != uid_to_modify:
+        raise HTTPException(
+            status_code=403,
+            detail=f"User with id {uid} attempted to modify user of id {uid_to_modify}",
+        )
+
+    user = pdb.query(UserModel).filter(UserModel.id == uid_to_modify).first()
     if user is None:
         raise HTTPException(status_code=404, detail=f"User '{uid}' not found")
 
@@ -126,9 +135,17 @@ def put_user(
     return user
 
 
-@router.delete("/users/")
-def delete_user(uid: str, pdb: Session = Depends(get_db)):
-    """Deletes an user given its id or 404 if not found"""
+@router.delete("/users/{uid_to_delete}")
+def delete_user(
+    uid_to_delete: str, uid: str = Header(...), pdb: Session = Depends(get_db)
+):
+    """Deletes a user given its id or 404 if not found or 403 if not authorized to delete"""
+
+    if uid != uid_to_delete:
+        raise HTTPException(
+            status_code=403,
+            detail=f"User with id {uid} attempted to delete user of id {uid_to_delete}",
+        )
 
     user = pdb.query(UserModel).filter(UserModel.id == uid).first()
     if user is None:

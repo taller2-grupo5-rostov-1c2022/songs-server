@@ -8,15 +8,17 @@ def header(uid):
     return {"api_key": "key", "uid": uid}
 
 
-def post_user(client, uid, user_name):
+def post_user(
+    client, uid, user_name, wallet="wallet", location="location", interests="interests"
+):
     response_post = client.post(
         API_VERSION_PREFIX + "/users/",
         headers={"api_key": "key", "uid": uid},
         data={
             "name": user_name,
-            "wallet": "wallet",
-            "location": "location",
-            "interests": "interests",
+            "wallet": wallet,
+            "location": location,
+            "interests": interests,
         },
     )
     return response_post
