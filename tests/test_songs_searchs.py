@@ -227,6 +227,7 @@ def test_search_song_by_subscription_one_result(client):
     assert len(response.json()) == 1
     assert response.json()[0]["name"] == "another_song_name"
 
+
 def test_search_song_multiple_queries(client):
     post_user(client, "user_id", "user_name")
     post_song(
