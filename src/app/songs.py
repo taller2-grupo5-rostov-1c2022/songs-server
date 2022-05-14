@@ -16,11 +16,13 @@ router = APIRouter(tags=["songs"])
 @router.get("/songs/", response_model=List[schemas.SongBase])
 def get_songs(
     creator: str = None,
+    artist: str = None,
+    genre: str = None,
     pdb: Session = Depends(get_db),
 ):
     """Returns all songs"""
 
-    return crud_songs.get_songs(pdb, creator)
+    return crud_songs.get_songs(pdb, creator, artist, genre)
 
 
 @router.get("/songs/{song_id}")
