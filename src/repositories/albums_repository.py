@@ -1,6 +1,5 @@
 from sqlalchemy.orm import Session, joinedload
 from src.postgres.models import AlbumModel, ArtistModel, SongModel
-from typing import Optional
 from fastapi import HTTPException
 from sqlalchemy import func
 
