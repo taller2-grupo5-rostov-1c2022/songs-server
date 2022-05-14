@@ -11,7 +11,7 @@ def header(uid):
 def post_user(client, uid, user_name):
     response_post = client.post(
         API_VERSION_PREFIX + "/users/",
-        headers=header(uid),
+        headers={"api_key": "key", "uid": uid},
         data={
             "name": user_name,
             "wallet": "wallet",
@@ -66,7 +66,7 @@ def post_album(
     headers: Optional[dict] = None,
 ):
     if headers is None:
-        headers = {"api_key": "key"}
+        headers = {"api_key": "key", "uid": uid}
     if songs_ids is None:
         songs_ids = []
 
@@ -76,7 +76,6 @@ def post_album(
         response_post = client.post(
             API_VERSION_PREFIX + "/albums/",
             data={
-                "uid": uid,
                 "name": name,
                 "description": description,
                 "sub_level": sub_level,

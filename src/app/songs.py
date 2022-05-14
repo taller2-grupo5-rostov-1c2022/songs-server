@@ -1,3 +1,4 @@
+import datetime
 from src.postgres import schemas
 from typing import List
 from fastapi import APIRouter, Header
@@ -15,11 +16,13 @@ router = APIRouter(tags=["songs"])
 @router.get("/songs/", response_model=List[schemas.SongBase])
 def get_songs(
     creator: str = None,
+    artist: str = None,
+    genre: str = None,
     pdb: Session = Depends(get_db),
 ):
     """Returns all songs"""
 
-    return crud_songs.get_songs(pdb, creator)
+    return crud_songs.get_songs(pdb, creator, artist, genre)
 
 
 @router.get("/songs/{song_id}")
@@ -30,9 +33,12 @@ def get_song_by_id(
     song = crud_songs.get_song_by_id(pdb, song_id).__dict__
 
     blob = bucket.blob("songs/" + str(song_id))
-    blob.make_public()
 
-    song["file"] = blob.public_url
+    song["file"] = blob.generate_signed_url(
+        version="v4",
+        expiration=datetime.timedelta(days=1),
+        method="GET",
+    )
     return song
 
 
@@ -134,9 +140,16 @@ def post_song(
 
     blob = bucket.blob(f"songs/{new_song.id}")
     blob.upload_from_file(file.file)
-    blob.make_public()
 
-    return schemas.SongResponse(success=True, id=new_song.id, file=blob.public_url)
+    return schemas.SongResponse(
+        success=True,
+        id=new_song.id,
+        file=blob.generate_signed_url(
+            version="v4",
+            expiration=datetime.timedelta(days=1),
+            method="GET",
+        ),
+    )
 
 
 @router.delete("/songs/{song_id}")

@@ -1,8 +1,8 @@
 from sqlalchemy.orm import Session
-from src.postgres.models import SongModel
-from typing import Optional
+from src.postgres.models import SongModel, ArtistModel
 from fastapi import HTTPException
 from src.postgres import schemas
+from sqlalchemy import func
 
 
 def create_song(pdb: Session, song: schemas.SongBase):
@@ -13,11 +13,18 @@ def create_song(pdb: Session, song: schemas.SongBase):
     return db_song
 
 
-def get_songs(pdb: Session, creator_id: Optional[str]):
+def get_songs(
+    pdb: Session, creator_id: str = None, artist: str = None, genre: str = None
+):
+    queries = []
     if creator_id is not None:
-        return pdb.query(SongModel).filter(SongModel.creator_id == creator_id).all()
-    else:
-        return pdb.query(SongModel).all()
+        queries.append(SongModel.creator_id == creator_id)
+    if artist is not None:
+        queries.append(func.lower(ArtistModel.name).contains(artist.lower()))
+    if genre is not None:
+        queries.append(func.lower(SongModel.genre).contains(genre.lower()))
+
+    return pdb.query(SongModel).join(ArtistModel.songs).filter(*queries).all()
 
 
 def get_song_by_id(pdb: Session, song_id: int) -> schemas.SongBase:
