@@ -5,7 +5,7 @@ from fastapi import (
 from src.app import songs, albums, users, playlists
 from src.middleware.utils import get_api_key
 
-API_VERSION_PREFIX = "/api/v4"
+API_VERSION_PREFIX = "/api/v3"
 
 app = FastAPI(dependencies=[Depends(get_api_key)])
 

@@ -193,6 +193,40 @@ def test_search_song_by_genre_substring_case_insensitive_many_results(client):
     assert len(response.json()) == 2
 
 
+def test_search_song_by_subscription_without_songs(client):
+    response = client.get(
+        f"{API_VERSION_PREFIX}/songs/?sub_level=0", headers={"api_key": "key"}
+    )
+
+    assert response.status_code == 200
+    assert len(response.json()) == 0
+
+
+def test_search_song_by_subscription_without_results(client):
+    post_user(client, "user_id", "user_name")
+    post_song(client, uid="user_id", name="my_song_name", sub_level=1)
+
+    response = client.get(
+        f"{API_VERSION_PREFIX}/songs/?sub_level=2", headers={"api_key": "key"}
+    )
+
+    assert response.status_code == 200
+    assert len(response.json()) == 0
+
+
+def test_search_song_by_subscription_one_result(client):
+    post_user(client, "user_id", "user_name")
+    post_song(client, uid="user_id", name="my_song_name", sub_level=1)
+    post_song(client, uid="user_id", name="another_song_name", sub_level=2)
+
+    response = client.get(
+        f"{API_VERSION_PREFIX}/songs/?sub_level=2", headers={"api_key": "key"}
+    )
+
+    assert response.status_code == 200
+    assert len(response.json()) == 1
+    assert response.json()[0]["name"] == "another_song_name"
+
 def test_search_song_multiple_queries(client):
     post_user(client, "user_id", "user_name")
     post_song(
