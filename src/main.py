@@ -5,9 +5,11 @@ from fastapi import (
 from src.app import songs, albums, users, playlists
 from src.middleware.utils import get_api_key
 
+API_VERSION_PREFIX = "/api/v4"
+
 app = FastAPI(dependencies=[Depends(get_api_key)])
 
-app.include_router(songs.router, prefix="/api/v3")
-app.include_router(albums.router, prefix="/api/v3")
-app.include_router(users.router, prefix="/api/v3")
-app.include_router(playlists.router, prefix="/api/v3")
+app.include_router(songs.router, prefix=API_VERSION_PREFIX)
+app.include_router(albums.router, prefix=API_VERSION_PREFIX)
+app.include_router(users.router, prefix=API_VERSION_PREFIX)
+app.include_router(playlists.router, prefix=API_VERSION_PREFIX)

@@ -1,7 +1,7 @@
 from typing import Optional, List
 import json
 
-API_VERSION_PREFIX = "/api/v3"
+from src.main import API_VERSION_PREFIX
 
 
 def header(uid):
