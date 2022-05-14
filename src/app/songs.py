@@ -26,16 +26,16 @@ def get_songs(
     return crud_songs.get_songs(pdb, creator, artist, genre, sub_level)
 
 
-@router.get("/songs/{song_id}")
+@router.get("/songs/{song_id}", response_model=schemas.SongGet)
 def get_song_by_id(
     song_id: int, pdb: Session = Depends(get_db), bucket=Depends(get_bucket)
 ):
     """Returns a song by its id or 404 if not found"""
-    song = crud_songs.get_song_by_id(pdb, song_id).__dict__
+    song = crud_songs.get_song_by_id(pdb, song_id)
 
     blob = bucket.blob("songs/" + str(song_id))
 
-    song["file"] = blob.generate_signed_url(
+    song.file = blob.generate_signed_url(
         version="v4",
         expiration=datetime.timedelta(days=1),
         method="GET",

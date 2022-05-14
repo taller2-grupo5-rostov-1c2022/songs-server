@@ -12,6 +12,12 @@ def test_get_albums(client):
     assert response.status_code == 200
 
 
+def test_get_album_by_invalid_id(client):
+    response = client.get(API_VERSION_PREFIX + "/albums/5", headers={"api_key": "key"})
+
+    assert response.status_code == 404
+
+
 def test_get_album_of_user_without_albums(client):
     post_user(client, "album_creator_id", "album_creator_name")
     response = client.get(
@@ -24,14 +30,16 @@ def test_get_album_of_user_without_albums(client):
 
 def test_get_my_albums(client):
     post_user(client, "album_creator_id", "album_creator_name")
+
     post_album(client)
 
     response = client.get(
         API_VERSION_PREFIX + "/my_albums/",
         headers={"uid": "album_creator_id", "api_key": "key"},
     )
+
     assert response.status_code == 200
-    print(response.json())
+    assert len(response.json()) == 1
     assert response.json()[0]["name"] == "album_name"
     assert response.json()[0]["description"] == "album_desc"
     assert response.json()[0]["genre"] == "album_genre"
@@ -50,14 +58,6 @@ def test_get_my_albums_does_not_return_albums_of_other_users(client):
     )
     assert response.status_code == 200
     assert len(response.json()) == 0
-
-
-def test_get_album_of_invalid_user(client):
-    response = client.get(
-        API_VERSION_PREFIX + "/my_albums/",
-        headers={"uid": "album_creator_id", "api_key": "key"},
-    )
-    assert response.status_code == 404
 
 
 def test_post_empty_album(client):

@@ -46,7 +46,7 @@ class AlbumBase(BaseModel):
     id: int
     name: str
     description: str
-    creator_id: str
+    album_creator_id: str
     genre: str
     sub_level: int
 

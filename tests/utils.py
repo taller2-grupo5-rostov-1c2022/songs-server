@@ -93,6 +93,29 @@ def post_album(
     return response_post
 
 
+def post_album_with_song(
+    client,
+    uid="user_id",
+    album_name="album_name",
+    album_genre="album_genre",
+    album_sub_level=0,
+    song_name="song_name",
+    song_genre="song_genre",
+    song_sub_level=0,
+):
+    song_id = post_song(
+        client, uid=uid, name=song_name, genre=song_genre, sub_level=song_sub_level
+    ).json()["id"]
+    return post_album(
+        client,
+        uid=uid,
+        name=album_name,
+        genre=album_genre,
+        sub_level=album_sub_level,
+        songs_ids=[song_id],
+    )
+
+
 def post_playlist(
     client,
     uid: Optional[str] = "playlist_creator_id",

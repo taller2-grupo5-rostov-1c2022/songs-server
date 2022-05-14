@@ -33,14 +33,11 @@ def get_songs(
     return pdb.query(SongModel).join(ArtistModel.songs).filter(*queries).all()
 
 
-def get_song_by_id(pdb: Session, song_id: int) -> schemas.SongBase:
-    try:
-        song = pdb.query(SongModel).filter(SongModel.id == song_id).first()
-        song_schema = schemas.SongBase(**song.__dict__.copy(), artists=song.artists)
-
-        return song_schema
-    except Exception as entry_not_found:
+def get_song_by_id(pdb: Session, song_id: int):
+    song = pdb.query(SongModel).filter(SongModel.id == song_id).first()
+    if song is None:
         raise HTTPException(
             status_code=404,
             detail=f"Song '{str(song_id)}' not found",
-        ) from entry_not_found
+        )
+    return song

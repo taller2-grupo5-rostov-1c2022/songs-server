@@ -58,7 +58,7 @@ class UserModel(Base):
     interests = Column(String, nullable=False, index=True)
 
     songs = relationship("SongModel", back_populates="creator")
-    albums = relationship("AlbumModel", back_populates="creator")
+    albums = relationship("AlbumModel", back_populates="album_creator")
 
     my_playlists = relationship("PlaylistModel", back_populates="creator")
     other_playlists = relationship(
@@ -77,8 +77,8 @@ class AlbumModel(Base):
     genre = Column(String, nullable=False, index=True)
     sub_level = Column(Integer, nullable=False)
 
-    creator = relationship("UserModel", back_populates="albums")
-    creator_id = Column(String, ForeignKey("users.id"))
+    album_creator = relationship("UserModel", back_populates="albums")
+    album_creator_id = Column(String, ForeignKey("users.id"))
 
     songs = relationship("SongModel", back_populates="album")
 
@@ -108,6 +108,7 @@ class SongModel(Base):
         "ArtistModel",
         secondary=song_artist_association_table,
         back_populates="songs",
+        lazy="joined",
     )
 
     album = relationship("AlbumModel", back_populates="songs", lazy="joined")

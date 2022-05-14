@@ -17,12 +17,15 @@ router = APIRouter(tags=["albums"])
 @router.get("/albums/", response_model=List[schemas.AlbumGet])
 def get_albums(
     creator: str = None,
+    artist: str = None,
+    genre: str = None,
+    sub_level: int = None,
     pdb: Session = Depends(get_db),
     bucket=Depends(get_bucket),
 ):
     """Returns all Albums"""
 
-    albums = crud_albums.get_albums(pdb, creator)
+    albums = crud_albums.get_albums(pdb, creator, artist, genre, sub_level)
 
     for album in albums:
         blob = bucket.blob("covers/" + str(album.id))
@@ -104,7 +107,7 @@ def post_album(
     album = models.AlbumModel(
         name=name,
         description=description,
-        creator=creator,
+        album_creator=creator,
         genre=genre,
         sub_level=sub_level,
         songs=songs,
@@ -140,10 +143,10 @@ def update_album(
     album = pdb.query(AlbumModel).filter(AlbumModel.id == album_id).first()
     if album is None:
         raise HTTPException(status_code=404, detail=f"Album '{album_id}' not found")
-    if album.creator_id != uid:
+    if album.album_creator_id != uid:
         raise HTTPException(
             status_code=403,
-            detail=f"User '{uid} attempted to edit album of user with ID {album.creator_id}",
+            detail=f"User '{uid} attempted to edit album of user with ID {album.album_creator_id}",
         )
 
     if name is not None:
@@ -191,10 +194,10 @@ def delete_album(
     if album is None:
         raise HTTPException(status_code=404, detail=f"Album '{album_id}' not found")
 
-    if uid != album.creator_id:
+    if uid != album.album_creator_id:
         raise HTTPException(
             status_code=403,
-            detail=f"User '{uid} attempted to delete album of user with ID {album.creator_id}",
+            detail=f"User '{uid} attempted to delete album of user with ID {album.album_creator_id}",
         )
     pdb.query(AlbumModel).filter(AlbumModel.id == album_id).delete()
     bucket.blob("covers/" + str(album_id)).delete()

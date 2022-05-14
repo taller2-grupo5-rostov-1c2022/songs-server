@@ -181,9 +181,9 @@ def test_search_song_by_genre_substring_case_insensitive_one_result(client):
 
 def test_search_song_by_genre_substring_case_insensitive_many_results(client):
     post_user(client, "user_id", "user_name")
-    post_song(client, uid="user_id", name="my_song_name", genre="my_genre")
-    post_song(client, uid="user_id", name="my_song_name", genre="MY_GENRE")
-    post_song(client, uid="user_id", name="my_song_name", genre="foo")
+    post_song(client, uid="user_id", genre="my_genre")
+    post_song(client, uid="user_id", genre="MY_GENRE")
+    post_song(client, uid="user_id", genre="foo")
 
     response = client.get(
         f"{API_VERSION_PREFIX}/songs/?genre=GEN", headers={"api_key": "key"}
@@ -253,7 +253,7 @@ def test_search_song_multiple_queries(client):
     )
 
     response = client.get(
-        f"{API_VERSION_PREFIX}/songs/?artist=my_artist_name&genre=my_genre",
+        f"{API_VERSION_PREFIX}/songs/?creator=user_id&artist=my_artist_name&genre=my_genre",
         headers={"api_key": "key"},
     )
 
