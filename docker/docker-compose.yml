@@ -5,7 +5,8 @@ services:
       context: ../
       dockerfile: docker/Dockerfile
     volumes:
-      - ./src:/src
+      - ../src:/code/src
+      - ../tests:/code/tests
     ports:
       - ${PORT}:${PORT}
     environment:

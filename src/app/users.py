@@ -91,7 +91,7 @@ def post_user(
             blob = bucket.blob("pfp/" + uid)
             blob.upload_from_file(img.file)
             blob.make_public()
-            auth.update_user(uid=uid, photoURL=blob.public_url)
+            auth.update_user(uid=uid, photo_url=blob.public_url)
         except Exception as entry_not_found:
             raise HTTPException(
                 status_code=404, detail=f"Image for User '{uid}' not found"
@@ -137,7 +137,7 @@ def put_user(
             blob = bucket.blob("pfp/" + uid)
             blob.upload_from_file(img.file)
             blob.make_public()
-            auth.update_user(uid=uid, photoURL=blob.public_url)
+            auth.update_user(uid=uid, photo_url=blob.public_url)
         except Exception as entry_not_found:
             raise HTTPException(
                 status_code=404, detail=f"Image for User '{uid}' not found"
