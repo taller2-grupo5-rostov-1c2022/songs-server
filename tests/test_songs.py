@@ -25,6 +25,7 @@ def test_post_song(client):
     assert response_get.json()["description"] == "song_desc"
     assert response_get.json()["artists"] == [{"name": "song_artist_name"}]
     assert response_get.json()["genre"] == "song_genre"
+    assert response_get.json()["sub_level"] == 0
     assert response_get.json()["file"] == "https://example.com"
     assert response_get.json()["album"] is None
 

@@ -31,6 +31,7 @@ def post_song(
     description: Optional[str] = "song_desc",
     artists: Optional[List[str]] = None,
     genre: Optional[str] = "song_genre",
+    sub_level: Optional[int] = 0,
     file: Optional[str] = "./tests/test.song",
     headers: Optional[dict] = None,
 ):
@@ -49,6 +50,7 @@ def post_song(
                 "description": description,
                 "artists": json.dumps(artists),
                 "genre": genre,
+                "sub_level": sub_level,
             },
             files={"file": ("song.txt", f, "plain/text")},
             headers=headers,

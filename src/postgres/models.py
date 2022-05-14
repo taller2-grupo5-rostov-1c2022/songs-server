@@ -87,7 +87,7 @@ class ArtistModel(Base):
     __tablename__ = "artists"
 
     id = Column(Integer, primary_key=True, nullable=False, index=True)
-    name = Column(String, nullable=False)
+    name = Column(String, nullable=False, index=True)
     songs = relationship(
         "SongModel",
         secondary=song_artist_association_table,
@@ -102,6 +102,7 @@ class SongModel(Base):
     name = Column(String, nullable=False, index=True)
     description = Column(String, nullable=False, index=True)
     genre = Column(String, nullable=False, index=True)
+    sub_level = Column(Integer, nullable=False, index=True)
 
     artists = relationship(
         "ArtistModel",

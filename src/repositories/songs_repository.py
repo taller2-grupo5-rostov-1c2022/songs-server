@@ -14,7 +14,11 @@ def create_song(pdb: Session, song: schemas.SongBase):
 
 
 def get_songs(
-    pdb: Session, creator_id: str = None, artist: str = None, genre: str = None
+    pdb: Session,
+    creator_id: str = None,
+    artist: str = None,
+    genre: str = None,
+    sub_level: int = None,
 ):
     queries = []
     if creator_id is not None:
@@ -23,6 +27,8 @@ def get_songs(
         queries.append(func.lower(ArtistModel.name).contains(artist.lower()))
     if genre is not None:
         queries.append(func.lower(SongModel.genre).contains(genre.lower()))
+    if sub_level is not None:
+        queries.append(SongModel.sub_level == sub_level)
 
     return pdb.query(SongModel).join(ArtistModel.songs).filter(*queries).all()
 

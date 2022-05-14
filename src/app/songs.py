@@ -18,11 +18,12 @@ def get_songs(
     creator: str = None,
     artist: str = None,
     genre: str = None,
+    sub_level: int = None,
     pdb: Session = Depends(get_db),
 ):
     """Returns all songs"""
 
-    return crud_songs.get_songs(pdb, creator, artist, genre)
+    return crud_songs.get_songs(pdb, creator, artist, genre, sub_level)
 
 
 @router.get("/songs/{song_id}")
@@ -48,7 +49,9 @@ def update_song(
     uid: str = Header(...),
     name: str = Form(None),
     description: str = Form(None),
+    genre: str = Form(None),
     artists: str = Form(None),
+    sub_level: int = Form(None),
     file: UploadFile = None,
     pdb: Session = Depends(get_db),
     bucket=Depends(get_bucket),
@@ -69,6 +72,10 @@ def update_song(
         song.name = name
     if description is not None:
         song.description = description
+    if genre is not None:
+        song.genre = genre
+    if sub_level is not None:
+        song.sub_level = sub_level
     if artists is not None:
         artists_list = []
         try:
@@ -105,6 +112,7 @@ def post_song(
     description: str = Form(...),
     artists: str = Form(...),
     genre: str = Form(...),
+    sub_level: int = Form(None),
     file: UploadFile = File(...),
     pdb: Session = Depends(get_db),
     bucket=Depends(get_bucket),
@@ -127,12 +135,16 @@ def post_song(
             status_code=422, detail="Artists string is not well encoded"
         ) from e
 
+    if sub_level is None:
+        sub_level = 0
+
     new_song = SongModel(
         name=name,
         description=description,
         creator_id=uid,
         artists=artists_models,
         genre=genre,
+        sub_level=sub_level,
     )
     pdb.add(new_song)
     pdb.commit()
