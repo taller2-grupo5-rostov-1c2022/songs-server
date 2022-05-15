@@ -147,7 +147,10 @@ def post_playlist(
 ):
 
     if headers is None:
-        headers = {"api_key": "key"}
+        headers = {
+            "api_key": "key",
+            "uid": uid,
+        }
     if songs_ids is None:
         songs_ids = []
     if colabs_ids is None:
@@ -156,7 +159,6 @@ def post_playlist(
     response_post = client.post(
         f"{API_VERSION_PREFIX}/playlists/",
         data={
-            "uid": uid,
             "name": playlist_name,
             "description": description,
             "songs_ids": json.dumps(songs_ids),
