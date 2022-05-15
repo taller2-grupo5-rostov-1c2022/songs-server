@@ -122,11 +122,11 @@ def post_album(
         blob.make_public()
         album.cover_last_update = datetime.datetime.now()
         pdb.commit()
-    except Exception as entry_not_found:
+    except Exception:  # noqa: E722 # Want to catch all exceptions
         if not SUPPRESS_BLOB_ERRORS:
             raise HTTPException(
                 status_code=507, detail=f"Could not upload cover for album {album.id}"
-            ) from entry_not_found
+            )
 
     return {"id": album.id}
 

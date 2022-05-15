@@ -30,9 +30,7 @@ def get_user_by_id(
     if user is None:
         raise HTTPException(status_code=404, detail="User not found")
 
-    user.pfp = (
-        STORAGE_PATH + "pfp/" + str(uid) + "?t=" + str(71)
-    )  # Use modification timestamp to force browser to reload
+    user.pfp = STORAGE_PATH + "pfp/" + str(uid) + "?t=" + str(user.pfp_last_update)
 
     return user
 
@@ -140,12 +138,12 @@ def put_user(
             blob = bucket.blob("pfp/" + uid)
             blob.upload_from_file(img.file)
             user.pfp_last_update = datetime.datetime.now()
-        except Exception as entry_not_found:
+        except Exception:  # noqa: E722 # Want to catch all exceptions
             if not SUPPRESS_BLOB_ERRORS:
                 raise HTTPException(
                     status_code=507,
                     detail=f"Image for User '{uid}' could not be uploaded",
-                ) from entry_not_found
+                )
 
     pdb.commit()
 
@@ -175,8 +173,8 @@ def delete_user(
 
     try:
         bucket.blob("pfp/" + str(uid)).delete()
-    except Exception as entry_not_found:
+    except:  # noqa: W0707 # Want to catch all exceptions
         if not SUPPRESS_BLOB_ERRORS:
             raise HTTPException(
                 status_code=507, detail=f"Image for User '{uid}' could not be deleted"
-            ) from entry_not_found
+            )

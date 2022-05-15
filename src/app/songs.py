@@ -97,11 +97,11 @@ def update_song(
             blob = bucket.blob("songs/" + song_id)
             blob.upload_from_file(file.file)
             song.file_last_update = datetime.datetime.now()
-        except Exception as entry_not_found:
+        except:  # noqa: W0707 # Want to catch all exceptions
             if not SUPPRESS_BLOB_ERRORS:
                 raise HTTPException(
                     status_code=507, detail=f"Files for Song '{song_id}' not found"
-                ) from entry_not_found
+                )
 
     pdb.commit()
 
@@ -158,17 +158,21 @@ def post_song(
         blob = bucket.blob(f"songs/{new_song.id}")
         blob.upload_from_file(file.file)
         blob.make_public()
-    except Exception as entry_not_found:
+    except:  # noqa: W0707 # Want to catch all exceptions
         if not SUPPRESS_BLOB_ERRORS:
             raise HTTPException(
                 status_code=507,
                 detail=f"Could not upload Files for new Song {new_song.id}",
-            ) from entry_not_found
+            )
 
     return schemas.SongResponse(
         success=True,
         id=new_song.id,
-        file=STORAGE_PATH + "songs/" + str(new_song.id) + "?t=" + str(71),
+        file=STORAGE_PATH
+        + "songs/"
+        + str(new_song.id)
+        + "?t="
+        + str(new_song.file_last_update),
     )
 
 
@@ -196,11 +200,11 @@ def delete_song(
 
     try:
         bucket.blob("songs/" + song_id).delete()
-    except Exception as entry_not_found:
+    except:  # noqa: W0707 # Want to catch all exceptions
         if not SUPPRESS_BLOB_ERRORS:
             raise HTTPException(
                 status_code=507, detail=f"Could not delete Song {song_id}"
-            ) from entry_not_found
+            )
 
     return {"song_id": song_id}
 
