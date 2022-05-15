@@ -17,22 +17,27 @@ router = APIRouter(tags=["songs"])
 @router.get("/songs/", response_model=List[schemas.SongBase])
 def get_songs(
     creator: str = None,
+    artist: str = None,
+    genre: str = None,
+    sub_level: int = None,
     pdb: Session = Depends(get_db),
 ):
     """Returns all songs"""
 
-    return crud_songs.get_songs(pdb, creator)
+    return crud_songs.get_songs(pdb, creator, artist, genre, sub_level)
 
 
-@router.get("/songs/{song_id}")
+@router.get("/songs/{song_id}", response_model=schemas.SongGet)
 def get_song_by_id(
     song_id: int,
     pdb: Session = Depends(get_db),
 ):
     """Returns a song by its id or 404 if not found"""
-    song = crud_songs.get_song_by_id(pdb, song_id).__dict__
+    song = crud_songs.get_song_by_id(pdb, song_id)
 
-    song["file"] = STORAGE_PATH + "songs/" + str(song_id) + "?t=" + str(71)
+    song.file = (
+        STORAGE_PATH + "songs/" + str(song_id) + "?t=" + str(song.file_last_update)
+    )
 
     return song
 
@@ -43,7 +48,9 @@ def update_song(
     uid: str = Header(...),
     name: str = Form(None),
     description: str = Form(None),
+    genre: str = Form(None),
     artists: str = Form(None),
+    sub_level: int = Form(None),
     file: UploadFile = None,
     pdb: Session = Depends(get_db),
     bucket=Depends(get_bucket),
@@ -64,6 +71,10 @@ def update_song(
         song.name = name
     if description is not None:
         song.description = description
+    if genre is not None:
+        song.genre = genre
+    if sub_level is not None:
+        song.sub_level = sub_level
     if artists is not None:
         artists_list = []
         try:
@@ -85,11 +96,14 @@ def update_song(
         try:
             blob = bucket.blob("songs/" + song_id)
             blob.upload_from_file(file.file)
-        except Exception as entry_not_found:
+            song.file_last_update = datetime.datetime.now()
+        except:  # noqa: W0707 # Want to catch all exceptions
             if not SUPPRESS_BLOB_ERRORS:
                 raise HTTPException(
                     status_code=507, detail=f"Files for Song '{song_id}' not found"
-                ) from entry_not_found
+                )
+
+    pdb.commit()
 
     return schemas.SongResponse(success=True, id=song.id if song else song_id)
 
@@ -101,6 +115,7 @@ def post_song(
     description: str = Form(...),
     artists: str = Form(...),
     genre: str = Form(...),
+    sub_level: int = Form(None),
     file: UploadFile = File(...),
     pdb: Session = Depends(get_db),
     bucket=Depends(get_bucket),
@@ -123,12 +138,17 @@ def post_song(
             status_code=422, detail="Artists string is not well encoded"
         ) from e
 
+    if sub_level is None:
+        sub_level = 0
+
     new_song = SongModel(
         name=name,
         description=description,
         creator_id=uid,
         artists=artists_models,
         genre=genre,
+        sub_level=sub_level,
+        file_last_update=datetime.datetime.now(),
     )
     pdb.add(new_song)
     pdb.commit()
@@ -138,17 +158,21 @@ def post_song(
         blob = bucket.blob(f"songs/{new_song.id}")
         blob.upload_from_file(file.file)
         blob.make_public()
-    except Exception as entry_not_found:
+    except:  # noqa: W0707 # Want to catch all exceptions
         if not SUPPRESS_BLOB_ERRORS:
             raise HTTPException(
                 status_code=507,
                 detail=f"Could not upload Files for new Song {new_song.id}",
-            ) from entry_not_found
+            )
 
     return schemas.SongResponse(
         success=True,
         id=new_song.id,
-        file=STORAGE_PATH + "songs/" + str(new_song.id) + "?t=" + str(71),
+        file=STORAGE_PATH
+        + "songs/"
+        + str(new_song.id)
+        + "?t="
+        + str(new_song.file_last_update),
     )
 
 
@@ -176,11 +200,11 @@ def delete_song(
 
     try:
         bucket.blob("songs/" + song_id).delete()
-    except Exception as entry_not_found:
+    except:  # noqa: W0707 # Want to catch all exceptions
         if not SUPPRESS_BLOB_ERRORS:
             raise HTTPException(
                 status_code=507, detail=f"Could not delete Song {song_id}"
-            ) from entry_not_found
+            )
 
     return {"song_id": song_id}
 

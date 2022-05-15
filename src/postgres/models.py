@@ -1,4 +1,4 @@
-from sqlalchemy import Column, ForeignKey, Integer, String
+from sqlalchemy import Column, ForeignKey, Integer, String, TIMESTAMP
 from sqlalchemy.orm import relationship
 from sqlalchemy import Table
 
@@ -56,9 +56,10 @@ class UserModel(Base):
     wallet = Column(String, nullable=True, index=True)
     location = Column(String, nullable=False, index=True)
     interests = Column(String, nullable=False, index=True)
+    pfp_last_update = Column(TIMESTAMP, nullable=False)
 
     songs = relationship("SongModel", back_populates="creator")
-    albums = relationship("AlbumModel", back_populates="creator")
+    albums = relationship("AlbumModel", back_populates="album_creator")
 
     my_playlists = relationship("PlaylistModel", back_populates="creator")
     other_playlists = relationship(
@@ -76,9 +77,10 @@ class AlbumModel(Base):
     description = Column(String, nullable=False, index=True)
     genre = Column(String, nullable=False, index=True)
     sub_level = Column(Integer, nullable=False)
+    cover_last_update = Column(TIMESTAMP, nullable=False)
 
-    creator = relationship("UserModel", back_populates="albums")
-    creator_id = Column(String, ForeignKey("users.id"))
+    album_creator = relationship("UserModel", back_populates="albums")
+    album_creator_id = Column(String, ForeignKey("users.id"))
 
     songs = relationship("SongModel", back_populates="album")
 
@@ -87,7 +89,7 @@ class ArtistModel(Base):
     __tablename__ = "artists"
 
     id = Column(Integer, primary_key=True, nullable=False, index=True)
-    name = Column(String, nullable=False)
+    name = Column(String, nullable=False, index=True)
     songs = relationship(
         "SongModel",
         secondary=song_artist_association_table,
@@ -102,11 +104,14 @@ class SongModel(Base):
     name = Column(String, nullable=False, index=True)
     description = Column(String, nullable=False, index=True)
     genre = Column(String, nullable=False, index=True)
+    sub_level = Column(Integer, nullable=False, index=True)
+    file_last_update = Column(TIMESTAMP, nullable=False)
 
     artists = relationship(
         "ArtistModel",
         secondary=song_artist_association_table,
         back_populates="songs",
+        lazy="joined",
     )
 
     album = relationship("AlbumModel", back_populates="songs", lazy="joined")

@@ -1,3 +1,4 @@
+import datetime
 from src.postgres import schemas
 from src.postgres import models
 from src.constants import STORAGE_PATH, SUPPRESS_BLOB_ERRORS
@@ -17,16 +18,23 @@ router = APIRouter(tags=["albums"])
 @router.get("/albums/", response_model=List[schemas.AlbumGet])
 def get_albums(
     creator: str = None,
+    artist: str = None,
+    genre: str = None,
+    sub_level: int = None,
     pdb: Session = Depends(get_db),
 ):
     """Returns all Albums"""
 
-    albums = crud_albums.get_albums(pdb, creator)
+    albums = crud_albums.get_albums(pdb, creator, artist, genre, sub_level)
 
     for album in albums:
         album.cover = (
-            STORAGE_PATH + "covers/" + str(album.id) + "?t=" + str(71)
-        )  # album.cover_timestamp
+            STORAGE_PATH
+            + "covers/"
+            + str(album.id)
+            + "?t="
+            + str(album.cover_last_update)
+        )
 
     return albums
 
@@ -41,8 +49,12 @@ def get_my_albums(
 
     for album in albums:
         album.cover = (
-            STORAGE_PATH + "covers/" + str(album.id) + "?t=" + str(71)
-        )  # album.cover_timestamp
+            STORAGE_PATH
+            + "covers/"
+            + str(album.id)
+            + "?t="
+            + str(album.cover_last_update)
+        )
 
     return albums
 
@@ -51,11 +63,11 @@ def get_my_albums(
 def get_album_by_id(album_id: int, pdb: Session = Depends(get_db)):
     """Returns an album by its id or 404 if not found"""
 
-    album = crud_albums.get_album_by_id(pdb, album_id).__dict__
+    album = crud_albums.get_album_by_id(pdb, album_id)
 
-    album["cover"] = (
-        STORAGE_PATH + "covers/" + str(album_id) + "?t=" + str(71)
-    )  # album.cover_timestamp
+    album.cover = (
+        STORAGE_PATH + "covers/" + str(album_id) + "?t=" + str(album.cover_last_update)
+    )
 
     return album
 
@@ -91,9 +103,10 @@ def post_album(
     album = models.AlbumModel(
         name=name,
         description=description,
-        creator=creator,
+        album_creator=creator,
         genre=genre,
         sub_level=sub_level,
+        cover_last_update=datetime.datetime.now(),
         songs=songs,
     )
     pdb.add(album)
@@ -107,11 +120,13 @@ def post_album(
         blob = bucket.blob(f"covers/{album.id}")
         blob.upload_from_file(cover.file)
         blob.make_public()
-    except Exception as entry_not_found:
+        album.cover_last_update = datetime.datetime.now()
+        pdb.commit()
+    except Exception:  # noqa: E722 # Want to catch all exceptions
         if not SUPPRESS_BLOB_ERRORS:
             raise HTTPException(
                 status_code=507, detail=f"Could not upload cover for album {album.id}"
-            ) from entry_not_found
+            )
 
     return {"id": album.id}
 
@@ -134,10 +149,10 @@ def update_album(
     album = pdb.query(AlbumModel).filter(AlbumModel.id == album_id).first()
     if album is None:
         raise HTTPException(status_code=404, detail=f"Album '{album_id}' not found")
-    if album.creator_id != uid:
+    if album.album_creator_id != uid:
         raise HTTPException(
             status_code=403,
-            detail=f"User '{uid} attempted to edit album of user with ID {album.creator_id}",
+            detail=f"User '{uid} attempted to edit album of user with ID {album.album_creator_id}",
         )
 
     if name is not None:
@@ -169,6 +184,8 @@ def update_album(
         try:
             blob = bucket.blob("covers/" + album_id)
             blob.upload_from_file(cover.file)
+            album.cover_last_update = datetime.datetime.now()
+            pdb.commit()
         except Exception as entry_not_found:
             if not SUPPRESS_BLOB_ERRORS:
                 raise HTTPException(
@@ -191,10 +208,10 @@ def delete_album(
     if album is None:
         raise HTTPException(status_code=404, detail=f"Album '{album_id}' not found")
 
-    if uid != album.creator_id:
+    if uid != album.album_creator_id:
         raise HTTPException(
             status_code=403,
-            detail=f"User '{uid} attempted to delete album of user with ID {album.creator_id}",
+            detail=f"User '{uid} attempted to delete album of user with ID {album.album_creator_id}",
         )
     pdb.query(AlbumModel).filter(AlbumModel.id == album_id).delete()
     pdb.commit()

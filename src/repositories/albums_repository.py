@@ -1,35 +1,47 @@
 from sqlalchemy.orm import Session, joinedload
-from src.postgres.models import AlbumModel, UserModel
-from typing import Optional
+from src.postgres.models import AlbumModel, ArtistModel, SongModel
 from fastapi import HTTPException
-from src.postgres import schemas
+from sqlalchemy import func
 
 
-def get_albums(pdb: Session, creator_id: Optional[str]):
+def get_albums(
+    pdb: Session,
+    creator_id: str = None,
+    artist: str = None,
+    genre: str = None,
+    sub_level: int = None,
+):
+    queries = []
+
     if creator_id is not None:
-        if pdb.query(UserModel).filter_by(id=creator_id).first() is None:
-            raise HTTPException(
-                status_code=404, detail=f"User with id {creator_id} not found"
-            )
+        queries.append(AlbumModel.album_creator_id == creator_id)
+    if artist is not None:
+        queries.append(func.lower(ArtistModel.name).contains(artist.lower()))
+    if genre is not None:
+        queries.append(func.lower(AlbumModel.genre).contains(genre.lower()))
+    if sub_level is not None:
+        queries.append(AlbumModel.sub_level == sub_level)
 
-        return pdb.query(AlbumModel).filter(AlbumModel.creator_id == creator_id).all()
-    else:
-        return pdb.query(AlbumModel).all()
+    return (
+        pdb.query(AlbumModel)
+        .join(ArtistModel.songs, full=True)
+        .join(SongModel.album, full=True)
+        .filter(*queries)
+        .all()
+    )
 
 
-def get_album_by_id(pdb: Session, album_id: int) -> schemas.AlbumBase:
-    try:
-        album = (
-            pdb.query(AlbumModel)
-            .options(joinedload(AlbumModel.songs))
-            .filter(AlbumModel.id == album_id)
-            .first()
-        )
-        album_schema = schemas.AlbumBase(**album.__dict__.copy())
-
-        return album_schema
-    except Exception as entry_not_found:
+def get_album_by_id(pdb: Session, album_id: int):
+    album = (
+        pdb.query(AlbumModel)
+        .options(joinedload(AlbumModel.songs))
+        .filter(AlbumModel.id == album_id)
+        .first()
+    )
+    if album is None:
         raise HTTPException(
             status_code=404,
             detail=f"Album '{str(album_id)}' not found",
-        ) from entry_not_found
+        )
+
+    return album

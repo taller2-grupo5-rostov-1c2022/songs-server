@@ -1,20 +1,46 @@
 from typing import Optional, List
 import json
 
-API_VERSION_PREFIX = "/api/v3"
+from src.main import API_VERSION_PREFIX
 
 
-def post_user(client, uid, user_name):
-    response_post = client.post(
-        API_VERSION_PREFIX + "/users/",
-        headers={"api_key": "key", "uid": uid},
-        data={
-            "name": user_name,
-            "wallet": "wallet",
-            "location": "location",
-            "interests": "interests",
-        },
-    )
+def header(uid):
+    return {"api_key": "key", "uid": uid}
+
+
+def post_user(
+    client,
+    uid,
+    user_name,
+    wallet="wallet",
+    location="location",
+    interests="interests",
+    include_pfp=False,
+):
+    data = {
+        "name": user_name,
+        "wallet": wallet,
+        "location": location,
+        "interests": interests,
+    }
+    if include_pfp:
+        with open("./pfp.img", "wb") as f:
+            f.write(b"test")
+        with open("./pfp.img", "rb") as f:
+            files = {"img": ("pfp.img", f, "plain/text")}
+            response_post = client.post(
+                API_VERSION_PREFIX + "/users/",
+                headers={"api_key": "key", "uid": uid},
+                data=data,
+                files=files,
+            )
+    else:
+        response_post = client.post(
+            API_VERSION_PREFIX + "/users/",
+            headers={"api_key": "key", "uid": uid},
+            data=data,
+        )
+
     return response_post
 
 
@@ -25,14 +51,12 @@ def post_song(
     description: Optional[str] = "song_desc",
     artists: Optional[List[str]] = None,
     genre: Optional[str] = "song_genre",
+    sub_level: Optional[int] = 0,
     file: Optional[str] = "./tests/test.song",
     headers: Optional[dict] = None,
 ):
     if headers is None:
-        headers = {
-            "api_key": "key",
-            "uid": uid,
-        }
+        headers = header(uid)
     if artists is None:
         artists = ["song_artist_name"]
 
@@ -46,6 +70,7 @@ def post_song(
                 "description": description,
                 "artists": json.dumps(artists),
                 "genre": genre,
+                "sub_level": sub_level,
             },
             files={"file": ("song.txt", f, "plain/text")},
             headers=headers,
@@ -86,6 +111,29 @@ def post_album(
         )
 
     return response_post
+
+
+def post_album_with_song(
+    client,
+    uid="user_id",
+    album_name="album_name",
+    album_genre="album_genre",
+    album_sub_level=0,
+    song_name="song_name",
+    song_genre="song_genre",
+    song_sub_level=0,
+):
+    song_id = post_song(
+        client, uid=uid, name=song_name, genre=song_genre, sub_level=song_sub_level
+    ).json()["id"]
+    return post_album(
+        client,
+        uid=uid,
+        name=album_name,
+        genre=album_genre,
+        sub_level=album_sub_level,
+        songs_ids=[song_id],
+    )
 
 
 def post_playlist(

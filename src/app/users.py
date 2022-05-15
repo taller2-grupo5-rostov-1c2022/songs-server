@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 from src.postgres.database import get_db
 from src.firebase.access import get_bucket, get_auth
 from src.postgres.models import UserModel
+import datetime
 
 router = APIRouter(tags=["users"])
 
@@ -29,14 +30,12 @@ def get_user_by_id(
     if user is None:
         raise HTTPException(status_code=404, detail="User not found")
 
-    user.pfp = (
-        STORAGE_PATH + "pfp/" + str(uid) + "?t=" + str(71)
-    )  # Use modification timestamp to force browser to reload
+    user.pfp = STORAGE_PATH + "pfp/" + str(uid) + "?t=" + str(user.pfp_last_update)
 
     return user
 
 
-@router.get("/my_users/", response_model=schemas.UserBase)
+@router.get("/my_user/", response_model=schemas.UserBase)
 def get_my_user(
     uid: str = Header(...),
     pdb: Session = Depends(get_db),
@@ -47,9 +46,7 @@ def get_my_user(
     if user is None:
         raise HTTPException(status_code=404, detail="User not found")
 
-    user.pfp = (
-        STORAGE_PATH + "pfp/" + str(uid) + "?t=" + str(71)
-    )  # Use modification timestamp to force browser to reload
+    user.pfp = STORAGE_PATH + "pfp/" + str(uid) + "?t=" + str(user.pfp_last_update)
 
     return user
 
@@ -66,9 +63,14 @@ def post_user(
     bucket=Depends(get_bucket),
     auth=Depends(get_auth),
 ):
-    """Creates an user and returns its id"""
+    """Creates a user and returns its id"""
     new_user = UserModel(
-        id=uid, name=name, wallet=wallet, location=location, interests=interests
+        id=uid,
+        name=name,
+        wallet=wallet,
+        location=location,
+        interests=interests,
+        pfp_last_update=datetime.datetime.now(),
     )
     pdb.add(new_user)
     pdb.commit()
@@ -92,8 +94,9 @@ def post_user(
     return new_user
 
 
-@router.put("/users/{uid}", response_model=schemas.UserBase)
+@router.put("/users/{uid_to_modify}", response_model=schemas.UserBase)
 def put_user(
+    uid_to_modify: str,
     uid: str = Header(...),
     name: str = Form(None),
     wallet: str = Form(None),
@@ -104,8 +107,14 @@ def put_user(
     bucket=Depends(get_bucket),
     auth=Depends(get_auth),
 ):
-    """Updates an user and returns its id"""
-    user = pdb.query(UserModel).filter(UserModel.id == uid).first()
+    """Updates a user and returns its id or 404 if not found or 403 if not authorized to update"""
+    if uid != uid_to_modify:
+        raise HTTPException(
+            status_code=403,
+            detail=f"User with id {uid} attempted to modify user of id {uid_to_modify}",
+        )
+
+    user = pdb.query(UserModel).filter(UserModel.id == uid_to_modify).first()
     if user is None:
         raise HTTPException(status_code=404, detail=f"User '{uid}' not found")
 
@@ -128,19 +137,33 @@ def put_user(
         try:
             blob = bucket.blob("pfp/" + uid)
             blob.upload_from_file(img.file)
-        except Exception as entry_not_found:
+            user.pfp_last_update = datetime.datetime.now()
+        except Exception:  # noqa: E722 # Want to catch all exceptions
             if not SUPPRESS_BLOB_ERRORS:
                 raise HTTPException(
                     status_code=507,
                     detail=f"Image for User '{uid}' could not be uploaded",
-                ) from entry_not_found
+                )
+
+    pdb.commit()
 
     return user
 
 
-@router.delete("/users/")
-def delete_user(uid: str, pdb: Session = Depends(get_db), bucket=Depends(get_bucket)):
-    """Deletes an user given its id or 404 if not found"""
+@router.delete("/users/{uid_to_delete}")
+def delete_user(
+    uid_to_delete: str,
+    uid: str = Header(...),
+    pdb: Session = Depends(get_db),
+    bucket: Session = Depends(get_bucket),
+):
+    """Deletes a user given its id or 404 if not found or 403 if not authorized to delete"""
+
+    if uid != uid_to_delete:
+        raise HTTPException(
+            status_code=403,
+            detail=f"User with id {uid} attempted to delete user of id {uid_to_delete}",
+        )
 
     user = pdb.query(UserModel).filter(UserModel.id == uid).first()
     if user is None:
@@ -150,8 +173,8 @@ def delete_user(uid: str, pdb: Session = Depends(get_db), bucket=Depends(get_buc
 
     try:
         bucket.blob("pfp/" + str(uid)).delete()
-    except Exception as entry_not_found:
+    except:  # noqa: W0707 # Want to catch all exceptions
         if not SUPPRESS_BLOB_ERRORS:
             raise HTTPException(
                 status_code=507, detail=f"Image for User '{uid}' could not be deleted"
-            ) from entry_not_found
+            )
