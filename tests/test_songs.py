@@ -1,3 +1,4 @@
+from src.constants import STORAGE_PATH
 from tests.utils import post_song, post_user
 from tests.utils import API_VERSION_PREFIX
 
@@ -26,7 +27,8 @@ def test_post_song(client):
     assert response_get.json()["artists"] == [{"name": "song_artist_name"}]
     assert response_get.json()["genre"] == "song_genre"
     assert response_get.json()["sub_level"] == 0
-    assert response_get.json()["file"] == "https://example.com"
+    assert response_get.json()["file"].startswith(STORAGE_PATH)
+    assert str(response_get.json()["id"]) in response_get.json()["file"]
     assert response_get.json()["album"] is None
 
 
