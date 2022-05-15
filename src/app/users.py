@@ -1,4 +1,4 @@
-import datetime
+from src.constants import STORAGE_PATH, SUPPRESS_BLOB_ERRORS
 from src.postgres import schemas
 from typing import List
 from fastapi import APIRouter
@@ -22,7 +22,6 @@ def get_all_users(pdb: Session = Depends(get_db)):
 def get_user_by_id(
     uid: str,
     pdb: Session = Depends(get_db),
-    bucket=Depends(get_bucket),
 ):
     """Returns an user by its id or 404 if not found"""
     user = pdb.query(UserModel).filter(UserModel.id == uid).first()
@@ -30,13 +29,9 @@ def get_user_by_id(
     if user is None:
         raise HTTPException(status_code=404, detail="User not found")
 
-    blob = bucket.blob(f"pfp/{uid}")
-    if blob.exists():
-        user.pfp = blob.generate_signed_url(
-            version="v4",
-            expiration=datetime.timedelta(days=1),
-            method="GET",
-        )
+    user.pfp = (
+        STORAGE_PATH + "pfp/" + str(uid) + "?t=" + str(71)
+    )  # Use modification timestamp to force browser to reload
 
     return user
 
@@ -45,7 +40,6 @@ def get_user_by_id(
 def get_my_user(
     uid: str = Header(...),
     pdb: Session = Depends(get_db),
-    bucket=Depends(get_bucket),
 ):
     """Returns own user"""
     user = pdb.query(UserModel).filter(UserModel.id == uid).first()
@@ -53,13 +47,9 @@ def get_my_user(
     if user is None:
         raise HTTPException(status_code=404, detail="User not found")
 
-    blob = bucket.blob(f"pfp/{uid}")
-    if blob.exists():
-        user.pfp = blob.generate_signed_url(
-            version="v4",
-            expiration=datetime.timedelta(days=1),
-            method="GET",
-        )
+    user.pfp = (
+        STORAGE_PATH + "pfp/" + str(uid) + "?t=" + str(71)
+    )  # Use modification timestamp to force browser to reload
 
     return user
 
@@ -93,9 +83,11 @@ def post_user(
             blob.make_public()
             auth.update_user(uid=uid, photo_url=blob.public_url)
         except Exception as entry_not_found:
-            raise HTTPException(
-                status_code=404, detail=f"Image for User '{uid}' not found"
-            ) from entry_not_found
+            if not SUPPRESS_BLOB_ERRORS:
+                raise HTTPException(
+                    status_code=507,
+                    detail=f"Image for User '{uid}' could not be uploaded",
+                ) from entry_not_found
 
     return new_user
 
@@ -136,18 +128,18 @@ def put_user(
         try:
             blob = bucket.blob("pfp/" + uid)
             blob.upload_from_file(img.file)
-            blob.make_public()
-            auth.update_user(uid=uid, photo_url=blob.public_url)
         except Exception as entry_not_found:
-            raise HTTPException(
-                status_code=404, detail=f"Image for User '{uid}' not found"
-            ) from entry_not_found
+            if not SUPPRESS_BLOB_ERRORS:
+                raise HTTPException(
+                    status_code=507,
+                    detail=f"Image for User '{uid}' could not be uploaded",
+                ) from entry_not_found
 
     return user
 
 
 @router.delete("/users/")
-def delete_user(uid: str, pdb: Session = Depends(get_db)):
+def delete_user(uid: str, pdb: Session = Depends(get_db), bucket=Depends(get_bucket)):
     """Deletes an user given its id or 404 if not found"""
 
     user = pdb.query(UserModel).filter(UserModel.id == uid).first()
@@ -155,3 +147,11 @@ def delete_user(uid: str, pdb: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail=f"User '{uid}' not found")
     pdb.query(UserModel).filter(UserModel.id == uid).delete()
     pdb.commit()
+
+    try:
+        bucket.blob("pfp/" + str(uid)).delete()
+    except Exception as entry_not_found:
+        if not SUPPRESS_BLOB_ERRORS:
+            raise HTTPException(
+                status_code=507, detail=f"Image for User '{uid}' could not be deleted"
+            ) from entry_not_found
