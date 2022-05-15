@@ -64,7 +64,12 @@ def post_user(
 ):
     """Creates a user and returns its id"""
     new_user = UserModel(
-        id=uid, name=name, wallet=wallet, location=location, interests=interests, pfp_last_update=datetime.datetime.now()
+        id=uid,
+        name=name,
+        wallet=wallet,
+        location=location,
+        interests=interests,
+        pfp_last_update=datetime.datetime.now(),
     )
     pdb.add(new_user)
     pdb.commit()

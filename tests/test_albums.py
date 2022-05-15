@@ -2,6 +2,7 @@ from tests.utils import post_user, post_song, post_album
 from tests.utils import API_VERSION_PREFIX
 import time
 
+
 def test_unauthorized_get(client):
     response = client.get(API_VERSION_PREFIX + "/albums/")
     assert response.status_code == 403
@@ -293,4 +294,7 @@ def test_update_cover_updates_cover_timestamp(client):
         headers={"api_key": "key"},
     )
 
-    assert response_get_1.json()["cover_last_update"] < response_get_2.json()["cover_last_update"]
+    assert (
+        response_get_1.json()["cover_last_update"]
+        < response_get_2.json()["cover_last_update"]
+    )
