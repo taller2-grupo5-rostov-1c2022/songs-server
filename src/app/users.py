@@ -41,12 +41,15 @@ def get_my_user(
 
     blob = bucket.blob(f"pfp/{uid}")
     if blob.exists():
-        user.pfp = blob.generate_signed_url(
-            version="v4",
-            expiration=datetime.timedelta(days=1),
-            method="GET",
+        user.pfp = (
+            blob.generate_signed_url(
+                version="v4",
+                expiration=datetime.timedelta(days=1),
+                method="GET",
+            )
+            + "?t="
+            + str(user.pfp_last_update)
         )
-
     return user
 
 
@@ -125,6 +128,8 @@ def put_user(
 
     if interests is not None:
         user.interests = interests
+
+    pdb.commit()
 
     if img is not None:
         try:

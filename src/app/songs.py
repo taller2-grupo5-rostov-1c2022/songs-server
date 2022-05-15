@@ -35,10 +35,14 @@ def get_song_by_id(
 
     blob = bucket.blob("songs/" + str(song_id))
 
-    song.file = blob.generate_signed_url(
-        version="v4",
-        expiration=datetime.timedelta(days=1),
-        method="GET",
+    song.file = (
+        blob.generate_signed_url(
+            version="v4",
+            expiration=datetime.timedelta(days=1),
+            method="GET",
+        )
+        + "?t="
+        + str(song.file_last_update)
     )
     return song
 
@@ -97,10 +101,13 @@ def update_song(
         try:
             blob = bucket.blob("songs/" + song_id)
             blob.upload_from_file(file.file)
+            song.file_last_update = datetime.datetime.now()
         except Exception as entry_not_found:
             raise HTTPException(
                 status_code=404, detail=f"Files for Song '{song_id}' not found"
             ) from entry_not_found
+
+    pdb.commit()
 
     return schemas.SongResponse(success=True, id=song.id if song else song_id)
 
@@ -145,6 +152,7 @@ def post_song(
         artists=artists_models,
         genre=genre,
         sub_level=sub_level,
+        file_last_update=datetime.datetime.now(),
     )
     pdb.add(new_song)
     pdb.commit()

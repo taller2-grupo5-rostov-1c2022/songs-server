@@ -9,18 +9,38 @@ def header(uid):
 
 
 def post_user(
-    client, uid, user_name, wallet="wallet", location="location", interests="interests"
+    client,
+    uid,
+    user_name,
+    wallet="wallet",
+    location="location",
+    interests="interests",
+    include_pfp=False,
 ):
-    response_post = client.post(
-        API_VERSION_PREFIX + "/users/",
-        headers={"api_key": "key", "uid": uid},
-        data={
-            "name": user_name,
-            "wallet": wallet,
-            "location": location,
-            "interests": interests,
-        },
-    )
+    data = {
+        "name": user_name,
+        "wallet": wallet,
+        "location": location,
+        "interests": interests,
+    }
+    if include_pfp:
+        with open("./pfp.img", "wb") as f:
+            f.write(b"test")
+        with open("./pfp.img", "rb") as f:
+            files = {"img": ("pfp.img", f, "plain/text")}
+            response_post = client.post(
+                API_VERSION_PREFIX + "/users/",
+                headers={"api_key": "key", "uid": uid},
+                data=data,
+                files=files,
+            )
+    else:
+        response_post = client.post(
+            API_VERSION_PREFIX + "/users/",
+            headers={"api_key": "key", "uid": uid},
+            data=data,
+        )
+
     return response_post
 
 

@@ -1,6 +1,7 @@
 from tests.utils import post_user, post_song, post_album
 from tests.utils import API_VERSION_PREFIX
-import time
+from urllib.parse import urlparse
+from urllib.parse import parse_qs
 
 
 def test_unauthorized_get(client):
@@ -98,7 +99,6 @@ def test_post_album_with_song(client):
     )
     assert response_get.json()["songs"][0]["name"] == "song_name"
     assert len(response_get.json()["songs"]) == 1
-    assert response_get.json()["cover"] == "https://example.com"
     assert response_get.json()["sub_level"] == 1
 
 
@@ -112,7 +112,6 @@ def test_post_album_associates_song_to_such_album(client):
         API_VERSION_PREFIX + "/songs/" + str(response_post_song.json()["id"]),
         headers={"api_key": "key"},
     )
-    print(response_get_song.json())
     assert response_get_song.json()["album"]["id"] == response_post_album.json()["id"]
     assert response_get_song.json()["album"]["name"] == "album_name"
 
@@ -217,7 +216,6 @@ def test_delete_album(client):
         API_VERSION_PREFIX + "/albums/" + str(response_post.json()["id"]),
         headers={"api_key": "key"},
     )
-    print(response_get.json())
     assert response_get.status_code == 404
 
 
@@ -294,7 +292,10 @@ def test_update_cover_updates_cover_timestamp(client):
         headers={"api_key": "key"},
     )
 
-    assert (
-        response_get_1.json()["cover_last_update"]
-        < response_get_2.json()["cover_last_update"]
-    )
+    url_1 = response_get_1.json()["cover"]
+    url_2 = response_get_2.json()["cover"]
+
+    timestamp_1 = parse_qs(urlparse(url_1).query)["t"][0]
+    timestamp_2 = parse_qs(urlparse(url_2).query)["t"][0]
+
+    assert timestamp_1 != timestamp_2

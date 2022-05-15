@@ -29,10 +29,14 @@ def get_albums(
 
     for album in albums:
         blob = bucket.blob("covers/" + str(album.id))
-        album.cover = blob.generate_signed_url(
-            version="v4",
-            expiration=datetime.timedelta(days=1),
-            method="GET",
+        album.cover = (
+            blob.generate_signed_url(
+                version="v4",
+                expiration=datetime.timedelta(days=1),
+                method="GET",
+            )
+            + "?t="
+            + str(album.cover_last_update)
         )
 
     return albums
@@ -49,10 +53,14 @@ def get_my_albums(
 
     for album in albums:
         blob = bucket.blob("covers/" + str(album.id))
-        album.cover = blob.generate_signed_url(
-            version="v4",
-            expiration=datetime.timedelta(days=1),
-            method="GET",
+        album.cover = (
+            blob.generate_signed_url(
+                version="v4",
+                expiration=datetime.timedelta(days=1),
+                method="GET",
+            )
+            + "?t="
+            + str(album.cover_last_update)
         )
 
     return albums
@@ -64,13 +72,17 @@ def get_album_by_id(
 ):
     """Returns an album by its id or 404 if not found"""
 
-    album = crud_albums.get_album_by_id(pdb, album_id).__dict__
+    album = crud_albums.get_album_by_id(pdb, album_id)
 
     blob = bucket.blob("covers/" + str(album_id))
-    album["cover"] = blob.generate_signed_url(
-        version="v4",
-        expiration=datetime.timedelta(days=1),
-        method="GET",
+    album.cover = (
+        blob.generate_signed_url(
+            version="v4",
+            expiration=datetime.timedelta(days=1),
+            method="GET",
+        )
+        + "?t="
+        + str(album.cover_last_update)
     )
 
     return album
@@ -158,6 +170,8 @@ def update_album(
         album.genre = genre
     if sub_level is not None:
         album.sub_level = sub_level
+
+    pdb.commit()
 
     if cover is not None:
         try:

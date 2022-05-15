@@ -105,6 +105,7 @@ class SongModel(Base):
     description = Column(String, nullable=False, index=True)
     genre = Column(String, nullable=False, index=True)
     sub_level = Column(Integer, nullable=False, index=True)
+    file_last_update = Column(TIMESTAMP, nullable=False)
 
     artists = relationship(
         "ArtistModel",
