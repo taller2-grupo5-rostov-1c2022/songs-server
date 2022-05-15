@@ -1,4 +1,3 @@
-from telnetlib import SE
 from src.constants import STORAGE_PATH, SUPPRESS_BLOB_ERRORS
 from src.postgres import schemas
 from typing import List
