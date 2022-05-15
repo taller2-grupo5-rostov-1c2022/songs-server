@@ -110,6 +110,7 @@ def post_album(
         album_creator=creator,
         genre=genre,
         sub_level=sub_level,
+        cover_last_update=datetime.datetime.now(),
         songs=songs,
     )
     pdb.add(album)
@@ -162,6 +163,8 @@ def update_album(
         try:
             blob = bucket.blob("covers/" + album_id)
             blob.upload_from_file(cover.file)
+            album.cover_last_update = datetime.datetime.now()
+
         except Exception as entry_not_found:
             raise HTTPException(
                 status_code=404, detail=f"Files for Cover '{album_id}' not found"

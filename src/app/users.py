@@ -64,7 +64,7 @@ def post_user(
 ):
     """Creates a user and returns its id"""
     new_user = UserModel(
-        id=uid, name=name, wallet=wallet, location=location, interests=interests
+        id=uid, name=name, wallet=wallet, location=location, interests=interests, pfp_last_update=datetime.datetime.now()
     )
     pdb.add(new_user)
     pdb.commit()
@@ -121,16 +121,17 @@ def put_user(
     if interests is not None:
         user.interests = interests
 
-    pdb.commit()
-
     if img is not None:
         try:
             blob = bucket.blob("pfp/" + uid)
             blob.upload_from_file(img.file)
+            user.pfp_last_update = datetime.datetime.now()
         except Exception as entry_not_found:
             raise HTTPException(
                 status_code=404, detail=f"Image for User '{uid}' not found"
             ) from entry_not_found
+
+    pdb.commit()
 
     return user
 

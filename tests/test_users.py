@@ -3,7 +3,6 @@ from tests.utils import (
     post_user,
     post_song,
     post_album,
-    post_playlist,
 )
 
 
@@ -153,3 +152,22 @@ def test_cannot_delete_another_user(client):
     )
 
     assert response.status_code == 403
+
+
+def test_update_pfp_updates_pfp_timestamp(client):
+    post_user(client, "user_id", "user_name")
+    response_get_1 = client.get(f"{API_VERSION_PREFIX}/users/user_id", headers={"api_key": "key"})
+
+    with open("./new_pfp.img", "wb") as f:
+        f.write(b"pfp data")
+    with open("./new_pfp.img", "rb") as f:
+        response_put = client.put(
+            f"{API_VERSION_PREFIX}/users/user_id",
+            files={"img": ("new_pfp.img", f, "plain/text")},
+            headers={"uid": "user_id", "api_key": "key"},
+        )
+        assert response_put.status_code == 200
+
+    response_get_2 = client.get(f"{API_VERSION_PREFIX}/users/user_id", headers={"api_key": "key"})
+
+    assert response_get_1.json()["pfp_last_update"] < response_get_2.json()["pfp_last_update"]

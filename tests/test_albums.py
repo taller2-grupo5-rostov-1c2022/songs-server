@@ -1,6 +1,6 @@
 from tests.utils import post_user, post_song, post_album
 from tests.utils import API_VERSION_PREFIX
-
+import time
 
 def test_unauthorized_get(client):
     response = client.get(API_VERSION_PREFIX + "/albums/")
@@ -267,3 +267,30 @@ def test_delete_album_should_not_delete_songs(client):
 
     assert response_get.status_code == 200
     assert response_get.json()["album"] is None
+
+
+def test_update_cover_updates_cover_timestamp(client):
+    post_user(client, "album_creator_id", "album_creator_name")
+    album_id = post_album(client).json()["id"]
+
+    response_get_1 = client.get(
+        f"{API_VERSION_PREFIX}/albums/{album_id}",
+        headers={"api_key": "key"},
+    )
+
+    with open("./new_cover.img", "wb") as f:
+        f.write(b"cover info")
+    with open("./new_cover.img", "rb") as f:
+        response_put = client.put(
+            f"{API_VERSION_PREFIX}/albums/{album_id}",
+            files={"cover": ("new_cover.img", f, "plain/text")},
+            headers={"uid": "album_creator_id", "api_key": "key"},
+        )
+        assert response_put.status_code == 200
+
+    response_get_2 = client.get(
+        f"{API_VERSION_PREFIX}/albums/{album_id}",
+        headers={"api_key": "key"},
+    )
+
+    assert response_get_1.json()["cover_last_update"] < response_get_2.json()["cover_last_update"]
