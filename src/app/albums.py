@@ -6,7 +6,7 @@ from fastapi import APIRouter
 from fastapi import Depends, Form, HTTPException, UploadFile, File, Header
 from src.firebase.access import get_bucket
 from src.repositories import albums_repository as crud_albums
-from typing import List
+from typing import List, Optional
 import json
 from sqlalchemy.orm import Session
 from src.postgres.database import get_db
@@ -18,6 +18,7 @@ router = APIRouter(tags=["albums"])
 @router.get("/albums/", response_model=List[schemas.AlbumGet])
 def get_albums(
     creator: str = None,
+    role: str = Header("listener"),
     artist: str = None,
     genre: str = None,
     sub_level: int = None,
@@ -25,7 +26,7 @@ def get_albums(
 ):
     """Returns all Albums"""
 
-    albums = crud_albums.get_albums(pdb, creator, artist, genre, sub_level)
+    albums = crud_albums.get_albums(pdb, role, creator, artist, genre, sub_level)
 
     for album in albums:
         album.cover = (
@@ -107,6 +108,7 @@ def post_album(
         genre=genre,
         sub_level=sub_level,
         cover_last_update=datetime.datetime.now(),
+        blocked=False,
         songs=songs,
     )
     pdb.add(album)
@@ -142,6 +144,7 @@ def update_album(
     sub_level: int = Form(None),
     cover: UploadFile = File(None),
     pdb: Session = Depends(get_db),
+    blocked: Optional[bool] = Form(None),
     bucket=Depends(get_bucket),
 ):
     """Updates album by its id"""
@@ -163,6 +166,8 @@ def update_album(
         album.genre = genre
     if sub_level is not None:
         album.sub_level = sub_level
+    if blocked is not None:
+        album.blocked = blocked
 
     if songs_ids is not None:
         songs = []

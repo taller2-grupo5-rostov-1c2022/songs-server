@@ -2,16 +2,19 @@ from sqlalchemy.orm import Session, joinedload
 from src.postgres.models import AlbumModel, ArtistModel, SongModel
 from fastapi import HTTPException
 from sqlalchemy import func
-
+from .utils import ROLES_TABLE
 
 def get_albums(
     pdb: Session,
+    role: str,
     creator_id: str = None,
     artist: str = None,
     genre: str = None,
     sub_level: int = None,
 ):
     queries = []
+    if ROLES_TABLE[role] < ROLES_TABLE["admin"]:
+        queries.append(AlbumModel.blocked == False)
 
     if creator_id is not None:
         queries.append(AlbumModel.album_creator_id == creator_id)

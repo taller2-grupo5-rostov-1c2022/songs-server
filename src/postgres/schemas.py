@@ -50,6 +50,7 @@ class AlbumBase(BaseModel):
     album_creator_id: str
     genre: str
     sub_level: int
+    blocked: bool
 
     songs: List[SongBase]
 
@@ -89,6 +90,7 @@ class UserBase(BaseModel):
     location: str
     interests: str
     pfp: Optional[str] = None
+    blocked: bool
 
     songs: List[SongBase]
     albums: List[AlbumBase]
