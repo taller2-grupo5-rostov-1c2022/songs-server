@@ -3,8 +3,9 @@ from tests.utils import (
     post_user,
     post_song,
     post_album,
-    post_playlist,
 )
+from urllib.parse import urlparse
+from urllib.parse import parse_qs
 
 
 def test_unauthorized_get(client):
@@ -153,3 +154,32 @@ def test_cannot_delete_another_user(client):
     )
 
     assert response.status_code == 403
+
+
+def test_update_pfp_updates_pfp_timestamp(client):
+    post_user(client, "user_id", "user_name", include_pfp=True)
+    response_get_1 = client.get(
+        f"{API_VERSION_PREFIX}/my_users/", headers={"uid": "user_id", "api_key": "key"}
+    )
+
+    with open("./new_pfp.img", "wb") as f:
+        f.write(b"pfp data")
+    with open("./new_pfp.img", "rb") as f:
+        response_put = client.put(
+            f"{API_VERSION_PREFIX}/users/user_id",
+            files={"img": ("new_pfp.img", f, "plain/text")},
+            headers={"uid": "user_id", "api_key": "key"},
+        )
+        assert response_put.status_code == 200
+
+    response_get_2 = client.get(
+        f"{API_VERSION_PREFIX}/my_users/", headers={"uid": "user_id", "api_key": "key"}
+    )
+
+    url_1 = response_get_1.json()["pfp"]
+    url_2 = response_get_2.json()["pfp"]
+
+    timestamp_1 = parse_qs(urlparse(url_1).query)["t"][0]
+    timestamp_2 = parse_qs(urlparse(url_2).query)["t"][0]
+
+    assert timestamp_1 != timestamp_2

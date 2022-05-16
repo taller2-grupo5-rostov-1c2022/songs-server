@@ -9,18 +9,38 @@ def header(uid):
 
 
 def post_user(
-    client, uid, user_name, wallet="wallet", location="location", interests="interests"
+    client,
+    uid,
+    user_name,
+    wallet="wallet",
+    location="location",
+    interests="interests",
+    include_pfp=False,
 ):
-    response_post = client.post(
-        API_VERSION_PREFIX + "/users/",
-        headers={"api_key": "key", "uid": uid},
-        data={
-            "name": user_name,
-            "wallet": wallet,
-            "location": location,
-            "interests": interests,
-        },
-    )
+    data = {
+        "name": user_name,
+        "wallet": wallet,
+        "location": location,
+        "interests": interests,
+    }
+    if include_pfp:
+        with open("./pfp.img", "wb") as f:
+            f.write(b"test")
+        with open("./pfp.img", "rb") as f:
+            files = {"img": ("pfp.img", f, "plain/text")}
+            response_post = client.post(
+                API_VERSION_PREFIX + "/users/",
+                headers={"api_key": "key", "uid": uid},
+                data=data,
+                files=files,
+            )
+    else:
+        response_post = client.post(
+            API_VERSION_PREFIX + "/users/",
+            headers={"api_key": "key", "uid": uid},
+            data=data,
+        )
+
     return response_post
 
 
@@ -144,7 +164,10 @@ def post_playlist(
 ):
 
     if headers is None:
-        headers = {"api_key": "key"}
+        headers = {
+            "api_key": "key",
+            "uid": uid,
+        }
     if songs_ids is None:
         songs_ids = []
     if colabs_ids is None:
@@ -153,7 +176,6 @@ def post_playlist(
     response_post = client.post(
         f"{API_VERSION_PREFIX}/playlists/",
         data={
-            "uid": uid,
             "name": playlist_name,
             "description": description,
             "songs_ids": json.dumps(songs_ids),

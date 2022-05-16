@@ -1,4 +1,5 @@
 import datetime
+from src.constants import STORAGE_PATH, SUPPRESS_BLOB_ERRORS
 from src.postgres import schemas
 from typing import List
 from fastapi import APIRouter, Header
@@ -28,18 +29,16 @@ def get_songs(
 
 @router.get("/songs/{song_id}", response_model=schemas.SongGet)
 def get_song_by_id(
-    song_id: int, pdb: Session = Depends(get_db), bucket=Depends(get_bucket)
+    song_id: int,
+    pdb: Session = Depends(get_db),
 ):
     """Returns a song by its id or 404 if not found"""
     song = crud_songs.get_song_by_id(pdb, song_id)
 
-    blob = bucket.blob("songs/" + str(song_id))
-
-    song.file = blob.generate_signed_url(
-        version="v4",
-        expiration=datetime.timedelta(days=1),
-        method="GET",
+    song.file = (
+        STORAGE_PATH + "songs/" + str(song_id) + "?t=" + str(song.file_last_update)
     )
+
     return song
 
 
@@ -97,10 +96,14 @@ def update_song(
         try:
             blob = bucket.blob("songs/" + song_id)
             blob.upload_from_file(file.file)
-        except Exception as entry_not_found:
-            raise HTTPException(
-                status_code=404, detail=f"Files for Song '{song_id}' not found"
-            ) from entry_not_found
+            song.file_last_update = datetime.datetime.now()
+        except:  # noqa: W0707 # Want to catch all exceptions
+            if not SUPPRESS_BLOB_ERRORS:
+                raise HTTPException(
+                    status_code=507, detail=f"Files for Song '{song_id}' not found"
+                )
+
+    pdb.commit()
 
     return schemas.SongResponse(success=True, id=song.id if song else song_id)
 
@@ -145,22 +148,31 @@ def post_song(
         artists=artists_models,
         genre=genre,
         sub_level=sub_level,
+        file_last_update=datetime.datetime.now(),
     )
     pdb.add(new_song)
     pdb.commit()
     pdb.refresh(new_song)
 
-    blob = bucket.blob(f"songs/{new_song.id}")
-    blob.upload_from_file(file.file)
+    try:
+        blob = bucket.blob(f"songs/{new_song.id}")
+        blob.upload_from_file(file.file)
+        blob.make_public()
+    except:  # noqa: W0707 # Want to catch all exceptions
+        if not SUPPRESS_BLOB_ERRORS:
+            raise HTTPException(
+                status_code=507,
+                detail=f"Could not upload Files for new Song {new_song.id}",
+            )
 
     return schemas.SongResponse(
         success=True,
         id=new_song.id,
-        file=blob.generate_signed_url(
-            version="v4",
-            expiration=datetime.timedelta(days=1),
-            method="GET",
-        ),
+        file=STORAGE_PATH
+        + "songs/"
+        + str(new_song.id)
+        + "?t="
+        + str(new_song.file_last_update),
     )
 
 
@@ -185,8 +197,14 @@ def delete_song(
 
     pdb.query(SongModel).filter(SongModel.id == song_id).delete()
     pdb.commit()
-    blob = bucket.blob("songs/" + song_id)
-    blob.delete()
+
+    try:
+        bucket.blob("songs/" + song_id).delete()
+    except:  # noqa: W0707 # Want to catch all exceptions
+        if not SUPPRESS_BLOB_ERRORS:
+            raise HTTPException(
+                status_code=507, detail=f"Could not delete Song {song_id}"
+            )
 
     return {"song_id": song_id}
 

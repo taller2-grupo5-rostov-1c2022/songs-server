@@ -1,12 +1,13 @@
+import datetime
 from src.postgres import schemas
 from src.postgres import models
+from src.constants import STORAGE_PATH, SUPPRESS_BLOB_ERRORS
 from fastapi import APIRouter
 from fastapi import Depends, Form, HTTPException, UploadFile, File, Header
 from src.firebase.access import get_bucket
 from src.repositories import albums_repository as crud_albums
 from typing import List
 import json
-import datetime
 from sqlalchemy.orm import Session
 from src.postgres.database import get_db
 from src.postgres.models import AlbumModel, SongModel, UserModel
@@ -21,18 +22,18 @@ def get_albums(
     genre: str = None,
     sub_level: int = None,
     pdb: Session = Depends(get_db),
-    bucket=Depends(get_bucket),
 ):
     """Returns all Albums"""
 
     albums = crud_albums.get_albums(pdb, creator, artist, genre, sub_level)
 
     for album in albums:
-        blob = bucket.blob("covers/" + str(album.id))
-        album.cover = blob.generate_signed_url(
-            version="v4",
-            expiration=datetime.timedelta(days=1),
-            method="GET",
+        album.cover = (
+            STORAGE_PATH
+            + "covers/"
+            + str(album.id)
+            + "?t="
+            + str(album.cover_last_update)
         )
 
     return albums
@@ -42,35 +43,30 @@ def get_albums(
 def get_my_albums(
     uid: str = Header(...),
     pdb: Session = Depends(get_db),
-    bucket=Depends(get_bucket),
 ):
 
     albums = crud_albums.get_albums(pdb, uid)
 
     for album in albums:
-        blob = bucket.blob("covers/" + str(album.id))
-        album.cover = blob.generate_signed_url(
-            version="v4",
-            expiration=datetime.timedelta(days=1),
-            method="GET",
+        album.cover = (
+            STORAGE_PATH
+            + "covers/"
+            + str(album.id)
+            + "?t="
+            + str(album.cover_last_update)
         )
 
     return albums
 
 
 @router.get("/albums/{album_id}", response_model=schemas.AlbumGet)
-def get_album_by_id(
-    album_id: int, pdb: Session = Depends(get_db), bucket=Depends(get_bucket)
-):
+def get_album_by_id(album_id: int, pdb: Session = Depends(get_db)):
     """Returns an album by its id or 404 if not found"""
 
-    album = crud_albums.get_album_by_id(pdb, album_id).__dict__
+    album = crud_albums.get_album_by_id(pdb, album_id)
 
-    blob = bucket.blob("covers/" + str(album_id))
-    album["cover"] = blob.generate_signed_url(
-        version="v4",
-        expiration=datetime.timedelta(days=1),
-        method="GET",
+    album.cover = (
+        STORAGE_PATH + "covers/" + str(album_id) + "?t=" + str(album.cover_last_update)
     )
 
     return album
@@ -110,6 +106,7 @@ def post_album(
         album_creator=creator,
         genre=genre,
         sub_level=sub_level,
+        cover_last_update=datetime.datetime.now(),
         songs=songs,
     )
     pdb.add(album)
@@ -119,8 +116,17 @@ def post_album(
         song.album = album
         pdb.refresh(song)
 
-    blob = bucket.blob(f"covers/{album.id}")
-    blob.upload_from_file(cover.file)
+    try:
+        blob = bucket.blob(f"covers/{album.id}")
+        blob.upload_from_file(cover.file)
+        blob.make_public()
+        album.cover_last_update = datetime.datetime.now()
+        pdb.commit()
+    except Exception:  # noqa: E722 # Want to catch all exceptions
+        if not SUPPRESS_BLOB_ERRORS:
+            raise HTTPException(
+                status_code=507, detail=f"Could not upload cover for album {album.id}"
+            )
 
     return {"id": album.id}
 
@@ -158,15 +164,6 @@ def update_album(
     if sub_level is not None:
         album.sub_level = sub_level
 
-    if cover is not None:
-        try:
-            blob = bucket.blob("covers/" + album_id)
-            blob.upload_from_file(cover.file)
-        except Exception as entry_not_found:
-            raise HTTPException(
-                status_code=404, detail=f"Files for Cover '{album_id}' not found"
-            ) from entry_not_found
-
     if songs_ids is not None:
         songs = []
         for song_id in json.loads(songs_ids):
@@ -182,12 +179,29 @@ def update_album(
         album.songs = songs
 
     pdb.commit()
+
+    if cover is not None:
+        try:
+            blob = bucket.blob("covers/" + album_id)
+            blob.upload_from_file(cover.file)
+            album.cover_last_update = datetime.datetime.now()
+            pdb.commit()
+        except Exception as entry_not_found:
+            if not SUPPRESS_BLOB_ERRORS:
+                raise HTTPException(
+                    status_code=507,
+                    detail=f"Could not upload cover for album {album.id}",
+                ) from entry_not_found
+
     return {"id": album_id}
 
 
 @router.delete("/albums/{album_id}")
 def delete_album(
-    uid: str, album_id: int, pdb: Session = Depends(get_db), bucket=Depends(get_bucket)
+    album_id: int,
+    uid: str = Header(...),
+    pdb: Session = Depends(get_db),
+    bucket=Depends(get_bucket),
 ):
     """Deletes an album by its id"""
     album = pdb.query(AlbumModel).filter(AlbumModel.id == album_id).first()
@@ -200,5 +214,11 @@ def delete_album(
             detail=f"User '{uid} attempted to delete album of user with ID {album.album_creator_id}",
         )
     pdb.query(AlbumModel).filter(AlbumModel.id == album_id).delete()
-    bucket.blob("covers/" + str(album_id)).delete()
     pdb.commit()
+    try:
+        bucket.blob("covers/" + str(album_id)).delete()
+    except Exception as entry_not_found:
+        if not SUPPRESS_BLOB_ERRORS:
+            raise HTTPException(
+                status_code=507, detail=f"Could not delete cover for album {album.id}"
+            ) from entry_not_found

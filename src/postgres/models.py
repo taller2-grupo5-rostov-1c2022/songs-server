@@ -1,4 +1,4 @@
-from sqlalchemy import Column, ForeignKey, Integer, String
+from sqlalchemy import Column, ForeignKey, Integer, String, TIMESTAMP
 from sqlalchemy.orm import relationship
 from sqlalchemy import Table
 
@@ -56,6 +56,7 @@ class UserModel(Base):
     wallet = Column(String, nullable=True, index=True)
     location = Column(String, nullable=False, index=True)
     interests = Column(String, nullable=False, index=True)
+    pfp_last_update = Column(TIMESTAMP, nullable=False)
 
     songs = relationship("SongModel", back_populates="creator")
     albums = relationship("AlbumModel", back_populates="album_creator")
@@ -76,6 +77,7 @@ class AlbumModel(Base):
     description = Column(String, nullable=False, index=True)
     genre = Column(String, nullable=False, index=True)
     sub_level = Column(Integer, nullable=False)
+    cover_last_update = Column(TIMESTAMP, nullable=False)
 
     album_creator = relationship("UserModel", back_populates="albums")
     album_creator_id = Column(String, ForeignKey("users.id"))
@@ -103,6 +105,7 @@ class SongModel(Base):
     description = Column(String, nullable=False, index=True)
     genre = Column(String, nullable=False, index=True)
     sub_level = Column(Integer, nullable=False, index=True)
+    file_last_update = Column(TIMESTAMP, nullable=False)
 
     artists = relationship(
         "ArtistModel",

@@ -1,5 +1,6 @@
 from typing import List, Optional
 from pydantic import BaseModel
+from datetime import datetime
 
 # Classes used to provide type checking
 
@@ -88,6 +89,7 @@ class UserBase(BaseModel):
     location: str
     interests: str
     pfp: Optional[str] = None
+
     songs: List[SongBase]
     albums: List[AlbumBase]
 

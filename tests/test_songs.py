@@ -1,5 +1,8 @@
+from src.constants import STORAGE_PATH
 from tests.utils import post_song, post_user
 from tests.utils import API_VERSION_PREFIX
+from urllib.parse import urlparse
+from urllib.parse import parse_qs
 
 
 def test_unauthorized_get(client):
@@ -26,7 +29,8 @@ def test_post_song(client):
     assert response_get.json()["artists"] == [{"name": "song_artist_name"}]
     assert response_get.json()["genre"] == "song_genre"
     assert response_get.json()["sub_level"] == 0
-    assert response_get.json()["file"] == "https://example.com"
+    assert response_get.json()["file"].startswith(STORAGE_PATH)
+    assert str(response_get.json()["id"]) in response_get.json()["file"]
     assert response_get.json()["album"] is None
 
 
@@ -205,3 +209,36 @@ def test_post_with_invalid_artists_format_should_fail(client):
         )
 
     assert response_post.status_code == 422
+
+
+def test_update_song_updates_song_timestamp(client):
+    post_user(client, "song_creator_id", "album_creator_name")
+    song_id = post_song(client, uid="song_creator_id").json()["id"]
+
+    response_get_1 = client.get(
+        f"{API_VERSION_PREFIX}/songs/{song_id}",
+        headers={"api_key": "key"},
+    )
+
+    with open("./new_song.img", "wb") as f:
+        f.write(b"song info")
+    with open("./new_song.img", "rb") as f:
+        response_put = client.put(
+            f"{API_VERSION_PREFIX}/songs/{song_id}",
+            files={"file": ("new_song.img", f, "plain/text")},
+            headers={"uid": "song_creator_id", "api_key": "key"},
+        )
+        assert response_put.status_code == 200
+
+    response_get_2 = client.get(
+        f"{API_VERSION_PREFIX}/songs/{song_id}",
+        headers={"api_key": "key"},
+    )
+
+    url_1 = response_get_1.json()["file"]
+    url_2 = response_get_2.json()["file"]
+
+    timestamp_1 = parse_qs(urlparse(url_1).query)["t"][0]
+    timestamp_2 = parse_qs(urlparse(url_2).query)["t"][0]
+
+    assert timestamp_1 != timestamp_2
