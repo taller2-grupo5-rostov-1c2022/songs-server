@@ -82,6 +82,16 @@ class AlbumUpdate(BaseModel):
     songs_ids: Optional[List[str]] = None
 
 
+class PlaylistBase(BaseModel):
+    id: int
+    name: str
+    description: str
+    songs: List[SongBase]
+
+    class Config:
+        orm_mode = True
+
+
 class UserBase(BaseModel):
     id: str
     name: str
@@ -92,13 +102,7 @@ class UserBase(BaseModel):
 
     songs: List[SongBase]
     albums: List[AlbumBase]
+    my_playlists: List[PlaylistBase]
 
     class Config:
         orm_mode = True
-
-
-class PlaylistBase(BaseModel):
-    id: int
-    name: str
-    description: str
-    songs: List[SongBase]

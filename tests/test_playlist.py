@@ -186,7 +186,6 @@ def test_colab_should_be_able_to_edit_playlist(client):
     )
 
     playlist = response_get.json()
-    print(playlist)
 
     assert response_get.status_code == 200
     assert playlist["id"] == 1
