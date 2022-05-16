@@ -35,7 +35,7 @@ def get_user_by_id(
     return user
 
 
-@router.get("/my_users/", response_model=schemas.UserBase)
+@router.get("/my_user/", response_model=schemas.UserBase)
 def get_my_user(
     uid: str = Header(...),
     pdb: Session = Depends(get_db),

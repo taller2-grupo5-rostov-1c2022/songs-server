@@ -26,7 +26,7 @@ def test_get_user_that_was_not_created(client):
     assert response.status_code == 404
 
 
-def test_get_my_users(client):
+def test_get_my_user(client):
     post_user(client, "user_id", "user_name")
 
     response = client.get(
@@ -40,7 +40,7 @@ def test_get_my_users(client):
 
 def test_get_my_user_with_invalid_uid_should_fail(client):
     response = client.get(
-        f"{API_VERSION_PREFIX}/my_users/",
+        f"{API_VERSION_PREFIX}/my_user/",
         headers={"api_key": "key", "uid": "not_created_id"},
     )
 
@@ -159,7 +159,7 @@ def test_cannot_delete_another_user(client):
 def test_update_pfp_updates_pfp_timestamp(client):
     post_user(client, "user_id", "user_name", include_pfp=True)
     response_get_1 = client.get(
-        f"{API_VERSION_PREFIX}/my_users/", headers={"uid": "user_id", "api_key": "key"}
+        f"{API_VERSION_PREFIX}/my_user/", headers={"uid": "user_id", "api_key": "key"}
     )
 
     with open("./new_pfp.img", "wb") as f:
@@ -173,7 +173,7 @@ def test_update_pfp_updates_pfp_timestamp(client):
         assert response_put.status_code == 200
 
     response_get_2 = client.get(
-        f"{API_VERSION_PREFIX}/my_users/", headers={"uid": "user_id", "api_key": "key"}
+        f"{API_VERSION_PREFIX}/my_user/", headers={"uid": "user_id", "api_key": "key"}
     )
 
     url_1 = response_get_1.json()["pfp"]

@@ -11,6 +11,9 @@ disable =
     # Errors
     import-error,
     no-name-in-module,
+    broad-except,
+    bare-except,
+    raise-missing-from,
     # Warnings:
     fixme,
     lost-exception,
