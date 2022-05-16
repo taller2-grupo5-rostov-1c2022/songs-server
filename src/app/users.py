@@ -137,6 +137,7 @@ def put_user(
         try:
             blob = bucket.blob("pfp/" + uid)
             blob.upload_from_file(img.file)
+            blob.make_public()
             user.pfp_last_update = datetime.datetime.now()
         except Exception:  # noqa: E722 # Want to catch all exceptions
             if not SUPPRESS_BLOB_ERRORS:

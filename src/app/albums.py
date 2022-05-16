@@ -187,6 +187,7 @@ def update_album(
         try:
             blob = bucket.blob("covers/" + album_id)
             blob.upload_from_file(cover.file)
+            blob.make_public()
             album.cover_last_update = datetime.datetime.now()
             pdb.commit()
         except Exception as entry_not_found:
