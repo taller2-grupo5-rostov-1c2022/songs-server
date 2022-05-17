@@ -4,7 +4,7 @@ from fastapi import APIRouter
 from fastapi import Depends, Form, HTTPException, Header
 from src.repositories import playlists_repository as crud_playlists
 import json
-
+from typing import List
 from sqlalchemy.orm import Session
 from src.postgres.database import get_db
 from src.postgres.models import PlaylistModel, SongModel, UserModel
@@ -12,26 +12,26 @@ from src.postgres.models import PlaylistModel, SongModel, UserModel
 router = APIRouter(tags=["playlists"])
 
 
-@router.get("/playlists/")
+@router.get("/playlists/", response_model=List[schemas.PlaylistBase])
 def get_playlists(
-    creator: str = None,
+    colab: str = None,
     pdb: Session = Depends(get_db),
 ):
     """Returns playlists either filtered by creator or all playlists"""
 
-    return crud_playlists.get_playlists(pdb, creator)
+    return crud_playlists.get_playlists(pdb, colab)
 
 
-@router.get("/my_playlists/")
+@router.get("/my_playlists/", response_model=List[schemas.PlaylistBase])
 def get_my_playlists(uid: str = Header(...), pdb: Session = Depends(get_db)):
     return crud_playlists.get_playlists(pdb, uid)
 
 
 @router.get("/playlists/{playlist_id}", response_model=schemas.PlaylistBase)
-def get_playlist_by_id(playlist_id: str, pdb: Session = Depends(get_db)):
+def get_playlist_by_id(playlist_id: int, pdb: Session = Depends(get_db)):
     """Returns a playlist by its id or 404 if not found"""
 
-    playlist = crud_playlists.get_playlist_by_id(pdb, playlist_id).__dict__
+    playlist = crud_playlists.get_playlist_by_id(pdb, playlist_id)
 
     return playlist
 

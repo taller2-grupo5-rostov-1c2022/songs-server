@@ -82,11 +82,21 @@ class AlbumUpdate(BaseModel):
     songs_ids: Optional[List[str]] = None
 
 
+class UserColab(BaseModel):
+    id: str
+    name: str
+
+    class Config:
+        orm_mode = True
+
+
 class PlaylistBase(BaseModel):
     id: int
     name: str
     description: str
     songs: List[SongBase]
+    colabs: List[UserColab]
+    creator_id: str
 
     class Config:
         orm_mode = True
