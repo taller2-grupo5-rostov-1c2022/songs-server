@@ -3,23 +3,20 @@ from src.postgres.models import AlbumModel, ArtistModel, SongModel
 from fastapi import HTTPException
 from sqlalchemy import func
 from .utils import ROLES_TABLE
-from ..postgres import schemas
+from .. import roles
 
 
 def get_albums(
     pdb: Session,
-    role: str,
+    role: roles.Role,
     creator_id: str = None,
     artist: str = None,
     genre: str = None,
     sub_level: int = None,
 ):
-    if role not in ROLES_TABLE:
-        raise HTTPException(status_code=422, detail=f"Invalid role: {role}")
-
     queries = []
-    if ROLES_TABLE[role] < ROLES_TABLE["admin"]:
-        # This action is not committed, therefore, it only affects the current session state
+    if not role.can_see_blocked():
+        # This action should not be committed
         pdb.query(SongModel).filter(SongModel.blocked == True).delete()
         queries.append(AlbumModel.blocked == False)
 
@@ -37,13 +34,10 @@ def get_albums(
     return results
 
 
-def get_album_by_id(pdb: Session, role: str, album_id: int):
-    if role not in ROLES_TABLE:
-        raise HTTPException(status_code=422, detail=f"Invalid role: {role}")
-
+def get_album_by_id(pdb: Session, role: roles.Role, album_id: int):
     queries = []
-    if ROLES_TABLE[role] < ROLES_TABLE["admin"]:
-        # This action is not committed, therefore, it only affects the current session state
+    if not role.can_see_blocked():
+        # This action should not be committed
         pdb.query(SongModel).filter(SongModel.blocked == True).delete()
         queries.append(AlbumModel.blocked == False)
 
@@ -59,7 +53,7 @@ def get_album_by_id(pdb: Session, role: str, album_id: int):
             status_code=404,
             detail=f"Album '{str(album_id)}' not found",
         )
-    if album.blocked and ROLES_TABLE[role] < ROLES_TABLE["admin"]:
+    if album.blocked and not role.can_see_blocked():
         raise HTTPException(status_code=403, detail=f"Album is blocked")
 
     return album

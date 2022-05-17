@@ -1,4 +1,6 @@
 import datetime
+
+from src import roles
 from src.constants import STORAGE_PATH, SUPPRESS_BLOB_ERRORS
 from src.postgres import schemas
 from typing import List, Optional
@@ -11,6 +13,7 @@ from sqlalchemy.orm import Session
 from src.postgres.database import get_db
 from src.postgres.models import SongModel, UserModel, ArtistModel
 from src.repositories.utils import ROLES_TABLE
+from src.roles import get_role
 
 router = APIRouter(tags=["songs"])
 
@@ -18,7 +21,7 @@ router = APIRouter(tags=["songs"])
 @router.get("/songs/", response_model=List[schemas.SongBase])
 def get_songs(
     creator: str = None,
-    role: str = Header("listener"),
+    role: roles.Role = Depends(get_role),
     artist: str = None,
     genre: str = None,
     sub_level: int = None,
@@ -32,7 +35,7 @@ def get_songs(
 @router.get("/songs/{song_id}", response_model=schemas.SongGet)
 def get_song_by_id(
     song_id: int,
-    role: str = Header("listener"),
+    role: roles.Role = Depends(get_role),
     pdb: Session = Depends(get_db),
 ):
     """Returns a song by its id or 404 if not found"""
@@ -49,7 +52,7 @@ def get_song_by_id(
 def update_song(
     song_id: str,
     uid: str = Header(...),
-    role: str = Header("listener"),
+    role: roles.Role = Depends(get_role),
     name: str = Form(None),
     description: str = Form(None),
     genre: str = Form(None),
@@ -66,7 +69,7 @@ def update_song(
     song = pdb.query(SongModel).filter(SongModel.id == song_id).first()
     if song is None:
         raise HTTPException(status_code=404, detail=f"Song '{song_id}' not found")
-    if song.creator_id != uid and ROLES_TABLE[role] < ROLES_TABLE["admin"]:
+    if song.creator_id != uid and not role.can_edit_everything():
         raise HTTPException(
             status_code=403,
             detail=f"User '{uid} attempted to edit song of user with ID {song.creator_id}",
@@ -81,7 +84,7 @@ def update_song(
     if sub_level is not None:
         song.sub_level = sub_level
     if blocked is not None:
-        if ROLES_TABLE[role] < ROLES_TABLE["admin"]:
+        if not role.can_block():
             raise HTTPException(status_code=403, detail=f"User {uid} without permissions tried to block song {song.id}")
         song.blocked = blocked
     if artists is not None:
@@ -221,4 +224,4 @@ def delete_song(
 
 @router.get("/my_songs/", response_model=List[schemas.SongBase])
 def get_my_songs(uid: str = Header(...), pdb: Session = Depends(get_db)):
-    return crud_songs.get_songs(pdb, "admin", uid)
+    return crud_songs.get_songs(pdb, roles.Role.admin(), uid)

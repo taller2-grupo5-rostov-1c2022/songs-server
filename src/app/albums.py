@@ -11,7 +11,8 @@ import json
 from sqlalchemy.orm import Session
 from src.postgres.database import get_db
 from src.postgres.models import AlbumModel, SongModel, UserModel
-from src.repositories.utils import ROLES_TABLE
+from src import roles
+from src.roles import get_role
 
 router = APIRouter(tags=["albums"])
 
@@ -19,7 +20,7 @@ router = APIRouter(tags=["albums"])
 @router.get("/albums/", response_model=List[schemas.AlbumGet])
 def get_albums(
     creator: str = None,
-    role: str = Header("listener"),
+    role: roles.Role = Depends(get_role),
     artist: str = None,
     genre: str = None,
     sub_level: int = None,
@@ -47,7 +48,7 @@ def get_my_albums(
     pdb: Session = Depends(get_db),
 ):
 
-    albums = crud_albums.get_albums(pdb, "admin", uid)
+    albums = crud_albums.get_albums(pdb, roles.Role.admin(), uid)
 
     for album in albums:
         album.cover = (
@@ -62,7 +63,7 @@ def get_my_albums(
 
 
 @router.get("/albums/{album_id}", response_model=schemas.AlbumGet)
-def get_album_by_id(album_id: int, role: str = Header("listener"), pdb: Session = Depends(get_db)):
+def get_album_by_id(album_id: int, role: roles.Role = Depends(get_role), pdb: Session = Depends(get_db)):
     """Returns an album by its id or 404 if not found"""
 
     album = crud_albums.get_album_by_id(pdb, role, album_id)
@@ -136,9 +137,9 @@ def post_album(
 
 @router.put("/albums/{album_id}")
 def update_album(
-    album_id: str,
+    album_id: int,
     uid: str = Header(...),
-    role: str = Header("listener"),
+    role: roles.Role = Depends(get_role),
     name: str = Form(None),
     description: str = Form(None),
     genre: str = Form(None),
@@ -150,14 +151,14 @@ def update_album(
     bucket=Depends(get_bucket),
 ):
     """Updates album by its id"""
-    # even though id is an integer, we can compare with a string
+
     album = pdb.query(AlbumModel).filter(AlbumModel.id == album_id).first()
     if album is None:
         raise HTTPException(status_code=404, detail=f"Album '{album_id}' not found")
-    if album.album_creator_id != uid and ROLES_TABLE[role] < ROLES_TABLE["admin"]:
+    if album.album_creator_id != uid and not role.can_edit_everything():
         raise HTTPException(
             status_code=403,
-            detail=f"User '{uid} attempted to edit album of user with ID {album.album_creator_id}",
+            detail=f"User {uid} attempted to edit album of user with ID {album.album_creator_id}",
         )
 
     if name is not None:
@@ -169,7 +170,9 @@ def update_album(
     if sub_level is not None:
         album.sub_level = sub_level
     if blocked is not None:
-        if ROLES_TABLE[role] < ROLES_TABLE["admin"]:
+        if not role.can_block():
+            print(role.can_block())
+            print(role.__dict__)
             raise HTTPException(status_code=403, detail=f"User {uid} without permissions tried to block album {album.id}")
         album.blocked = blocked
 

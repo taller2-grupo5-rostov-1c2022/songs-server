@@ -3,7 +3,6 @@ from src.postgres.models import SongModel, ArtistModel
 from fastapi import HTTPException
 from src.postgres import schemas
 from sqlalchemy import func
-from .utils import ROLES_TABLE
 from .. import roles
 
 
@@ -17,17 +16,14 @@ def create_song(pdb: Session, song: schemas.SongBase):
 
 def get_songs(
     pdb: Session,
-    role: str,
+    role: roles.Role,
     creator_id: str = None,
     artist: str = None,
     genre: str = None,
     sub_level: int = None,
 ):
-    if role not in ROLES_TABLE:
-        raise HTTPException(status_code=422, detail=f"Invalid role: {role}")
-
     queries = []
-    if ROLES_TABLE[role] < ROLES_TABLE["admin"]:
+    if role.can_see_blocked():
         queries.append(SongModel.blocked == False)
 
     if creator_id is not None:
@@ -42,12 +38,7 @@ def get_songs(
     return pdb.query(SongModel).join(ArtistModel.songs).filter(*queries).all()
 
 
-def get_song_by_id(pdb: Session, role: str, song_id: int):
-    role_object = roles.Role(role)
-
-    if role not in ROLES_TABLE:
-        raise HTTPException(status_code=422, detail=f"Invalid role: {role}")
-
+def get_song_by_id(pdb: Session, role: roles.Role, song_id: int):
     song = pdb.query(SongModel).filter(SongModel.id == song_id).first()
     if song is None:
         raise HTTPException(
@@ -55,8 +46,7 @@ def get_song_by_id(pdb: Session, role: str, song_id: int):
             detail=f"Song '{str(song_id)}' not found",
         )
 
-    print(song.blocked, role)
-    if song.blocked and ROLES_TABLE[role] < ROLES_TABLE["admin"]:
+    if song.blocked and not role.can_see_blocked():
         raise HTTPException(status_code=403, detail=f"Song is blocked")
 
     return song
