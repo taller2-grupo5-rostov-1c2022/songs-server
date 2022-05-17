@@ -1,11 +1,14 @@
 from sqlalchemy.orm import Session, joinedload
+from src import roles
 from src.postgres.models import PlaylistModel, UserModel
 from typing import Optional
 from fastapi import HTTPException
 from src.postgres import schemas
+from src.roles import get_role
+from fastapi import Depends
 
 
-def get_playlists(pdb: Session, creator_id: Optional[str]):
+def get_playlists(pdb: Session, role: roles.Role, creator_id: Optional[str]):
     if creator_id is not None:
         if pdb.query(UserModel).filter_by(id=creator_id).first() is None:
             raise HTTPException(

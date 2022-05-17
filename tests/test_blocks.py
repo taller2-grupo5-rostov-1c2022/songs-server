@@ -3,6 +3,7 @@ from tests.utils import (
     post_user,
     post_song,
     post_album,
+    post_playlist
 )
 
 
@@ -364,6 +365,199 @@ def test_listener_get_album_by_id_with_blocked_songs_should_not_remove_song(clie
 
     client.get(
         f"{API_VERSION_PREFIX}/albums/{album_id}",
+        headers={"role-name": "listener", "api_key": "key"}
+    )
+
+    response_get_song = client.get(
+        f"{API_VERSION_PREFIX}/songs/{song_id_1}",
+        headers={"role-name": "admin", "api_key": "key"}
+    )
+    assert response_get_song.status_code == 200
+
+
+def test_user_cannot_modify_blocked_status_of_playlist(client):
+    post_user(client, uid="artist_id", user_name="artist_name")
+    album_id = post_playlist(client, uid="artist_id").json()["id"]
+
+    response = client.put(
+        f"{API_VERSION_PREFIX}/playlists/{album_id}",
+        data={
+            "blocked": True
+        },
+        headers={"uid": "artist_id", "role-name": "listener", "api_key": "key"}
+    )
+    assert response.status_code == 403
+
+
+def test_admin_can_modify_blocked_status_of_playlist(client):
+    post_user(client, uid="admin_id", user_name="admin_name")
+    post_user(client, uid="artist_id", user_name="artist_name")
+    album_id = post_playlist(client, uid="artist_id").json()["id"]
+
+    response_put = client.put(
+        f"{API_VERSION_PREFIX}/playlists/{album_id}",
+        data={
+            "blocked": True
+        },
+        headers={"uid": "admin_id", "role-name": "admin", "api_key": "key"}
+    )
+    assert response_put.status_code == 200
+
+
+def test_listener_get_not_blocked_playlist_by_id(client):
+    post_user(client, uid="artist_id", user_name="artist_name")
+
+    album_id = post_playlist(client, uid="artist_id", blocked=False).json()["id"]
+
+    response = client.get(
+        f"{API_VERSION_PREFIX}/playlists/{album_id}",
+        headers={"role-name": "listener", "api_key": "key"}
+    )
+
+    assert response.status_code == 200
+    assert response.json()["name"] == "my_playlist_name"
+
+
+def test_listener_get_blocked_playlist_by_id_should_fail(client):
+    post_user(client, uid="artist_id", user_name="artist_name")
+
+    album_id = post_playlist(client, uid="artist_id", blocked=True).json()["id"]
+
+    response = client.get(
+        f"{API_VERSION_PREFIX}/playlists/{album_id}",
+        headers={"role-name": "listener", "api_key": "key"}
+    )
+
+    assert response.status_code == 403
+
+
+def test_admin_get_blocked_playlist_by_id(client):
+    post_user(client, uid="artist_id", user_name="artist_name")
+
+    album_id = post_playlist(client, uid="artist_id", blocked=True).json()["id"]
+
+    response = client.get(
+        f"{API_VERSION_PREFIX}/playlists/{album_id}",
+        headers={"role-name": "admin", "api_key": "key"}
+    )
+
+    assert response.status_code == 200
+    assert response.json()["name"] == "my_playlist_name"
+
+
+def test_listener_get_all_playlists_returns_only_not_blocked_playlists(client):
+    post_user(client, uid="artist_id", user_name="artist_name")
+
+    post_playlist(client, uid="artist_id", blocked=False)
+    post_playlist(client, uid="artist_id", blocked=True)
+
+    response = client.get(
+        f"{API_VERSION_PREFIX}/playlists/",
+        headers={"role-name": "listener", "api_key": "key"}
+    )
+
+    assert response.status_code == 200
+    assert len(response.json()) == 1
+    assert response.json()[0]["name"] == "not_blocked_playlist"
+
+
+def test_admin_get_all_playlists_returns_blocked_and_not_blocked_playlists(client):
+    post_user(client, uid="artist_id", user_name="artist_name")
+
+    post_playlist(client, uid="artist_id", blocked=False)
+    post_playlist(client, uid="artist_id", blocked=True)
+
+    response = client.get(
+        f"{API_VERSION_PREFIX}/playlists/",
+        headers={"role-name": "admin", "api_key": "key"}
+    )
+
+    assert response.status_code == 200
+    assert len(response.json()) == 2
+
+
+def test_admin_get_playlist_by_id_indicates_if_playlist_is_blocked(client):
+    post_user(client, uid="admin_id", user_name="admin_name")
+
+    album_id = post_playlist(client, uid="admin_id", blocked=True).json()["id"]
+
+    response = client.get(
+        f"{API_VERSION_PREFIX}/playlists/{album_id}",
+        headers={"role-name": "admin", "api_key": "key"}
+    )
+
+    assert response.status_code == 200
+    assert response.json()["blocked"] is True
+
+
+def test_artist_get_my_playlists_returns_blocked_playlists(client):
+    post_user(client, uid="artist_id", user_name="artist_name")
+
+    post_playlist(client, uid="artist_id", blocked=False)
+    post_playlist(client, uid="artist_id", blocked=True)
+
+    response = client.get(
+        f"{API_VERSION_PREFIX}/my_playlists/",
+        headers={"uid": "artist_id", "role-name": "artist", "api_key": "key"}
+    )
+
+    assert response.status_code == 200
+    assert len(response.json()) == 2
+
+
+def test_get_playlist_by_id_invalid_role(client):
+    post_user(client, uid="artist_id", user_name="artist_name")
+
+    album_id = post_playlist(client, uid="artist_id", blocked=True).json()["id"]
+
+    response = client.get(
+        f"{API_VERSION_PREFIX}/playlists/{album_id}",
+        headers={"role-name": "an_invalid_role", "api_key": "key"}
+    )
+
+    assert response.status_code == 422
+
+
+def test_get_playlists_invalid_role(client):
+    post_user(client, uid="artist_id", user_name="artist_name")
+    post_playlist(client, uid="artist_id", blocked=True)
+
+    response = client.get(
+        f"{API_VERSION_PREFIX}/playlists/",
+        headers={"role-name": "an_invalid_role", "api_key": "key"}
+    )
+
+    assert response.status_code == 422
+
+
+def test_listener_get_playlist_by_id_with_blocked_songs_should_retrieve_not_blocked_songs(client):
+    post_user(client, uid="artist_id", user_name="artist_name")
+    song_id_1 = post_song(client, uid="artist_id", name="blocked_song", blocked=True).json()["id"]
+    song_id_2 = post_song(client, uid="artist_id", name="not_blocked_song", blocked=False).json()["id"]
+
+    album_id = post_playlist(client, uid="artist_id", songs_ids=[song_id_1, song_id_2], blocked=False).json()["id"]
+
+    response = client.get(
+        f"{API_VERSION_PREFIX}/playlists/{album_id}",
+        headers={"role-name": "listener", "api_key": "key"}
+    )
+
+    assert response.status_code == 200
+    assert len(response.json()["songs"]) == 1
+    assert response.json()["songs"][0]["name"] == "not_blocked_song"
+
+
+def test_listener_get_playlist_by_id_with_blocked_songs_should_not_remove_song(client):
+    # This is a white box test
+
+    post_user(client, uid="artist_id", user_name="artist_name")
+    song_id_1 = post_song(client, uid="artist_id", name="blocked_song", blocked=True).json()["id"]
+    song_id_2 = post_song(client, uid="artist_id", name="not_blocked_song", blocked=False).json()["id"]
+
+    album_id = post_playlist(client, uid="artist_id", songs_ids=[song_id_1, song_id_2], blocked=False).json()["id"]
+
+    client.get(
+        f"{API_VERSION_PREFIX}/playlists/{album_id}",
         headers={"role-name": "listener", "api_key": "key"}
     )
 

@@ -23,7 +23,7 @@ def get_songs(
     sub_level: int = None,
 ):
     queries = []
-    if role.can_see_blocked():
+    if not role.can_see_blocked():
         queries.append(SongModel.blocked == False)
 
     if creator_id is not None:

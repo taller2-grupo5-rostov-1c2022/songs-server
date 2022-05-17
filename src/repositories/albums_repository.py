@@ -2,7 +2,6 @@ from sqlalchemy.orm import Session, joinedload
 from src.postgres.models import AlbumModel, ArtistModel, SongModel
 from fastapi import HTTPException
 from sqlalchemy import func
-from .utils import ROLES_TABLE
 from .. import roles
 
 

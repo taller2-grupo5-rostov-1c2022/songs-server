@@ -12,7 +12,6 @@ from src.firebase.access import get_bucket
 from sqlalchemy.orm import Session
 from src.postgres.database import get_db
 from src.postgres.models import SongModel, UserModel, ArtistModel
-from src.repositories.utils import ROLES_TABLE
 from src.roles import get_role
 
 router = APIRouter(tags=["songs"])
