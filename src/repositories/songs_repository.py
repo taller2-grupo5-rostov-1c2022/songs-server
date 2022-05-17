@@ -47,6 +47,6 @@ def get_song_by_id(pdb: Session, role: roles.Role, song_id: int):
         )
 
     if song.blocked and not role.can_see_blocked():
-        raise HTTPException(status_code=403, detail=f"Song is blocked")
+        raise HTTPException(status_code=403, detail="Song is blocked")
 
     return song

@@ -66,7 +66,9 @@ def get_my_albums(
 
 
 @router.get("/albums/{album_id}", response_model=schemas.AlbumGet)
-def get_album_by_id(album_id: int, role: roles.Role = Depends(get_role), pdb: Session = Depends(get_db)):
+def get_album_by_id(
+    album_id: int, role: roles.Role = Depends(get_role), pdb: Session = Depends(get_db)
+):
     """Returns an album by its id or 404 if not found"""
 
     album = crud_albums.get_album_by_id(pdb, role, album_id)
@@ -174,9 +176,10 @@ def update_album(
         album.sub_level = sub_level
     if blocked is not None:
         if not role.can_block():
-            print(role.can_block())
-            print(role.__dict__)
-            raise HTTPException(status_code=403, detail=f"User {uid} without permissions tried to block album {album.id}")
+            raise HTTPException(
+                status_code=403,
+                detail=f"User {uid} without permissions tried to block album {album.id}",
+            )
         album.blocked = blocked
 
     if songs_ids is not None:
@@ -197,9 +200,10 @@ def update_album(
 
     if cover is not None:
         try:
-            blob = bucket.blob("covers/" + album_id)
+            blob = bucket.blob("covers/" + str(album_id))
             blob.upload_from_file(cover.file)
             album.cover_last_update = datetime.datetime.now()
+
             pdb.commit()
         except Exception as entry_not_found:
             if not SUPPRESS_BLOB_ERRORS:

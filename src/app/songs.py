@@ -84,7 +84,10 @@ def update_song(
         song.sub_level = sub_level
     if blocked is not None:
         if not role.can_block():
-            raise HTTPException(status_code=403, detail=f"User {uid} without permissions tried to block song {song.id}")
+            raise HTTPException(
+                status_code=403,
+                detail=f"User {uid} without permissions tried to block song {song.id}",
+            )
         song.blocked = blocked
     if artists is not None:
         artists_list = []

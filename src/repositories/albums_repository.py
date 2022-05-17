@@ -28,7 +28,13 @@ def get_albums(
     if sub_level is not None:
         queries.append(AlbumModel.sub_level == sub_level)
 
-    results = pdb.query(AlbumModel).join(ArtistModel.songs, full=True).join(SongModel.album, full=True).filter(*queries).all()
+    results = (
+        pdb.query(AlbumModel)
+        .join(ArtistModel.songs, full=True)
+        .join(SongModel.album, full=True)
+        .filter(*queries)
+        .all()
+    )
 
     return results
 
@@ -53,6 +59,6 @@ def get_album_by_id(pdb: Session, role: roles.Role, album_id: int):
             detail=f"Album '{str(album_id)}' not found",
         )
     if album.blocked and not role.can_see_blocked():
-        raise HTTPException(status_code=403, detail=f"Album is blocked")
+        raise HTTPException(status_code=403, detail="Album is blocked")
 
     return album

@@ -1,10 +1,7 @@
 from fastapi import HTTPException, Header
 
-ROLES_TABLE = {
-    "listener": 0,
-    "artist": 1,
-    "admin": 2
-}
+ROLES_TABLE = {"listener": 0, "artist": 1, "admin": 2}
+
 
 class Role:
     def __init__(self, role_name):

@@ -17,23 +17,28 @@ router = APIRouter(tags=["playlists"])
 @router.get("/playlists/", response_model=List[schemas.PlaylistBase])
 def get_playlists(
     colab: str = None,
+    role: roles.Role = Depends(get_role),
     pdb: Session = Depends(get_db),
 ):
     """Returns playlists either filtered by colab or all playlists"""
 
-    return crud_playlists.get_playlists(pdb, colab)
+    return crud_playlists.get_playlists(pdb, role, colab)
 
 
 @router.get("/my_playlists/", response_model=List[schemas.PlaylistBase])
 def get_my_playlists(uid: str = Header(...), pdb: Session = Depends(get_db)):
-    return crud_playlists.get_playlists(pdb, uid)
+    return crud_playlists.get_playlists(pdb, roles.Role.admin(), uid)
 
 
 @router.get("/playlists/{playlist_id}", response_model=schemas.PlaylistBase)
-def get_playlist_by_id(playlist_id: int, pdb: Session = Depends(get_db)):
+def get_playlist_by_id(
+    playlist_id: int,
+    role: roles.Role = Depends(get_role),
+    pdb: Session = Depends(get_db),
+):
     """Returns a playlist by its id or 404 if not found"""
 
-    playlist = crud_playlists.get_playlist_by_id(pdb, playlist_id)
+    playlist = crud_playlists.get_playlist_by_id(pdb, role, playlist_id)
 
     return playlist
 
@@ -65,6 +70,7 @@ def post_playlist(
         description=description,
         creator_id=uid,
         colabs=colabs,
+        blocked=False,
         songs=songs,
     )
     pdb.add(playlist)
@@ -77,10 +83,12 @@ def post_playlist(
 def update_playlist(
     playlist_id: str,
     uid: str = Header(...),
+    role: roles.Role = Depends(get_role),
     name: str = Form(None),
     colabs_ids: str = Form(None),
     description: str = Form(None),
     songs_ids: str = Form(None),
+    blocked: bool = Form(None),
     pdb: Session = Depends(get_db),
 ):
     """Updates playlist by its id"""
@@ -94,6 +102,7 @@ def update_playlist(
     if (
         uid not in [colab.id for colab in playlist.colabs]
         and uid != playlist.creator_id
+        and not role.can_edit_everything()
     ):
         raise HTTPException(
             status_code=403,
@@ -104,6 +113,14 @@ def update_playlist(
         playlist.name = name
     if description is not None:
         playlist.description = description
+    if blocked is not None:
+        if not role.can_block():
+            raise HTTPException(
+                status_code=403,
+                detail=f"User {uid} without permissions tried to block playlist {playlist.id}",
+            )
+        playlist.blocked = blocked
+
     if colabs_ids is not None:
         if uid != playlist.creator_id:
             raise HTTPException(

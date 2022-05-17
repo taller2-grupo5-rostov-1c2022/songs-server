@@ -99,6 +99,7 @@ class PlaylistBase(BaseModel):
     songs: List[SongBase]
     colabs: List[UserColab]
     creator_id: str
+    blocked: bool
 
     class Config:
         orm_mode = True

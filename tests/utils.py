@@ -81,7 +81,7 @@ def post_song(
         response_put = client.put(
             f"{API_VERSION_PREFIX}/songs/{response_post.json()['id']}",
             data={"blocked": True},
-            headers={"api_key": "key", "uid": uid, "role-name": "admin"}
+            headers={"api_key": "key", "uid": uid, "role-name": "admin"},
         )
         assert response_put.status_code == 200
     return response_post
@@ -124,7 +124,7 @@ def post_album(
         response_put = client.put(
             f"{API_VERSION_PREFIX}/albums/{response_post.json()['id']}",
             data={"blocked": True},
-            headers={"api_key": "key", "uid": uid, "role-name": "admin"}
+            headers={"api_key": "key", "uid": uid, "role-name": "admin"},
         )
         assert response_put.status_code == 200
     return response_post
@@ -160,7 +160,7 @@ def post_playlist(
     description: Optional[str] = "playlist_desc",
     songs_ids: Optional[List[str]] = None,
     colabs_ids: Optional[List[str]] = None,
-    blocked: Optional[bool] = None,
+    blocked: Optional[bool] = False,
     headers: Optional[dict] = None,
 ):
 
@@ -189,7 +189,7 @@ def post_playlist(
         response_put = client.put(
             f"{API_VERSION_PREFIX}/playlists/{response_post.json()['id']}",
             data={"blocked": True},
-            headers={"api_key": "key", "uid": uid, "role-name": "admin"}
+            headers={"api_key": "key", "uid": uid, "role-name": "admin"},
         )
         assert response_put.status_code == 200
     return response_post

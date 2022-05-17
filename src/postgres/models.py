@@ -131,8 +131,8 @@ class PlaylistModel(Base):
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, nullable=False, index=True)
     description = Column(String, nullable=False, index=True)
+    blocked = Column(Boolean, nullable=False, index=True)
     songs = relationship("SongModel", secondary=song_playlist_association_table)
-
     colabs = relationship(
         "UserModel",
         secondary=colab_playlist_association_table,
