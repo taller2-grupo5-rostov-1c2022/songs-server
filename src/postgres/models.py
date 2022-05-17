@@ -125,15 +125,6 @@ class SongModel(Base):
     creator_id = Column(String, ForeignKey("users.id"))
 
 
-class ColabPlaylistModel(Base):
-    __tablename__ = "colab_playlist"
-
-    id = Column(Integer, primary_key=True, nullable=False, index=True)
-
-    colab_id = Column(String, ForeignKey("users.id"))
-    playlist_id = Column(Integer, ForeignKey("playlists.id"))
-
-
 class PlaylistModel(Base):
     __tablename__ = "playlists"
 

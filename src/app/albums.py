@@ -30,7 +30,10 @@ def get_albums(
 
     albums = crud_albums.get_albums(pdb, role, creator, artist, genre, sub_level)
 
+    albums = list(filter(None, albums))
+
     for album in albums:
+
         album.cover = (
             STORAGE_PATH
             + "covers/"

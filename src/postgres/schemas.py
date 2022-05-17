@@ -84,16 +84,9 @@ class AlbumUpdate(BaseModel):
     songs_ids: Optional[List[str]] = None
 
 
-class UserBase(BaseModel):
+class UserColab(BaseModel):
     id: str
     name: str
-    wallet: Optional[str] = None
-    location: str
-    interests: str
-    pfp: Optional[str] = None
-
-    songs: List[SongBase]
-    albums: List[AlbumBase]
 
     class Config:
         orm_mode = True
@@ -104,3 +97,24 @@ class PlaylistBase(BaseModel):
     name: str
     description: str
     songs: List[SongBase]
+    colabs: List[UserColab]
+    creator_id: str
+
+    class Config:
+        orm_mode = True
+
+
+class UserBase(BaseModel):
+    id: str
+    name: str
+    wallet: Optional[str] = None
+    location: str
+    interests: str
+    pfp: Optional[str] = None
+
+    songs: List[SongBase]
+    albums: List[AlbumBase]
+    my_playlists: List[PlaylistBase]
+
+    class Config:
+        orm_mode = True
