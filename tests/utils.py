@@ -53,7 +53,7 @@ def post_song(
     genre: Optional[str] = "song_genre",
     sub_level: Optional[int] = 0,
     file: Optional[str] = "./tests/test.song",
-    blocked: bool = False,
+    blocked: Optional[bool] = False,
     headers: Optional[dict] = None,
 ):
     if headers is None:
@@ -77,7 +77,7 @@ def post_song(
             headers=headers,
         )
 
-    if blocked:
+    if blocked is True:
         response_put = client.put(
             f"{API_VERSION_PREFIX}/songs/{response_post.json()['id']}",
             data={"blocked": True},

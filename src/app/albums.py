@@ -11,6 +11,7 @@ import json
 from sqlalchemy.orm import Session
 from src.postgres.database import get_db
 from src.postgres.models import AlbumModel, SongModel, UserModel
+from src.repositories.utils import ROLES_TABLE
 
 router = APIRouter(tags=["albums"])
 
@@ -46,7 +47,7 @@ def get_my_albums(
     pdb: Session = Depends(get_db),
 ):
 
-    albums = crud_albums.get_albums(pdb, uid)
+    albums = crud_albums.get_albums(pdb, "admin", uid)
 
     for album in albums:
         album.cover = (
@@ -61,10 +62,10 @@ def get_my_albums(
 
 
 @router.get("/albums/{album_id}", response_model=schemas.AlbumGet)
-def get_album_by_id(album_id: int, pdb: Session = Depends(get_db)):
+def get_album_by_id(album_id: int, role: str = Header("listener"), pdb: Session = Depends(get_db)):
     """Returns an album by its id or 404 if not found"""
 
-    album = crud_albums.get_album_by_id(pdb, album_id)
+    album = crud_albums.get_album_by_id(pdb, role, album_id)
 
     album.cover = (
         STORAGE_PATH + "covers/" + str(album_id) + "?t=" + str(album.cover_last_update)
@@ -137,6 +138,7 @@ def post_album(
 def update_album(
     album_id: str,
     uid: str = Header(...),
+    role: str = Header("listener"),
     name: str = Form(None),
     description: str = Form(None),
     genre: str = Form(None),
@@ -152,7 +154,7 @@ def update_album(
     album = pdb.query(AlbumModel).filter(AlbumModel.id == album_id).first()
     if album is None:
         raise HTTPException(status_code=404, detail=f"Album '{album_id}' not found")
-    if album.album_creator_id != uid:
+    if album.album_creator_id != uid and ROLES_TABLE[role] < ROLES_TABLE["admin"]:
         raise HTTPException(
             status_code=403,
             detail=f"User '{uid} attempted to edit album of user with ID {album.album_creator_id}",
@@ -167,6 +169,8 @@ def update_album(
     if sub_level is not None:
         album.sub_level = sub_level
     if blocked is not None:
+        if ROLES_TABLE[role] < ROLES_TABLE["admin"]:
+            raise HTTPException(status_code=403, detail=f"User {uid} without permissions tried to block album {album.id}")
         album.blocked = blocked
 
     if songs_ids is not None:

@@ -28,6 +28,7 @@ class SongBase(BaseModel):
     genre: str
     sub_level: int
     album: Optional[AlbumInfoBase] = None
+    blocked: bool
 
     class Config:
         orm_mode = True
@@ -90,7 +91,6 @@ class UserBase(BaseModel):
     location: str
     interests: str
     pfp: Optional[str] = None
-    blocked: bool
 
     songs: List[SongBase]
     albums: List[AlbumBase]

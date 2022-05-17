@@ -1,7 +1,7 @@
 import datetime
 from src.constants import STORAGE_PATH, SUPPRESS_BLOB_ERRORS
 from src.postgres import schemas
-from typing import List
+from typing import List, Optional
 from fastapi import APIRouter, Header
 from fastapi import Depends, File, Form, HTTPException, UploadFile
 import json
@@ -10,6 +10,7 @@ from src.firebase.access import get_bucket
 from sqlalchemy.orm import Session
 from src.postgres.database import get_db
 from src.postgres.models import SongModel, UserModel, ArtistModel
+from src.repositories.utils import ROLES_TABLE
 
 router = APIRouter(tags=["songs"])
 
@@ -17,6 +18,7 @@ router = APIRouter(tags=["songs"])
 @router.get("/songs/", response_model=List[schemas.SongBase])
 def get_songs(
     creator: str = None,
+    role: str = Header("listener"),
     artist: str = None,
     genre: str = None,
     sub_level: int = None,
@@ -24,16 +26,17 @@ def get_songs(
 ):
     """Returns all songs"""
 
-    return crud_songs.get_songs(pdb, creator, artist, genre, sub_level)
+    return crud_songs.get_songs(pdb, role, creator, artist, genre, sub_level)
 
 
 @router.get("/songs/{song_id}", response_model=schemas.SongGet)
 def get_song_by_id(
     song_id: int,
+    role: str = Header("listener"),
     pdb: Session = Depends(get_db),
 ):
     """Returns a song by its id or 404 if not found"""
-    song = crud_songs.get_song_by_id(pdb, song_id)
+    song = crud_songs.get_song_by_id(pdb, role, song_id)
 
     song.file = (
         STORAGE_PATH + "songs/" + str(song_id) + "?t=" + str(song.file_last_update)
@@ -46,12 +49,14 @@ def get_song_by_id(
 def update_song(
     song_id: str,
     uid: str = Header(...),
+    role: str = Header("listener"),
     name: str = Form(None),
     description: str = Form(None),
     genre: str = Form(None),
     artists: str = Form(None),
     sub_level: int = Form(None),
     file: UploadFile = None,
+    blocked: Optional[bool] = Form(None),
     pdb: Session = Depends(get_db),
     bucket=Depends(get_bucket),
 ):
@@ -61,7 +66,7 @@ def update_song(
     song = pdb.query(SongModel).filter(SongModel.id == song_id).first()
     if song is None:
         raise HTTPException(status_code=404, detail=f"Song '{song_id}' not found")
-    if song.creator_id != uid:
+    if song.creator_id != uid and ROLES_TABLE[role] < ROLES_TABLE["admin"]:
         raise HTTPException(
             status_code=403,
             detail=f"User '{uid} attempted to edit song of user with ID {song.creator_id}",
@@ -75,6 +80,10 @@ def update_song(
         song.genre = genre
     if sub_level is not None:
         song.sub_level = sub_level
+    if blocked is not None:
+        if ROLES_TABLE[role] < ROLES_TABLE["admin"]:
+            raise HTTPException(status_code=403, detail=f"User {uid} without permissions tried to block song {song.id}")
+        song.blocked = blocked
     if artists is not None:
         artists_list = []
         try:
@@ -148,6 +157,7 @@ def post_song(
         artists=artists_models,
         genre=genre,
         sub_level=sub_level,
+        blocked=False,
         file_last_update=datetime.datetime.now(),
     )
     pdb.add(new_song)
@@ -211,4 +221,4 @@ def delete_song(
 
 @router.get("/my_songs/", response_model=List[schemas.SongBase])
 def get_my_songs(uid: str = Header(...), pdb: Session = Depends(get_db)):
-    return crud_songs.get_songs(pdb, uid)
+    return crud_songs.get_songs(pdb, "admin", uid)

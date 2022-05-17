@@ -15,9 +15,25 @@ def test_user_cannot_modify_blocked_status_of_song(client):
         data={
             "blocked": True
         },
-        headers={"role": "listener", "api_key": "key"}
+        headers={"uid": "artist_id", "role": "listener", "api_key": "key"}
     )
     assert response.status_code == 403
+
+
+def test_admin_can_modify_blocked_status_of_song(client):
+    post_user(client, uid="admin_id", user_name="admin_name")
+    post_user(client, uid="artist_id", user_name="artist_name")
+    song_id = post_song(client, uid="artist_id").json()["id"]
+
+    response_put = client.put(
+        f"{API_VERSION_PREFIX}/songs/{song_id}",
+        data={
+            "blocked": True
+        },
+        headers={"uid": "admin_id", "role": "admin", "api_key": "key"}
+    )
+    assert response_put.status_code == 200
+
 
 def test_listener_get_not_blocked_song_by_id(client):
     post_user(client, uid="artist_id", user_name="artist_name")
@@ -114,7 +130,7 @@ def test_admin_get_all_songs_returns_blocked_and_not_blocked_songs(client):
 def test_admin_get_song_by_id_indicates_if_song_is_blocked(client):
     post_user(client, uid="admin_id", user_name="admin_name")
 
-    song_id = post_song(client, uid="admin_id", name="not_blocked_song", blocked=True).json()["id"]
+    song_id = post_song(client, uid="admin_id", blocked=True).json()["id"]
 
     response = client.get(
         f"{API_VERSION_PREFIX}/songs/{song_id}",
@@ -163,6 +179,35 @@ def test_get_songs_invalid_role(client):
     )
 
     assert response.status_code == 422
+
+
+def test_user_cannot_modify_blocked_status_of_album(client):
+    post_user(client, uid="artist_id", user_name="artist_name")
+    album_id = post_album(client, uid="artist_id").json()["id"]
+
+    response = client.put(
+        f"{API_VERSION_PREFIX}/albums/{album_id}",
+        data={
+            "blocked": True
+        },
+        headers={"uid": "artist_id", "role": "listener", "api_key": "key"}
+    )
+    assert response.status_code == 403
+
+
+def test_admin_can_modify_blocked_status_of_album(client):
+    post_user(client, uid="admin_id", user_name="admin_name")
+    post_user(client, uid="artist_id", user_name="artist_name")
+    album_id = post_album(client, uid="artist_id").json()["id"]
+
+    response_put = client.put(
+        f"{API_VERSION_PREFIX}/albums/{album_id}",
+        data={
+            "blocked": True
+        },
+        headers={"uid": "admin_id", "role": "admin", "api_key": "key"}
+    )
+    assert response_put.status_code == 200
 
 
 def test_listener_get_not_blocked_album_by_id(client):
@@ -307,3 +352,24 @@ def test_listener_get_album_by_id_with_blocked_songs_should_retrieve_not_blocked
     assert len(response.json()["songs"]) == 1
     assert response.json()["songs"][0]["name"] == "not_blocked_song"
 
+
+def test_listener_get_album_by_id_with_blocked_songs_should_not_remove_song(client):
+    # This is a white box test
+
+    post_user(client, uid="artist_id", user_name="artist_name")
+    song_id_1 = post_song(client, uid="artist_id", name="blocked_song", blocked=True).json()["id"]
+    song_id_2 = post_song(client, uid="artist_id", name="not_blocked_song", blocked=False).json()["id"]
+
+    album_id = post_album(client, uid="artist_id", songs_ids=[song_id_1, song_id_2], blocked=False).json()["id"]
+
+    client.get(
+        f"{API_VERSION_PREFIX}/albums/{album_id}",
+        headers={"role": "listener", "api_key": "key"}
+    )
+
+    response_get_song = client.get(
+        f"{API_VERSION_PREFIX}/songs/{song_id_1}",
+        headers={"role": "admin", "api_key": "key"}
+    )
+
+    assert response_get_song.status_code == 200
