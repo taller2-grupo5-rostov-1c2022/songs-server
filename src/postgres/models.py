@@ -68,9 +68,12 @@ class UserModel(Base):
         back_populates="colabs",
     )
 
+    comments = relationship("CommentModel", back_populates="commenter")
+
 
 class ResourceModel(Base):
     __abstract__ = True
+
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, nullable=False, index=True)
     description = Column(String, nullable=False, index=True)
@@ -83,6 +86,17 @@ class ResourceCreatorModel(ResourceModel):
     sub_level = Column(Integer, nullable=False)
 
 
+class CommentModel(Base):
+    __tablename__ = "comments"
+
+    id = Column(Integer, primary_key=True, index=True)
+    commenter = relationship("UserModel", back_populates="comments")
+    commenter_id = Column(String, ForeignKey("user.id"))
+
+    score = Column(Integer, nullable=True)
+    text = Column(String, nullable=True)
+
+
 class AlbumModel(ResourceCreatorModel):
     __tablename__ = "albums"
 
@@ -92,6 +106,8 @@ class AlbumModel(ResourceCreatorModel):
     creator_id = Column(String, ForeignKey("users.id"))
 
     songs = relationship("SongModel", back_populates="album")
+
+    comments = relationship("CommentModel", back_populates="album")
 
 
 class ArtistModel(Base):

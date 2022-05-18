@@ -22,6 +22,12 @@ class ResourceUpdate(BaseModel):
         orm_mode = True
 
 
+class CommentBase(BaseModel):
+    user_id: str
+    text: Optional[str]
+    score: Optional[int]
+
+
 class ResourceCreator(ResourceBase):
     genre: str
     sub_level: int
@@ -95,6 +101,8 @@ class SongResponse(BaseModel):
 
 class AlbumBase(ResourceCreator):
     songs: List[SongBase]
+    score: int
+    scores_amount: int
 
     class Config:
         orm_mode = True
@@ -150,6 +158,7 @@ class UserBase(BaseModel):
     songs: List[SongBase]
     albums: List[AlbumBase]
     my_playlists: List[PlaylistBase]
+
 
     class Config:
         orm_mode = True

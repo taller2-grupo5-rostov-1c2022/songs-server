@@ -1,14 +1,19 @@
 from fastapi import Form, Depends, HTTPException, Header
 from typing import Optional, List
 import json
+
+from src import roles
 from src.postgres import schemas
 from src.postgres.database import get_db
 from src.postgres.models import AlbumModel, UserModel
 from src.postgres.schemas import AlbumInfoBase
 from sqlalchemy.orm import Session
+from src.repositories import albums_repository as crud_albums
+
+from src.roles import get_role
 
 
-def retrieve_uid(uid: str = Header(...), pdb=Depends(get_db)):
+def retrieve_uid(uid: str = Header(...), pdb: Session =Depends(get_db)):
     # The user is not in the database
     if pdb.get(UserModel, uid) is None:
         raise HTTPException(status_code=404, detail=f"User with ID {uid} not found")
@@ -180,3 +185,12 @@ def retrieve_playlist_update(
     return schemas.PlaylistUpdate(
         songs_ids=songs_ids, colabs_ids=colabs_ids, **resource_update.dict()
     )
+
+
+def get_album(
+        album_id: int,
+        role: roles.Role = Depends(get_role),
+        pdb: Session = Depends(get_db)
+):
+    return crud_albums.get_album_by_id(pdb, role, album_id)
+

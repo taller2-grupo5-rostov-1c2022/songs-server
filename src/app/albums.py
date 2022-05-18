@@ -6,7 +6,7 @@ from fastapi import APIRouter
 from fastapi import Depends, File, HTTPException, UploadFile
 from src.firebase.access import get_bucket
 from src.repositories import albums_repository as crud_albums
-from typing import List
+from typing import List, Optional
 from sqlalchemy.orm import Session
 from src.postgres.database import get_db
 from src.postgres.models import AlbumModel, UserModel
@@ -14,7 +14,7 @@ from src import roles
 from src.repositories.resources_repository import (
     retrieve_album_update,
     retrieve_album,
-    retrieve_uid,
+    retrieve_uid, get_album,
 )
 from src.roles import get_role
 
@@ -71,14 +71,12 @@ def get_my_albums(
 
 @router.get("/albums/{album_id}", response_model=schemas.AlbumGet)
 def get_album_by_id(
-    album_id: int, role: roles.Role = Depends(get_role), pdb: Session = Depends(get_db)
+    album: AlbumModel = Depends(get_album)
 ):
     """Returns an album by its id or 404 if not found"""
 
-    album = crud_albums.get_album_by_id(pdb, role, album_id)
-
     album.cover = (
-        STORAGE_PATH + "covers/" + str(album_id) + "?t=" + str(album.cover_last_update)
+        STORAGE_PATH + "covers/" + str(album.id) + "?t=" + str(album.cover_last_update)
     )
 
     return album
@@ -118,7 +116,7 @@ def post_album(
 
 @router.put("/albums/{album_id}")
 def update_album(
-    album_id: int,
+    album: AlbumModel = Depends(get_album),
     uid: str = Depends(retrieve_uid),
     role: roles.Role = Depends(get_role),
     album_update: schemas.AlbumUpdate = Depends(retrieve_album_update),
@@ -128,9 +126,6 @@ def update_album(
 ):
     """Updates album by its id"""
 
-    album = pdb.get(AlbumModel, album_id)
-    if album is None:
-        raise HTTPException(status_code=404, detail=f"Album '{album_id}' not found")
     if album.creator_id != uid and not role.can_edit_everything():
         raise HTTPException(
             status_code=403,
@@ -158,32 +153,47 @@ def update_album(
     if cover is not None:
         crud_albums.set_cover(pdb, bucket, album, cover.file)
 
-    return {"id": album_id}
-
 
 @router.delete("/albums/{album_id}")
 def delete_album(
-    album_id: int,
+    album: AlbumModel = Depends(get_album),
     uid: str = Depends(retrieve_uid),
     pdb: Session = Depends(get_db),
     bucket=Depends(get_bucket),
 ):
     """Deletes an album by its id"""
-    album = pdb.get(AlbumModel, album_id)
+    album = pdb.get(AlbumModel, album.id)
     if album is None:
-        raise HTTPException(status_code=404, detail=f"Album '{album_id}' not found")
+        raise HTTPException(status_code=404, detail=f"Album '{album.id}' not found")
 
     if uid != album.creator_id:
         raise HTTPException(
             status_code=403,
             detail=f"User '{uid} attempted to delete album of user with ID {album.creator_id}",
         )
-    pdb.query(AlbumModel).filter(AlbumModel.id == album_id).delete()
+    pdb.query(AlbumModel).filter(AlbumModel.id == album.id).delete()
     pdb.commit()
     try:
-        bucket.blob("covers/" + str(album_id)).delete()
+        bucket.blob("covers/" + str(album.id)).delete()
     except Exception as entry_not_found:
         if not SUPPRESS_BLOB_ERRORS:
             raise HTTPException(
                 status_code=507, detail=f"Could not delete cover for album {album.id}"
             ) from entry_not_found
+
+
+@router.post("/albums/{album_id}/comments/")
+def comment_album(
+        album: AlbumModel = Depends(get_album),
+        uid: str = Depends(retrieve_uid),
+        text: Optional[str] = None,
+        score: Optional[int] = None,
+        pdb: Session = Depends(get_db)
+):
+    if text is None and score is None:
+        raise HTTPException(status_code=422, detail="Text and score cannot be None at the same time")
+
+    comments = album.comments
+
+
+
