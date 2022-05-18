@@ -5,6 +5,7 @@ from src.postgres import schemas
 from src.postgres.database import get_db
 from src.postgres.models import AlbumModel, UserModel
 from src.postgres.schemas import AlbumInfoBase
+from sqlalchemy.orm import Session
 
 
 def retrieve_uid(uid: str = Header(...), pdb=Depends(get_db)):
@@ -23,8 +24,14 @@ def retrieve_resource_update(
 
 
 def retrieve_resource(
-    name: str = Form(...), description: str = Form(...), uid: str = Header(...)
+    name: str = Form(...),
+    description: str = Form(...),
+    uid: str = Header(...),
+    pdb: Session = Depends(get_db),
 ):
+    if pdb.get(UserModel, uid) is None:
+        raise HTTPException(status_code=404, detail=f"User with id {uid} not found")
+
     return schemas.ResourceBase(
         name=name, description=description, blocked=False, creator_id=uid
     )
@@ -55,7 +62,9 @@ def retrieve_songs_ids(songs_ids: Optional[str] = Form(None)):
         songs_ids = json.loads(songs_ids)
         return songs_ids
     except ValueError:
-        HTTPException(status_code=422, detail="Songs ids string is not well encoded")
+        raise HTTPException(
+            status_code=422, detail="Songs ids string is not well encoded"
+        )
 
 
 def retrieve_songs_ids_update(songs_ids: Optional[str] = Form(None)):
