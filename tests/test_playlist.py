@@ -153,9 +153,10 @@ def test_owner_should_be_able_to_edit_its_own_playlist(client):
         },
         headers={"api_key": "key", "uid": "user_playlist_owner"},
     )
+    assert response_put.status_code == 200
 
     response_get = client.get(
-        f"{API_VERSION_PREFIX}/playlists/{response_put.json()['id']}",
+        f"{API_VERSION_PREFIX}/playlists/{response_post.json()['id']}",
         headers={"api_key": "key"},
     )
 
@@ -182,9 +183,10 @@ def test_colab_should_be_able_to_edit_playlist(client):
             "uid": "user_playlist_colab",
         },
     )
+    assert response_put.status_code == 200
 
     response_get = client.get(
-        f"{API_VERSION_PREFIX}/playlists/{response_put.json()['id']}",
+        f"{API_VERSION_PREFIX}/playlists/{response_post.json()['id']}",
         headers={"api_key": "key"},
     )
 

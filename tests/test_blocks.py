@@ -351,7 +351,7 @@ def test_listener_get_album_by_id_with_blocked_songs_should_retrieve_not_blocked
     client,
 ):
     post_user(client, uid="artist_id", user_name="artist_name")
-    # The song if blocked after the album is created
+    # The song is blocked after the album is created
     song_id_1 = post_song(
         client, uid="artist_id", name="blocked_song", blocked=False
     ).json()["id"]
@@ -567,8 +567,9 @@ def test_listener_get_playlist_by_id_with_blocked_songs_should_retrieve_not_bloc
     client,
 ):
     post_user(client, uid="artist_id", user_name="artist_name")
+    # The song is blocked after the playlist is created
     song_id_1 = post_song(
-        client, uid="artist_id", name="blocked_song", blocked=True
+        client, uid="artist_id", name="blocked_song", blocked=False
     ).json()["id"]
     song_id_2 = post_song(
         client, uid="artist_id", name="not_blocked_song", blocked=False
@@ -577,6 +578,8 @@ def test_listener_get_playlist_by_id_with_blocked_songs_should_retrieve_not_bloc
     playlist_id = post_playlist(
         client, uid="artist_id", songs_ids=[song_id_1, song_id_2], blocked=False
     ).json()["id"]
+
+    block_song(client, song_id_1)
 
     response = client.get(
         f"{API_VERSION_PREFIX}/playlists/{playlist_id}",
@@ -592,8 +595,9 @@ def test_listener_get_playlist_by_id_with_blocked_songs_should_not_remove_song(c
     # This is a white box test
 
     post_user(client, uid="artist_id", user_name="artist_name")
+    # The song is blocked after the playlist is created
     song_id_1 = post_song(
-        client, uid="artist_id", name="blocked_song", blocked=True
+        client, uid="artist_id", name="blocked_song", blocked=False
     ).json()["id"]
     song_id_2 = post_song(
         client, uid="artist_id", name="not_blocked_song", blocked=False
@@ -602,6 +606,7 @@ def test_listener_get_playlist_by_id_with_blocked_songs_should_not_remove_song(c
     playlist_id = post_playlist(
         client, uid="artist_id", songs_ids=[song_id_1, song_id_2], blocked=False
     ).json()["id"]
+    block_song(client, song_id_1)
 
     client.get(
         f"{API_VERSION_PREFIX}/playlists/{playlist_id}",

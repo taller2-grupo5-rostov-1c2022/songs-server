@@ -13,7 +13,8 @@ from src.postgres.models import AlbumModel, UserModel
 from src import roles
 from src.repositories.resources_repository import (
     retrieve_album_update,
-    retrieve_album, retrieve_uid,
+    retrieve_album,
+    retrieve_uid,
 )
 from src.roles import get_role
 
@@ -141,6 +142,9 @@ def update_album(
     for album_attr in album_update:
         if album_update[album_attr] is not None:
             setattr(album, album_attr, album_update[album_attr])
+    if album_update["songs_ids"] is not None:
+        songs = crud_albums.get_songs_list(pdb, uid, role, album_update["songs_ids"])
+        album.songs = songs
 
     if album_update["blocked"] is not None:
         if not role.can_block():
@@ -149,10 +153,6 @@ def update_album(
                 detail=f"User {uid} without permissions tried to block album {album.id}",
             )
         album.blocked = album_update["blocked"]
-
-    if album_update["songs_ids"] is not None:
-        songs = crud_albums.get_songs_list(pdb, uid, role, album_update["songs_ids"])
-        album.songs = songs
 
     pdb.commit()
     if cover is not None:

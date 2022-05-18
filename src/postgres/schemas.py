@@ -123,9 +123,20 @@ class PlaylistBase(ResourceBase):
         orm_mode = True
 
 
+class PlaylistPost(ResourceBase):
+    songs_ids: List[int]
+    colabs_ids: List[str]
+
+    class Config:
+        orm_mode = True
+
+
 class PlaylistUpdate(ResourceUpdate):
-    songs: Optional[List[SongBase]]
-    colabs: Optional[List[UserInfo]]
+    songs_ids: Optional[List[int]]
+    colabs_ids: Optional[List[str]]
+
+    class Config:
+        orm_mode = True
 
 
 class UserBase(BaseModel):

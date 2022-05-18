@@ -62,7 +62,7 @@ def test_put_song(client):
         headers={
             "api_key": "key",
             "uid": "song_creator_id",
-        }
+        },
     )
 
     assert str(response_get.json()["id"]) == str(response_post.json()["id"])

@@ -9,7 +9,11 @@ from typing import List
 from sqlalchemy.orm import Session
 from src.postgres.database import get_db
 from src.postgres.models import PlaylistModel, SongModel, UserModel
-from src.repositories.resources_repository import retrieve_uid
+from src.repositories.resources_repository import (
+    retrieve_uid,
+    retrieve_playlist,
+    retrieve_playlist_update,
+)
 from src.roles import get_role
 
 router = APIRouter(tags=["playlists"])
@@ -44,57 +48,40 @@ def get_playlist_by_id(
     return playlist
 
 
-@router.post("/playlists/")
+@router.post("/playlists/", response_model=schemas.PlaylistBase)
 def post_playlist(
-    uid: str = Depends(retrieve_uid),
-    name: str = Form(...),
-    description: str = Form(...),
-    colabs_ids: str = Form(...),
-    songs_ids: str = Form(...),
+    playlist_info: schemas.PlaylistPost = Depends(retrieve_playlist),
+    role: roles.Role = Depends(get_role),
     pdb: Session = Depends(get_db),
 ):
     """Creates a playlist and returns its id. Songs_ids form is encoded like '["song_id_1", "song_id_2", ...]'.
     Colabs_ids form is encoded like '["colab_id_1", "colab_id_2", ...]'"""
 
-    songs = []
-    for song_id in json.loads(songs_ids):
-        song = pdb.query(SongModel).filter(SongModel.id == song_id).first()
-        songs.append(song)
-
-    colabs = []
-    for colab_id in json.loads(colabs_ids):
-        colab = pdb.query(UserModel).filter(UserModel.id == colab_id).first()
-        colabs.append(colab)
+    songs = crud_playlists.get_songs_list(pdb, role, playlist_info.songs_ids)
+    colabs = crud_playlists.get_colabs_list(pdb, playlist_info.colabs_ids)
 
     playlist = models.PlaylistModel(
-        name=name,
-        description=description,
-        creator_id=uid,
+        **playlist_info.dict(exclude={"songs_ids", "colabs_ids"}),
         colabs=colabs,
-        blocked=False,
         songs=songs,
     )
     pdb.add(playlist)
     pdb.commit()
 
-    return {"id": playlist.id}
+    return playlist
 
 
 @router.put("/playlists/{playlist_id}")
 def update_playlist(
-    playlist_id: str,
+    playlist_id: int,
     uid: str = Depends(retrieve_uid),
     role: roles.Role = Depends(get_role),
-    name: str = Form(None),
-    colabs_ids: str = Form(None),
-    description: str = Form(None),
-    songs_ids: str = Form(None),
-    blocked: bool = Form(None),
+    playlist_update: schemas.PlaylistUpdate = Depends(retrieve_playlist_update),
     pdb: Session = Depends(get_db),
 ):
     """Updates playlist by its id"""
     # even though id is an integer, we can compare with a string
-    playlist = pdb.query(PlaylistModel).filter(PlaylistModel.id == playlist_id).first()
+    playlist = pdb.get(PlaylistModel, playlist_id)
     if playlist is None:
         raise HTTPException(
             status_code=404, detail=f"Playlist '{playlist_id}' not found"
@@ -110,40 +97,29 @@ def update_playlist(
             detail=f"User '{uid} attempted to edit playlist in which is not a collaborator",
         )
 
-    if name is not None:
-        playlist.name = name
-    if description is not None:
-        playlist.description = description
-    if blocked is not None:
+    playlist_update = playlist_update.dict()
+
+    for playlist_attr in playlist_update:
+        if playlist_update[playlist_attr] is not None:
+            setattr(playlist, playlist_attr, playlist_update[playlist_attr])
+
+    if playlist_update["colabs_ids"] is not None:
+        colabs = crud_playlists.get_colabs_list(pdb, playlist_update["colabs_ids"])
+        playlist.colabs = colabs
+
+    if playlist_update["songs_ids"] is not None:
+        songs = crud_playlists.get_songs_list(pdb, role, playlist_update["songs_ids"])
+        playlist.songs = songs
+
+    if playlist_update["blocked"] is not None:
         if not role.can_block():
             raise HTTPException(
                 status_code=403,
                 detail=f"User {uid} without permissions tried to block playlist {playlist.id}",
             )
-        playlist.blocked = blocked
-
-    if colabs_ids is not None:
-        if uid != playlist.creator_id:
-            raise HTTPException(
-                status_code=403,
-                detail=f"User '{uid} attempted to edit playlist collaborator in which is not the creator",
-            )
-        colabs = []
-        for colab_id in json.loads(colabs_ids):
-            colab = pdb.query(UserModel).filter(UserModel.id == colab_id).first()
-            colabs.append(colab)
-        playlist.colabs = colabs
-
-    if songs_ids is not None:
-        songs = []
-        for song_id in json.loads(songs_ids):
-            # TODO: sacar codigo repetido con app/songs
-            song = pdb.query(SongModel).filter(SongModel.id == song_id).first()
-            songs.append(song)
-        playlist.songs = songs
+        playlist.blocked = playlist_update["blocked"]
 
     pdb.commit()
-    return {"id": playlist_id}
 
 
 @router.delete("/playlists/{playlist_id}")
