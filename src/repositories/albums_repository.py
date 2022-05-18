@@ -87,7 +87,7 @@ def get_songs_list(pdb: Session, uid: str, role: roles.Role, songs_ids: List[int
     return songs
 
 
-def set_cover(pdb: Session, bucket, album: AlbumModel, file: IO):
+def set_cover(bucket, album: AlbumModel, file: IO):
     try:
         blob = bucket.blob("covers/" + str(album.id))
         blob.upload_from_file(file)
@@ -95,7 +95,6 @@ def set_cover(pdb: Session, bucket, album: AlbumModel, file: IO):
         album.cover_last_update = datetime.datetime.now() + datetime.timedelta(
             seconds=1
         )
-        pdb.commit()
     except Exception as entry_not_found:
         if not SUPPRESS_BLOB_ERRORS:
             raise HTTPException(

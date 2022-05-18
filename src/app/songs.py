@@ -100,8 +100,6 @@ def update_song(
             )
         song.blocked = song_update["blocked"]
 
-    pdb.commit()
-
     if file is not None:
         try:
             blob = bucket.blob("songs/" + song_id)
@@ -174,7 +172,6 @@ def delete_song(
         )
 
     pdb.query(SongModel).filter(SongModel.id == song_id).delete()
-    pdb.commit()
 
     try:
         bucket.blob("songs/" + song_id).delete()
@@ -184,7 +181,8 @@ def delete_song(
                 status_code=507, detail=f"Could not delete Song {song_id}"
             )
 
-    return {"song_id": song_id}
+    pdb.commit()
+
 
 
 @router.get("/my_songs/", response_model=List[schemas.SongBase])

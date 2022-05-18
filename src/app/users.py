@@ -25,7 +25,7 @@ def get_user_by_id(
     pdb: Session = Depends(get_db),
 ):
     """Returns an user by its id or 404 if not found"""
-    user = pdb.query(UserModel).filter(UserModel.id == uid).first()
+    user = pdb.get(UserModel, uid)
 
     if user is None:
         raise HTTPException(status_code=404, detail="User not found")
@@ -41,7 +41,7 @@ def get_my_user(
     pdb: Session = Depends(get_db),
 ):
     """Returns own user"""
-    user = pdb.query(UserModel).filter(UserModel.id == uid).first()
+    user = pdb.get(UserModel, uid)
 
     if user is None:
         raise HTTPException(status_code=404, detail="User not found")
@@ -78,9 +78,6 @@ def post_user(
         interests=interests,
         pfp_last_update=datetime.datetime.now(),
     )
-    pdb.add(new_user)
-    pdb.commit()
-    pdb.refresh(new_user)
 
     auth.update_user(uid=uid, display_name=name)
 
@@ -96,6 +93,10 @@ def post_user(
                     status_code=507,
                     detail=f"Image for User '{uid}' could not be uploaded",
                 ) from entry_not_found
+
+    pdb.add(new_user)
+    pdb.commit()
+    pdb.refresh(new_user)
 
     return new_user
 
@@ -137,8 +138,6 @@ def put_user(
     if interests is not None:
         user.interests = interests
 
-    pdb.commit()
-
     if img is not None:
         try:
             blob = bucket.blob("pfp/" + uid)
@@ -164,7 +163,7 @@ def delete_user(
     uid_to_delete: str,
     uid: str = Header(...),
     pdb: Session = Depends(get_db),
-    bucket: Session = Depends(get_bucket),
+    bucket = Depends(get_bucket),
 ):
     """Deletes a user given its id or 404 if not found or 403 if not authorized to delete"""
 
@@ -177,8 +176,7 @@ def delete_user(
     user = pdb.query(UserModel).filter(UserModel.id == uid).first()
     if user is None:
         raise HTTPException(status_code=404, detail=f"User '{uid}' not found")
-    pdb.query(UserModel).filter(UserModel.id == uid).delete()
-    pdb.commit()
+    pdb.delete(user)
 
     try:
         bucket.blob("pfp/" + str(uid)).delete()
@@ -187,3 +185,5 @@ def delete_user(
             raise HTTPException(
                 status_code=507, detail=f"Image for User '{uid}' could not be deleted"
             )
+
+    pdb.commit()
