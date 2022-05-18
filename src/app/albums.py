@@ -63,7 +63,7 @@ def get_my_albums(
             + "covers/"
             + str(album.id)
             + "?t="
-            + str(album.cover_last_update)
+            + str(int(datetime.datetime.timestamp(album.cover_last_update)))
         )
 
     return albums
