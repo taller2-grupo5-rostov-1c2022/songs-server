@@ -82,7 +82,7 @@ def get_album_by_id(
     return album
 
 
-@router.post("/albums/")
+@router.post("/albums/", response_model=schemas.AlbumBase)
 def post_album(
     uid: str = Depends(retrieve_uid),
     role: roles.Role = Depends(get_role),
@@ -107,11 +107,10 @@ def post_album(
         **album_info,
     )
     pdb.add(album)
+
+    crud_albums.set_cover(bucket, album, cover.file)
     pdb.commit()
-
-    crud_albums.set_cover(pdb, bucket, album, cover.file)
-
-    return {"id": album.id}
+    return album
 
 
 @router.put("/albums/{album_id}")
@@ -149,9 +148,10 @@ def update_album(
             )
         album.blocked = album_update["blocked"]
 
-    pdb.commit()
     if cover is not None:
-        crud_albums.set_cover(pdb, bucket, album, cover.file)
+        crud_albums.set_cover(bucket, album, cover.file)
+
+    pdb.commit()
 
 
 @router.delete("/albums/{album_id}")
@@ -171,8 +171,7 @@ def delete_album(
             status_code=403,
             detail=f"User '{uid} attempted to delete album of user with ID {album.creator_id}",
         )
-    pdb.query(AlbumModel).filter(AlbumModel.id == album.id).delete()
-    pdb.commit()
+    pdb.delete(album)
     try:
         bucket.blob("covers/" + str(album.id)).delete()
     except Exception as entry_not_found:
