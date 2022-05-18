@@ -3,15 +3,14 @@ import datetime
 from src import roles
 from src.constants import STORAGE_PATH, SUPPRESS_BLOB_ERRORS
 from src.postgres import schemas
-from typing import List, Optional
-from fastapi import APIRouter, Header
-from fastapi import Depends, File, Form, HTTPException, UploadFile
-import json
+from typing import List
+from fastapi import APIRouter
+from fastapi import Depends, File, HTTPException, UploadFile
 from src.repositories import songs_repository as crud_songs
 from src.firebase.access import get_bucket
 from sqlalchemy.orm import Session
 from src.postgres.database import get_db
-from src.postgres.models import SongModel, UserModel, ArtistModel
+from src.postgres.models import SongModel, ArtistModel
 from src.repositories.resources_repository import (
     retrieve_song,
     retrieve_uid,
@@ -115,7 +114,6 @@ def update_song(
 
 @router.post("/songs/", response_model=schemas.SongBase)
 def post_song(
-    uid: str = Depends(retrieve_uid),
     song_info: schemas.SongPost = Depends(retrieve_song),
     file: UploadFile = File(...),
     pdb: Session = Depends(get_db),

@@ -2,13 +2,12 @@ from src import roles
 from src.postgres import schemas
 from src.postgres import models
 from fastapi import APIRouter
-from fastapi import Depends, Form, HTTPException, Header
+from fastapi import Depends, Form, HTTPException
 from src.repositories import playlists_repository as crud_playlists
-import json
 from typing import List
 from sqlalchemy.orm import Session
 from src.postgres.database import get_db
-from src.postgres.models import PlaylistModel, SongModel, UserModel
+from src.postgres.models import PlaylistModel, SongModel
 from src.repositories.resources_repository import (
     retrieve_uid,
     retrieve_playlist,

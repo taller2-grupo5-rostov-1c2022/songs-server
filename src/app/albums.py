@@ -3,7 +3,7 @@ from src.postgres import schemas
 from src.postgres import models
 from src.constants import STORAGE_PATH, SUPPRESS_BLOB_ERRORS
 from fastapi import APIRouter
-from fastapi import Depends, HTTPException, UploadFile, File, Header
+from fastapi import Depends, File, HTTPException, UploadFile
 from src.firebase.access import get_bucket
 from src.repositories import albums_repository as crud_albums
 from typing import List
