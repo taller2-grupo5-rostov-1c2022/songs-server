@@ -46,7 +46,13 @@ def get_my_user(
     if user is None:
         raise HTTPException(status_code=404, detail="User not found")
 
-    user.pfp = STORAGE_PATH + "pfp/" + str(uid) + "?t=" + str(user.pfp_last_update)
+    user.pfp = (
+        STORAGE_PATH
+        + "pfp/"
+        + str(uid)
+        + "?t="
+        + str(int(datetime.datetime.timestamp(user.pfp_last_update)))
+    )
 
     return user
 
@@ -137,7 +143,10 @@ def put_user(
         try:
             blob = bucket.blob("pfp/" + uid)
             blob.upload_from_file(img.file)
-            user.pfp_last_update = datetime.datetime.now()
+            blob.make_public()
+            user.pfp_last_update = datetime.datetime.now() + datetime.timedelta(
+                seconds=1
+            )
         except Exception:  # noqa: E722 # Want to catch all exceptions
             if not SUPPRESS_BLOB_ERRORS:
                 raise HTTPException(

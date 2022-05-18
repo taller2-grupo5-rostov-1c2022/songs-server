@@ -52,7 +52,11 @@ def get_song_by_id(
     song = crud_songs.get_song_by_id(pdb, role, song_id)
 
     song.file = (
-        STORAGE_PATH + "songs/" + str(song_id) + "?t=" + str(song.file_last_update)
+        STORAGE_PATH
+        + "songs/"
+        + str(song_id)
+        + "?t="
+        + str(int(datetime.datetime.timestamp(song.file_last_update)))
     )
 
     return song
@@ -102,7 +106,10 @@ def update_song(
         try:
             blob = bucket.blob("songs/" + song_id)
             blob.upload_from_file(file.file)
-            song.file_last_update = datetime.datetime.now()
+            blob.make_public()
+            song.file_last_update = datetime.datetime.now() + datetime.timedelta(
+                seconds=1
+            )
         except:  # noqa: W0707 # Want to catch all exceptions
             if not SUPPRESS_BLOB_ERRORS:
                 raise HTTPException(

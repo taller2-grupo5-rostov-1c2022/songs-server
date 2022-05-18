@@ -159,6 +159,5 @@ class UserBase(BaseModel):
     albums: List[AlbumBase]
     my_playlists: List[PlaylistBase]
 
-
     class Config:
         orm_mode = True

@@ -10,7 +10,7 @@ API_VERSION_PREFIX = "/api/v3"
 app = FastAPI(
     title="Songs API",
     description="Spotifiuby's API to manage songs, albums, playlists and users",
-    version="3.3.3",
+    version="3.4.0",
     dependencies=[Depends(get_api_key)],
 )
 
