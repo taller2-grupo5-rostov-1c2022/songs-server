@@ -193,3 +193,14 @@ def post_playlist(
         )
         assert response_put.status_code == 200
     return response_post
+
+
+def block_song(client, id: int):
+    post_user(client, uid="__blocker__id__", user_name="__blocker__name__")
+    response_put = client.put(
+        f"{API_VERSION_PREFIX}/songs/{id}",
+        data={"blocked": True},
+        headers={"api_key": "key", "uid": "__blocker__id__", "role-name": "admin"},
+    )
+    assert response_put.status_code == 200
+    return response_put

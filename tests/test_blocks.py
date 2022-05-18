@@ -4,6 +4,7 @@ from tests.utils import (
     post_song,
     post_album,
     post_playlist,
+    block_song,
 )
 
 
@@ -16,7 +17,18 @@ def test_user_cannot_modify_blocked_status_of_song(client):
         data={"blocked": True},
         headers={"uid": "artist_id", "role-name": "listener", "api_key": "key"},
     )
+
     assert response.status_code == 403
+
+    response_get = client.get(
+        f"{API_VERSION_PREFIX}/songs/{song_id}",
+        data={"blocked": True},
+        headers={"role-name": "admin", "api_key": "key"},
+    )
+    song = response_get.json()
+
+    assert response_get.status_code == 200
+    assert song["blocked"] is False
 
 
 def test_admin_can_modify_blocked_status_of_song(client):
@@ -339,16 +351,25 @@ def test_listener_get_album_by_id_with_blocked_songs_should_retrieve_not_blocked
     client,
 ):
     post_user(client, uid="artist_id", user_name="artist_name")
+    # The song if blocked after the album is created
     song_id_1 = post_song(
-        client, uid="artist_id", name="blocked_song", blocked=True
+        client, uid="artist_id", name="blocked_song", blocked=False
     ).json()["id"]
+
     song_id_2 = post_song(
         client, uid="artist_id", name="not_blocked_song", blocked=False
     ).json()["id"]
 
     album_id = post_album(
-        client, uid="artist_id", songs_ids=[song_id_1, song_id_2], blocked=False
-    ).json()["id"]
+        client,
+        uid="artist_id",
+        name="blocked_song",
+        songs_ids=[song_id_1, song_id_2],
+        blocked=False,
+    )
+    block_song(client, id=song_id_1)
+
+    album_id = album_id.json()["id"]
 
     response = client.get(
         f"{API_VERSION_PREFIX}/albums/{album_id}",
@@ -363,9 +384,10 @@ def test_listener_get_album_by_id_with_blocked_songs_should_retrieve_not_blocked
 def test_listener_get_album_by_id_with_blocked_songs_should_not_remove_song(client):
     # This is a white box test
 
+    # The song is blocked after the album is created
     post_user(client, uid="artist_id", user_name="artist_name")
     song_id_1 = post_song(
-        client, uid="artist_id", name="blocked_song", blocked=True
+        client, uid="artist_id", name="blocked_song", blocked=False
     ).json()["id"]
     song_id_2 = post_song(
         client, uid="artist_id", name="not_blocked_song", blocked=False
@@ -374,6 +396,7 @@ def test_listener_get_album_by_id_with_blocked_songs_should_not_remove_song(clie
     album_id = post_album(
         client, uid="artist_id", songs_ids=[song_id_1, song_id_2], blocked=False
     ).json()["id"]
+    block_song(client, song_id_1)
 
     client.get(
         f"{API_VERSION_PREFIX}/albums/{album_id}",

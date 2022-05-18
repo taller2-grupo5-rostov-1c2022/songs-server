@@ -1,12 +1,38 @@
-from typing import List, Optional
-from pydantic import BaseModel
-from datetime import datetime
-
-# Classes used to provide type checking
+from pydantic.main import BaseModel
+from typing import Optional, List
 
 
-class ArtistBase(BaseModel):
+class ResourceBase(BaseModel):
+    id: Optional[int]
     name: str
+    description: str
+    blocked: bool
+    creator_id: str
+
+    class Config:
+        orm_mode = True
+
+
+class ResourceUpdate(BaseModel):
+    name: Optional[str]
+    description: Optional[str]
+    blocked: Optional[bool]
+
+    class Config:
+        orm_mode = True
+
+
+class ResourceCreator(ResourceBase):
+    genre: str
+    sub_level: int
+
+    class Config:
+        orm_mode = True
+
+
+class ResourceCreatorUpdate(ResourceUpdate):
+    genre: Optional[str]
+    sub_level: Optional[int]
 
     class Config:
         orm_mode = True
@@ -20,15 +46,38 @@ class AlbumInfoBase(BaseModel):
         orm_mode = True
 
 
-class SongBase(BaseModel):
-    id: int
+class UserInfo(BaseModel):
     name: str
-    description: str
+
+    class Config:
+        orm_mode = True
+
+
+class ArtistBase(BaseModel):
+    name: str
+
+    class Config:
+        orm_mode = True
+
+
+class SongBase(ResourceCreator):
     artists: List[ArtistBase]
-    genre: str
-    sub_level: int
     album: Optional[AlbumInfoBase] = None
-    blocked: bool
+
+    class Config:
+        orm_mode = True
+
+
+class SongPost(ResourceCreator):
+    artists_names: List[str]
+    album: Optional[AlbumInfoBase] = None
+
+    class Config:
+        orm_mode = True
+
+
+class SongUpdate(ResourceCreatorUpdate):
+    artists_names: Optional[List[str]]
 
     class Config:
         orm_mode = True
@@ -44,19 +93,19 @@ class SongResponse(BaseModel):
     file: Optional[str]
 
 
-class AlbumBase(BaseModel):
-    id: int
-    name: str
-    description: str
-    album_creator_id: str
-    genre: str
-    sub_level: int
-    blocked: bool
-
+class AlbumBase(ResourceCreator):
     songs: List[SongBase]
 
     class Config:
         orm_mode = True
+
+
+class AlbumPost(ResourceCreator):
+    songs_ids: List[int]
+
+
+class AlbumUpdate(ResourceCreatorUpdate):
+    songs_ids: Optional[List[int]]
 
 
 class AlbumGet(AlbumBase):
@@ -66,43 +115,17 @@ class AlbumGet(AlbumBase):
         orm_mode = True
 
 
-class AlbumCreate(BaseModel):
-    name: str
-    description: str
-    creator: str
-    artists: List[str]
-    genre: str
-    songs_ids: List[str]
-
-
-class AlbumUpdate(BaseModel):
-    name: Optional[str] = None
-    description: Optional[str] = None
-    creator: Optional[str] = None
-    artists: Optional[List[str]] = None
-    genre: Optional[str] = None
-    songs_ids: Optional[List[str]] = None
-
-
-class UserColab(BaseModel):
-    id: str
-    name: str
-
-    class Config:
-        orm_mode = True
-
-
-class PlaylistBase(BaseModel):
-    id: int
-    name: str
-    description: str
+class PlaylistBase(ResourceBase):
     songs: List[SongBase]
-    colabs: List[UserColab]
-    creator_id: str
-    blocked: bool
+    colabs: List[UserInfo]
 
     class Config:
         orm_mode = True
+
+
+class PlaylistUpdate(ResourceUpdate):
+    songs: Optional[List[SongBase]]
+    colabs: Optional[List[UserInfo]]
 
 
 class UserBase(BaseModel):

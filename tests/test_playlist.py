@@ -64,7 +64,7 @@ def test_get_playlist_by_id(client):
     assert playlist["id"] == 1
     assert playlist["name"] == "playlist_name"
     assert len(playlist["colabs"]) == 1
-    assert playlist["colabs"][0]["id"] == "user_playlist_colab"
+    assert playlist["colabs"][0]["name"] == "Fernandito"
     assert playlist["creator_id"] == "user_playlist_owner"
     assert playlist["description"] == "playlist_description"
     assert playlist["songs"][0]["name"] == "song_for_playlist1"

@@ -9,6 +9,7 @@ from typing import List
 from sqlalchemy.orm import Session
 from src.postgres.database import get_db
 from src.postgres.models import PlaylistModel, SongModel, UserModel
+from src.repositories.resources_repository import retrieve_uid
 from src.roles import get_role
 
 router = APIRouter(tags=["playlists"])
@@ -26,7 +27,7 @@ def get_playlists(
 
 
 @router.get("/my_playlists/", response_model=List[schemas.PlaylistBase])
-def get_my_playlists(uid: str = Header(...), pdb: Session = Depends(get_db)):
+def get_my_playlists(uid: str = Depends(retrieve_uid), pdb: Session = Depends(get_db)):
     return crud_playlists.get_playlists(pdb, roles.Role.admin(), uid)
 
 
@@ -45,7 +46,7 @@ def get_playlist_by_id(
 
 @router.post("/playlists/")
 def post_playlist(
-    uid: str = Header(...),
+    uid: str = Depends(retrieve_uid),
     name: str = Form(...),
     description: str = Form(...),
     colabs_ids: str = Form(...),
@@ -82,7 +83,7 @@ def post_playlist(
 @router.put("/playlists/{playlist_id}")
 def update_playlist(
     playlist_id: str,
-    uid: str = Header(...),
+    uid: str = Depends(retrieve_uid),
     role: roles.Role = Depends(get_role),
     name: str = Form(None),
     colabs_ids: str = Form(None),
@@ -148,7 +149,7 @@ def update_playlist(
 @router.delete("/playlists/{playlist_id}")
 def delete_playlist(
     playlist_id: str,
-    uid: str = Header(...),
+    uid: str = Depends(retrieve_uid),
     pdb: Session = Depends(get_db),
 ):
     """Deletes a playlist by its id"""
@@ -171,7 +172,7 @@ def delete_playlist(
 def add_song_to_playlist(
     playlist_id: str,
     song_id: str = Form(...),
-    uid: str = Header(...),
+    uid: str = Depends(retrieve_uid),
     pdb: Session = Depends(get_db),
 ):
     """Adds a song to a playlist"""
@@ -204,7 +205,7 @@ def add_song_to_playlist(
 def remove_song_from_playlist(
     playlist_id: str,
     song_id: str,
-    uid: str = Header(...),
+    uid: str = Depends(retrieve_uid),
     pdb: Session = Depends(get_db),
 ):
     """Removes a song from a playlist"""

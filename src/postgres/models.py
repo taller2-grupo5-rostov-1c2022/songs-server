@@ -59,7 +59,7 @@ class UserModel(Base):
     pfp_last_update = Column(TIMESTAMP, nullable=False)
 
     songs = relationship("SongModel", back_populates="creator")
-    albums = relationship("AlbumModel", back_populates="album_creator")
+    albums = relationship("AlbumModel", back_populates="creator")
 
     my_playlists = relationship("PlaylistModel", back_populates="creator")
     other_playlists = relationship(
@@ -69,19 +69,27 @@ class UserModel(Base):
     )
 
 
-class AlbumModel(Base):
-    __tablename__ = "albums"
-
+class ResourceModel(Base):
+    __abstract__ = True
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, nullable=False, index=True)
     description = Column(String, nullable=False, index=True)
-    genre = Column(String, nullable=False, index=True)
-    sub_level = Column(Integer, nullable=False)
-    cover_last_update = Column(TIMESTAMP, nullable=False)
     blocked = Column(Boolean, nullable=False, index=True)
 
-    album_creator = relationship("UserModel", back_populates="albums")
-    album_creator_id = Column(String, ForeignKey("users.id"))
+
+class ResourceCreatorModel(ResourceModel):
+    __abstract__ = True
+    genre = Column(String, nullable=False, index=True)
+    sub_level = Column(Integer, nullable=False)
+
+
+class AlbumModel(ResourceCreatorModel):
+    __tablename__ = "albums"
+
+    cover_last_update = Column(TIMESTAMP, nullable=False)
+
+    creator = relationship("UserModel", back_populates="albums")
+    creator_id = Column(String, ForeignKey("users.id"))
 
     songs = relationship("SongModel", back_populates="album")
 
@@ -98,16 +106,10 @@ class ArtistModel(Base):
     )
 
 
-class SongModel(Base):
+class SongModel(ResourceCreatorModel):
     __tablename__ = "songs"
 
-    id = Column(Integer, primary_key=True, index=True)
-    name = Column(String, nullable=False, index=True)
-    description = Column(String, nullable=False, index=True)
-    genre = Column(String, nullable=False, index=True)
-    sub_level = Column(Integer, nullable=False, index=True)
     file_last_update = Column(TIMESTAMP, nullable=False)
-    blocked = Column(Boolean, nullable=False, index=True)
 
     artists = relationship(
         "ArtistModel",
@@ -125,13 +127,9 @@ class SongModel(Base):
     creator_id = Column(String, ForeignKey("users.id"))
 
 
-class PlaylistModel(Base):
+class PlaylistModel(ResourceModel):
     __tablename__ = "playlists"
 
-    id = Column(Integer, primary_key=True, index=True)
-    name = Column(String, nullable=False, index=True)
-    description = Column(String, nullable=False, index=True)
-    blocked = Column(Boolean, nullable=False, index=True)
     songs = relationship("SongModel", secondary=song_playlist_association_table)
     colabs = relationship(
         "UserModel",
