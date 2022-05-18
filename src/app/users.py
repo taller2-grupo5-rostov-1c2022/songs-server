@@ -163,7 +163,7 @@ def delete_user(
     uid_to_delete: str,
     uid: str = Header(...),
     pdb: Session = Depends(get_db),
-    bucket = Depends(get_bucket),
+    bucket=Depends(get_bucket),
 ):
     """Deletes a user given its id or 404 if not found or 403 if not authorized to delete"""
 

@@ -184,7 +184,6 @@ def delete_song(
     pdb.commit()
 
 
-
 @router.get("/my_songs/", response_model=List[schemas.SongBase])
 def get_my_songs(uid: str = Depends(retrieve_uid), pdb: Session = Depends(get_db)):
     return crud_songs.get_songs(pdb, roles.Role.admin(), uid)
