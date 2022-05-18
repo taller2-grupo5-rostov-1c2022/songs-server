@@ -77,7 +77,7 @@ def post_song(
             headers=headers,
         )
 
-    if blocked is True:
+    if blocked:
         response_put = client.put(
             f"{API_VERSION_PREFIX}/songs/{response_post.json()['id']}",
             data={"blocked": True},
