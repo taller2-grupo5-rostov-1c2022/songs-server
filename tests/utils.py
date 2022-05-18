@@ -81,7 +81,7 @@ def post_song(
         response_put = client.put(
             f"{API_VERSION_PREFIX}/songs/{response_post.json()['id']}",
             data={"blocked": True},
-            headers={"api_key": "key", "uid": uid, "role-name": "admin"},
+            headers={"api_key": "key", "uid": uid, "role": "admin"},
         )
         assert response_put.status_code == 200
     return response_post
@@ -124,7 +124,7 @@ def post_album(
         response_put = client.put(
             f"{API_VERSION_PREFIX}/albums/{response_post.json()['id']}",
             data={"blocked": True},
-            headers={"api_key": "key", "uid": uid, "role-name": "admin"},
+            headers={"api_key": "key", "uid": uid, "role": "admin"},
         )
         assert response_put.status_code == 200
     return response_post
@@ -189,7 +189,7 @@ def post_playlist(
         response_put = client.put(
             f"{API_VERSION_PREFIX}/playlists/{response_post.json()['id']}",
             data={"blocked": True},
-            headers={"api_key": "key", "uid": uid, "role-name": "admin"},
+            headers={"api_key": "key", "uid": uid, "role": "admin"},
         )
         assert response_put.status_code == 200
     return response_post
@@ -200,7 +200,7 @@ def block_song(client, id: int):
     response_put = client.put(
         f"{API_VERSION_PREFIX}/songs/{id}",
         data={"blocked": True},
-        headers={"api_key": "key", "uid": "__blocker__id__", "role-name": "admin"},
+        headers={"api_key": "key", "uid": "__blocker__id__", "role": "admin"},
     )
     assert response_put.status_code == 200
     return response_put

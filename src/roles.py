@@ -31,5 +31,5 @@ class Role:
         return self == Role.admin()
 
 
-async def get_role(role_name: str = Header("listener")):
-    return Role(role_name)
+async def get_role(role: str = Header("listener")):
+    return Role(role)

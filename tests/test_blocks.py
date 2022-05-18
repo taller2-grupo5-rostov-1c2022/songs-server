@@ -15,7 +15,7 @@ def test_user_cannot_modify_blocked_status_of_song(client):
     response = client.put(
         f"{API_VERSION_PREFIX}/songs/{song_id}",
         data={"blocked": True},
-        headers={"uid": "artist_id", "role-name": "listener", "api_key": "key"},
+        headers={"uid": "artist_id", "role": "listener", "api_key": "key"},
     )
 
     assert response.status_code == 403
@@ -23,7 +23,7 @@ def test_user_cannot_modify_blocked_status_of_song(client):
     response_get = client.get(
         f"{API_VERSION_PREFIX}/songs/{song_id}",
         data={"blocked": True},
-        headers={"role-name": "admin", "api_key": "key"},
+        headers={"role": "admin", "api_key": "key"},
     )
     song = response_get.json()
 
@@ -39,7 +39,7 @@ def test_admin_can_modify_blocked_status_of_song(client):
     response_put = client.put(
         f"{API_VERSION_PREFIX}/songs/{song_id}",
         data={"blocked": True},
-        headers={"uid": "admin_id", "role-name": "admin", "api_key": "key"},
+        headers={"uid": "admin_id", "role": "admin", "api_key": "key"},
     )
     assert response_put.status_code == 200
 
@@ -51,7 +51,7 @@ def test_listener_get_not_blocked_song_by_id(client):
 
     response = client.get(
         f"{API_VERSION_PREFIX}/songs/{song_id}",
-        headers={"role-name": "listener", "api_key": "key"},
+        headers={"role": "listener", "api_key": "key"},
     )
 
     assert response.status_code == 200
@@ -64,7 +64,7 @@ def test_listener_get_blocked_song_by_id_should_fail(client):
 
     response = client.get(
         f"{API_VERSION_PREFIX}/songs/{song_id}",
-        headers={"role-name": "listener", "api_key": "key"},
+        headers={"role": "listener", "api_key": "key"},
     )
 
     assert response.status_code == 403
@@ -76,7 +76,7 @@ def test_artist_get_blocked_song_by_id_should_fail(client):
 
     response = client.get(
         f"{API_VERSION_PREFIX}/songs/{song_id}",
-        headers={"role-name": "artist", "api_key": "key"},
+        headers={"role": "artist", "api_key": "key"},
     )
 
     assert response.status_code == 403
@@ -99,7 +99,7 @@ def test_admin_get_blocked_song_by_id(client):
 
     response = client.get(
         f"{API_VERSION_PREFIX}/songs/{song_id}",
-        headers={"role-name": "admin", "api_key": "key"},
+        headers={"role": "admin", "api_key": "key"},
     )
 
     assert response.status_code == 200
@@ -113,7 +113,7 @@ def test_listener_get_all_songs_returns_only_not_blocked_songs(client):
 
     response = client.get(
         f"{API_VERSION_PREFIX}/songs/",
-        headers={"role-name": "listener", "api_key": "key"},
+        headers={"role": "listener", "api_key": "key"},
     )
 
     assert response.status_code == 200
@@ -127,7 +127,7 @@ def test_admin_get_all_songs_returns_blocked_and_not_blocked_songs(client):
     post_song(client, uid="admin_id", name="blocked_song", blocked=True)
 
     response = client.get(
-        f"{API_VERSION_PREFIX}/songs/", headers={"role-name": "admin", "api_key": "key"}
+        f"{API_VERSION_PREFIX}/songs/", headers={"role": "admin", "api_key": "key"}
     )
 
     assert response.status_code == 200
@@ -141,7 +141,7 @@ def test_admin_get_song_by_id_indicates_if_song_is_blocked(client):
 
     response = client.get(
         f"{API_VERSION_PREFIX}/songs/{song_id}",
-        headers={"role-name": "admin", "api_key": "key"},
+        headers={"role": "admin", "api_key": "key"},
     )
 
     assert response.status_code == 200
@@ -156,7 +156,7 @@ def test_artist_get_my_songs_returns_blocked_songs(client):
 
     response = client.get(
         f"{API_VERSION_PREFIX}/my_songs/",
-        headers={"uid": "artist_id", "role-name": "artist", "api_key": "key"},
+        headers={"uid": "artist_id", "role": "artist", "api_key": "key"},
     )
 
     assert response.status_code == 200
@@ -170,7 +170,7 @@ def test_get_song_by_id_invalid_role(client):
 
     response = client.get(
         f"{API_VERSION_PREFIX}/songs/{song_id}",
-        headers={"role-name": "an_invalid_role", "api_key": "key"},
+        headers={"role": "an_invalid_role", "api_key": "key"},
     )
 
     assert response.status_code == 422
@@ -182,7 +182,7 @@ def test_get_songs_invalid_role(client):
 
     response = client.get(
         f"{API_VERSION_PREFIX}/songs/",
-        headers={"role-name": "an_invalid_role", "api_key": "key"},
+        headers={"role": "an_invalid_role", "api_key": "key"},
     )
 
     assert response.status_code == 422
@@ -195,7 +195,7 @@ def test_user_cannot_modify_blocked_status_of_album(client):
     response = client.put(
         f"{API_VERSION_PREFIX}/albums/{album_id}",
         data={"blocked": True},
-        headers={"uid": "artist_id", "role-name": "listener", "api_key": "key"},
+        headers={"uid": "artist_id", "role": "listener", "api_key": "key"},
     )
     assert response.status_code == 403
 
@@ -208,7 +208,7 @@ def test_admin_can_modify_blocked_status_of_album(client):
     response_put = client.put(
         f"{API_VERSION_PREFIX}/albums/{album_id}",
         data={"blocked": True},
-        headers={"uid": "admin_id", "role-name": "admin", "api_key": "key"},
+        headers={"uid": "admin_id", "role": "admin", "api_key": "key"},
     )
     assert response_put.status_code == 200
 
@@ -222,7 +222,7 @@ def test_listener_get_not_blocked_album_by_id(client):
 
     response = client.get(
         f"{API_VERSION_PREFIX}/albums/{album_id}",
-        headers={"role-name": "listener", "api_key": "key"},
+        headers={"role": "listener", "api_key": "key"},
     )
 
     assert response.status_code == 200
@@ -238,7 +238,7 @@ def test_listener_get_blocked_album_by_id_should_fail(client):
 
     response = client.get(
         f"{API_VERSION_PREFIX}/albums/{album_id}",
-        headers={"role-name": "listener", "api_key": "key"},
+        headers={"role": "listener", "api_key": "key"},
     )
 
     assert response.status_code == 403
@@ -253,7 +253,7 @@ def test_admin_get_blocked_album_by_id(client):
 
     response = client.get(
         f"{API_VERSION_PREFIX}/albums/{album_id}",
-        headers={"role-name": "admin", "api_key": "key"},
+        headers={"role": "admin", "api_key": "key"},
     )
 
     assert response.status_code == 200
@@ -268,7 +268,7 @@ def test_listener_get_all_albums_returns_only_not_blocked_albums(client):
 
     response = client.get(
         f"{API_VERSION_PREFIX}/albums/",
-        headers={"role-name": "listener", "api_key": "key"},
+        headers={"role": "listener", "api_key": "key"},
     )
 
     assert response.status_code == 200
@@ -284,7 +284,7 @@ def test_admin_get_all_albums_returns_blocked_and_not_blocked_albums(client):
 
     response = client.get(
         f"{API_VERSION_PREFIX}/albums/",
-        headers={"role-name": "admin", "api_key": "key"},
+        headers={"role": "admin", "api_key": "key"},
     )
 
     assert response.status_code == 200
@@ -300,7 +300,7 @@ def test_admin_get_album_by_id_indicates_if_album_is_blocked(client):
 
     response = client.get(
         f"{API_VERSION_PREFIX}/albums/{album_id}",
-        headers={"role-name": "admin", "api_key": "key"},
+        headers={"role": "admin", "api_key": "key"},
     )
 
     assert response.status_code == 200
@@ -315,7 +315,7 @@ def test_artist_get_my_albums_returns_blocked_albums(client):
 
     response = client.get(
         f"{API_VERSION_PREFIX}/my_albums/",
-        headers={"uid": "artist_id", "role-name": "artist", "api_key": "key"},
+        headers={"uid": "artist_id", "role": "artist", "api_key": "key"},
     )
 
     assert response.status_code == 200
@@ -329,7 +329,7 @@ def test_get_album_by_id_invalid_role(client):
 
     response = client.get(
         f"{API_VERSION_PREFIX}/albums/{album_id}",
-        headers={"role-name": "an_invalid_role", "api_key": "key"},
+        headers={"role": "an_invalid_role", "api_key": "key"},
     )
 
     assert response.status_code == 422
@@ -341,7 +341,7 @@ def test_get_albums_invalid_role(client):
 
     response = client.get(
         f"{API_VERSION_PREFIX}/albums/",
-        headers={"role-name": "an_invalid_role", "api_key": "key"},
+        headers={"role": "an_invalid_role", "api_key": "key"},
     )
 
     assert response.status_code == 422
@@ -373,7 +373,7 @@ def test_listener_get_album_by_id_with_blocked_songs_should_retrieve_not_blocked
 
     response = client.get(
         f"{API_VERSION_PREFIX}/albums/{album_id}",
-        headers={"role-name": "listener", "api_key": "key"},
+        headers={"role": "listener", "api_key": "key"},
     )
 
     assert response.status_code == 200
@@ -400,12 +400,12 @@ def test_listener_get_album_by_id_with_blocked_songs_should_not_remove_song(clie
 
     client.get(
         f"{API_VERSION_PREFIX}/albums/{album_id}",
-        headers={"role-name": "listener", "api_key": "key"},
+        headers={"role": "listener", "api_key": "key"},
     )
 
     response_get_song = client.get(
         f"{API_VERSION_PREFIX}/songs/{song_id_1}",
-        headers={"role-name": "admin", "api_key": "key"},
+        headers={"role": "admin", "api_key": "key"},
     )
     assert response_get_song.status_code == 200
 
@@ -417,7 +417,7 @@ def test_user_cannot_modify_blocked_status_of_playlist(client):
     response = client.put(
         f"{API_VERSION_PREFIX}/playlists/{playlist_id}",
         data={"blocked": True},
-        headers={"uid": "artist_id", "role-name": "listener", "api_key": "key"},
+        headers={"uid": "artist_id", "role": "listener", "api_key": "key"},
     )
     assert response.status_code == 403
 
@@ -430,7 +430,7 @@ def test_admin_can_modify_blocked_status_of_playlist(client):
     response_put = client.put(
         f"{API_VERSION_PREFIX}/playlists/{playlist_id}",
         data={"blocked": True},
-        headers={"uid": "admin_id", "role-name": "admin", "api_key": "key"},
+        headers={"uid": "admin_id", "role": "admin", "api_key": "key"},
     )
     assert response_put.status_code == 200
 
@@ -442,7 +442,7 @@ def test_listener_get_not_blocked_playlist_by_id(client):
 
     response = client.get(
         f"{API_VERSION_PREFIX}/playlists/{playlist_id}",
-        headers={"role-name": "listener", "api_key": "key"},
+        headers={"role": "listener", "api_key": "key"},
     )
 
     assert response.status_code == 200
@@ -456,7 +456,7 @@ def test_listener_get_blocked_playlist_by_id_should_fail(client):
 
     response = client.get(
         f"{API_VERSION_PREFIX}/playlists/{playlist_id}",
-        headers={"role-name": "listener", "api_key": "key"},
+        headers={"role": "listener", "api_key": "key"},
     )
 
     assert response.status_code == 403
@@ -469,7 +469,7 @@ def test_admin_get_blocked_playlist_by_id(client):
 
     response = client.get(
         f"{API_VERSION_PREFIX}/playlists/{playlist_id}",
-        headers={"role-name": "admin", "api_key": "key"},
+        headers={"role": "admin", "api_key": "key"},
     )
 
     assert response.status_code == 200
@@ -486,7 +486,7 @@ def test_listener_get_all_playlists_returns_only_not_blocked_playlists(client):
 
     response = client.get(
         f"{API_VERSION_PREFIX}/playlists/",
-        headers={"role-name": "listener", "api_key": "key"},
+        headers={"role": "listener", "api_key": "key"},
     )
 
     assert response.status_code == 200
@@ -502,7 +502,7 @@ def test_admin_get_all_playlists_returns_blocked_and_not_blocked_playlists(clien
 
     response = client.get(
         f"{API_VERSION_PREFIX}/playlists/",
-        headers={"role-name": "admin", "api_key": "key"},
+        headers={"role": "admin", "api_key": "key"},
     )
 
     assert response.status_code == 200
@@ -516,7 +516,7 @@ def test_admin_get_playlist_by_id_indicates_if_playlist_is_blocked(client):
 
     response = client.get(
         f"{API_VERSION_PREFIX}/playlists/{playlist_id}",
-        headers={"role-name": "admin", "api_key": "key"},
+        headers={"role": "admin", "api_key": "key"},
     )
 
     assert response.status_code == 200
@@ -531,7 +531,7 @@ def test_artist_get_my_playlists_returns_blocked_playlists(client):
 
     response = client.get(
         f"{API_VERSION_PREFIX}/my_playlists/",
-        headers={"uid": "artist_id", "role-name": "artist", "api_key": "key"},
+        headers={"uid": "artist_id", "role": "artist", "api_key": "key"},
     )
 
     assert response.status_code == 200
@@ -545,7 +545,7 @@ def test_get_playlist_by_id_invalid_role(client):
 
     response = client.get(
         f"{API_VERSION_PREFIX}/playlists/{playlist_id}",
-        headers={"role-name": "an_invalid_role", "api_key": "key"},
+        headers={"role": "an_invalid_role", "api_key": "key"},
     )
 
     assert response.status_code == 422
@@ -557,7 +557,7 @@ def test_get_playlists_invalid_role(client):
 
     response = client.get(
         f"{API_VERSION_PREFIX}/playlists/",
-        headers={"role-name": "an_invalid_role", "api_key": "key"},
+        headers={"role": "an_invalid_role", "api_key": "key"},
     )
 
     assert response.status_code == 422
@@ -583,7 +583,7 @@ def test_listener_get_playlist_by_id_with_blocked_songs_should_retrieve_not_bloc
 
     response = client.get(
         f"{API_VERSION_PREFIX}/playlists/{playlist_id}",
-        headers={"role-name": "listener", "api_key": "key"},
+        headers={"role": "listener", "api_key": "key"},
     )
 
     assert response.status_code == 200
@@ -610,11 +610,11 @@ def test_listener_get_playlist_by_id_with_blocked_songs_should_not_remove_song(c
 
     client.get(
         f"{API_VERSION_PREFIX}/playlists/{playlist_id}",
-        headers={"role-name": "listener", "api_key": "key"},
+        headers={"role": "listener", "api_key": "key"},
     )
 
     response_get_song = client.get(
         f"{API_VERSION_PREFIX}/songs/{song_id_1}",
-        headers={"role-name": "admin", "api_key": "key"},
+        headers={"role": "admin", "api_key": "key"},
     )
     assert response_get_song.status_code == 200
