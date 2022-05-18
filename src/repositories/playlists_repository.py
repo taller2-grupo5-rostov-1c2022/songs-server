@@ -1,39 +1,74 @@
 from sqlalchemy.orm import Session, joinedload
-from src.postgres.models import PlaylistModel, UserModel
-from typing import Optional
+from src import roles
+from src.postgres.models import PlaylistModel, UserModel, SongModel
+from typing import Optional, List
 from fastapi import HTTPException
-from src.postgres import schemas
+from sqlalchemy import or_
+from src.repositories import songs_repository as crud_songs
 
 
-def get_playlists(pdb: Session, creator_id: Optional[str]):
-    if creator_id is not None:
-        if pdb.query(UserModel).filter_by(id=creator_id).first() is None:
-            raise HTTPException(
-                status_code=404, detail=f"User with id {creator_id} not found"
-            )
+def get_playlists(pdb: Session, role: roles.Role, colab_id: Optional[str]):
+    queries = []
+    if not role.can_see_blocked():
+        # This action should not be committed
+        pdb.query(SongModel).filter(SongModel.blocked == True).delete()
+        queries.append(PlaylistModel.blocked == False)
 
-        return (
-            pdb.query(PlaylistModel)
-            .filter(PlaylistModel.creator_id == creator_id)
-            .all()
+    if colab_id is not None:
+        queries.append(
+            or_(PlaylistModel.creator_id == colab_id, UserModel.id == colab_id)
         )
-    else:
-        return pdb.query(PlaylistModel).all()
+
+    playlists = (
+        pdb.query(PlaylistModel)
+        .join(UserModel.other_playlists, full=True)
+        .filter(*queries)
+        .all()
+    )
+
+    return playlists
 
 
-def get_playlist_by_id(pdb: Session, playlist_id: int) -> schemas.PlaylistBase:
-    try:
-        playlist = (
-            pdb.query(PlaylistModel)
-            .options(joinedload(PlaylistModel.songs))
-            .filter(PlaylistModel.id == playlist_id)
-            .first()
-        )
-        playlist_schema = schemas.PlaylistBase(**playlist.__dict__.copy())
+def get_playlist_by_id(pdb: Session, role: roles.Role, playlist_id: int):
+    queries = []
+    if not role.can_see_blocked():
+        # This action should not be committed
+        pdb.query(SongModel).filter(SongModel.blocked == True).delete()
+        queries.append(PlaylistModel.blocked == False)
 
-        return playlist_schema
-    except Exception as entry_not_found:
+    playlist = (
+        pdb.query(PlaylistModel)
+        .options(joinedload(PlaylistModel.songs))
+        .options(joinedload(PlaylistModel.colabs))
+        .filter(PlaylistModel.id == playlist_id)
+        .first()
+    )
+    if playlist is None:
         raise HTTPException(
             status_code=404,
-            detail=f"Playlist '{str(playlist_id)}' not found",
-        ) from entry_not_found
+            detail=f"Playlist '{playlist_id}' not found",
+        )
+    if playlist.blocked and not role.can_see_blocked():
+        raise HTTPException(status_code=403, detail="Playlist is blocked")
+
+    return playlist
+
+
+def get_songs_list(pdb: Session, role: roles.Role, songs_ids: List[int]):
+    songs = []
+    for song_id in songs_ids:
+        song = crud_songs.get_song_by_id(pdb, role, song_id)
+        songs.append(song)
+    return songs
+
+
+def get_colabs_list(pdb: Session, colabs_ids: List[str]):
+    colabs = []
+    for colab_id in colabs_ids:
+        colab = pdb.get(UserModel, colab_id)
+        if colab is None:
+            raise HTTPException(
+                status_code=404, detail=f"User with id {colab_id} not found"
+            )
+        colabs.append(colab)
+    return colabs

@@ -36,7 +36,7 @@ def test_post_song(client):
 
 def test_cannot_post_song_with_not_created_user(client):
     response_post = post_song(client)
-    assert response_post.status_code == 403
+    assert response_post.status_code == 404
 
 
 def test_put_song(client):
@@ -56,11 +56,13 @@ def test_put_song(client):
         },
     )
     assert response_update.status_code == 200
-    assert response_update.json()["id"] == response_post.json()["id"]
 
     response_get = client.get(
-        API_VERSION_PREFIX + "/songs/" + str(response_post.json()["id"]),
-        headers={"api_key": "key"},
+        f"{API_VERSION_PREFIX}/songs/{response_post.json()['id']}",
+        headers={
+            "api_key": "key",
+            "uid": "song_creator_id",
+        },
     )
 
     assert str(response_get.json()["id"]) == str(response_post.json()["id"])
@@ -149,11 +151,12 @@ def test_cannot_delete_song_of_another_user(client):
 
 def test_cannot_delete_song_that_does_not_exist(client):
     post_user(client, "song_creator_id", "song_creator")
+    post_user(client, "another_creator_id", "another_creator")
+
     response_delete = client.delete(
         API_VERSION_PREFIX + "/songs/1",
         headers={"api_key": "key", "uid": "another_creator_id"},
     )
-
     assert response_delete.status_code == 404
 
 

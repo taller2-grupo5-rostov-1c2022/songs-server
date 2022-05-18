@@ -3,6 +3,7 @@ from tests.utils import (
     post_user,
     post_song,
     post_album,
+    post_playlist,
 )
 from urllib.parse import urlparse
 from urllib.parse import parse_qs
@@ -183,3 +184,16 @@ def test_update_pfp_updates_pfp_timestamp(client):
     timestamp_2 = parse_qs(urlparse(url_2).query)["t"][0]
 
     assert timestamp_1 != timestamp_2
+
+
+def test_user_should_return_his_own_playlists(client):
+    post_user(client, "user_id", "user_name")
+    post_playlist(client, "user_id", "playlist_name")
+
+    response = client.get(
+        f"{API_VERSION_PREFIX}/users/user_id", headers={"api_key": "key"}
+    )
+
+    assert response.status_code == 200
+    assert len(response.json()["my_playlists"]) == 1
+    assert response.json()["my_playlists"][0]["name"] == "playlist_name"

@@ -20,6 +20,7 @@ ignore =
     W0702, # No exception type(s) specified (bare-except)
     E722, # do not use bare 'except'
     W0703, # Catching too general exception Exception (broad-except)
+    E712, # comparison to True should be 'if cond is True:' or 'if cond:'
 select =
     C, # McCabe complexity
     E, # pep8 errors

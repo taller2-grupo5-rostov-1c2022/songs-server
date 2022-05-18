@@ -3,6 +3,7 @@ from src.postgres.models import SongModel, ArtistModel
 from fastapi import HTTPException
 from src.postgres import schemas
 from sqlalchemy import func
+from .. import roles
 
 
 def create_song(pdb: Session, song: schemas.SongBase):
@@ -15,12 +16,16 @@ def create_song(pdb: Session, song: schemas.SongBase):
 
 def get_songs(
     pdb: Session,
+    role: roles.Role,
     creator_id: str = None,
     artist: str = None,
     genre: str = None,
     sub_level: int = None,
 ):
     queries = []
+    if not role.can_see_blocked():
+        queries.append(SongModel.blocked == False)
+
     if creator_id is not None:
         queries.append(SongModel.creator_id == creator_id)
     if artist is not None:
@@ -33,11 +38,15 @@ def get_songs(
     return pdb.query(SongModel).join(ArtistModel.songs).filter(*queries).all()
 
 
-def get_song_by_id(pdb: Session, song_id: int):
+def get_song_by_id(pdb: Session, role: roles.Role, song_id: int):
     song = pdb.query(SongModel).filter(SongModel.id == song_id).first()
     if song is None:
         raise HTTPException(
             status_code=404,
             detail=f"Song '{str(song_id)}' not found",
         )
+
+    if song.blocked and not role.can_see_blocked():
+        raise HTTPException(status_code=403, detail="Song is blocked")
+
     return song

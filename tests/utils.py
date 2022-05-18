@@ -53,6 +53,7 @@ def post_song(
     genre: Optional[str] = "song_genre",
     sub_level: Optional[int] = 0,
     file: Optional[str] = "./tests/test.song",
+    blocked: Optional[bool] = False,
     headers: Optional[dict] = None,
 ):
     if headers is None:
@@ -75,6 +76,14 @@ def post_song(
             files={"file": ("song.txt", f, "plain/text")},
             headers=headers,
         )
+
+    if blocked:
+        response_put = client.put(
+            f"{API_VERSION_PREFIX}/songs/{response_post.json()['id']}",
+            data={"blocked": True},
+            headers={"api_key": "key", "uid": uid, "role": "admin"},
+        )
+        assert response_put.status_code == 200
     return response_post
 
 
@@ -87,6 +96,7 @@ def post_album(
     songs_ids: Optional[List[str]] = None,
     sub_level: Optional[int] = 1,
     cover: Optional[str] = "./tests/test.cover",
+    blocked: bool = False,
     headers: Optional[dict] = None,
 ):
     if headers is None:
@@ -110,6 +120,13 @@ def post_album(
             headers=headers,
         )
 
+    if blocked:
+        response_put = client.put(
+            f"{API_VERSION_PREFIX}/albums/{response_post.json()['id']}",
+            data={"blocked": True},
+            headers={"api_key": "key", "uid": uid, "role": "admin"},
+        )
+        assert response_put.status_code == 200
     return response_post
 
 
@@ -143,6 +160,7 @@ def post_playlist(
     description: Optional[str] = "playlist_desc",
     songs_ids: Optional[List[str]] = None,
     colabs_ids: Optional[List[str]] = None,
+    blocked: Optional[bool] = False,
     headers: Optional[dict] = None,
 ):
 
@@ -167,4 +185,22 @@ def post_playlist(
         headers=headers,
     )
 
+    if blocked:
+        response_put = client.put(
+            f"{API_VERSION_PREFIX}/playlists/{response_post.json()['id']}",
+            data={"blocked": True},
+            headers={"api_key": "key", "uid": uid, "role": "admin"},
+        )
+        assert response_put.status_code == 200
     return response_post
+
+
+def block_song(client, id: int):
+    post_user(client, uid="__blocker__id__", user_name="__blocker__name__")
+    response_put = client.put(
+        f"{API_VERSION_PREFIX}/songs/{id}",
+        data={"blocked": True},
+        headers={"api_key": "key", "uid": "__blocker__id__", "role": "admin"},
+    )
+    assert response_put.status_code == 200
+    return response_put

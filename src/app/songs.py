@@ -1,22 +1,37 @@
 import datetime
+
+from src import roles
 from src.constants import STORAGE_PATH, SUPPRESS_BLOB_ERRORS
 from src.postgres import schemas
 from typing import List
-from fastapi import APIRouter, Header
-from fastapi import Depends, File, Form, HTTPException, UploadFile
-import json
+from fastapi import APIRouter
+from fastapi import Depends, File, HTTPException, UploadFile
 from src.repositories import songs_repository as crud_songs
 from src.firebase.access import get_bucket
 from sqlalchemy.orm import Session
 from src.postgres.database import get_db
-from src.postgres.models import SongModel, UserModel, ArtistModel
+from src.postgres.models import SongModel, ArtistModel
+from src.repositories.resources_repository import (
+    retrieve_song,
+    retrieve_uid,
+    retrieve_song_update,
+)
+from src.roles import get_role
 
 router = APIRouter(tags=["songs"])
+
+
+def create_song_artists_models(artists_names: List[str]):
+    artists = []
+    for artist_name in artists_names:
+        artists.append(ArtistModel(name=artist_name))
+    return artists
 
 
 @router.get("/songs/", response_model=List[schemas.SongBase])
 def get_songs(
     creator: str = None,
+    role: roles.Role = Depends(get_role),
     artist: str = None,
     genre: str = None,
     sub_level: int = None,
@@ -24,16 +39,17 @@ def get_songs(
 ):
     """Returns all songs"""
 
-    return crud_songs.get_songs(pdb, creator, artist, genre, sub_level)
+    return crud_songs.get_songs(pdb, role, creator, artist, genre, sub_level)
 
 
 @router.get("/songs/{song_id}", response_model=schemas.SongGet)
 def get_song_by_id(
     song_id: int,
+    role: roles.Role = Depends(get_role),
     pdb: Session = Depends(get_db),
 ):
     """Returns a song by its id or 404 if not found"""
-    song = crud_songs.get_song_by_id(pdb, song_id)
+    song = crud_songs.get_song_by_id(pdb, role, song_id)
 
     song.file = (
         STORAGE_PATH + "songs/" + str(song_id) + "?t=" + str(song.file_last_update)
@@ -45,12 +61,9 @@ def get_song_by_id(
 @router.put("/songs/{song_id}")
 def update_song(
     song_id: str,
-    uid: str = Header(...),
-    name: str = Form(None),
-    description: str = Form(None),
-    genre: str = Form(None),
-    artists: str = Form(None),
-    sub_level: int = Form(None),
+    uid: str = Depends(retrieve_uid),
+    role: roles.Role = Depends(get_role),
+    song_update: schemas.SongUpdate = Depends(retrieve_song_update),
     file: UploadFile = None,
     pdb: Session = Depends(get_db),
     bucket=Depends(get_bucket),
@@ -58,37 +71,30 @@ def update_song(
     """Updates song by its id"""
 
     # even though id is an integer, we can compare with a string
-    song = pdb.query(SongModel).filter(SongModel.id == song_id).first()
+    song = pdb.get(SongModel, song_id)
     if song is None:
         raise HTTPException(status_code=404, detail=f"Song '{song_id}' not found")
-    if song.creator_id != uid:
+    if song.creator_id != uid and not role.can_edit_everything():
         raise HTTPException(
             status_code=403,
             detail=f"User '{uid} attempted to edit song of user with ID {song.creator_id}",
         )
 
-    if name is not None:
-        song.name = name
-    if description is not None:
-        song.description = description
-    if genre is not None:
-        song.genre = genre
-    if sub_level is not None:
-        song.sub_level = sub_level
-    if artists is not None:
-        artists_list = []
-        try:
-            parsed_artists = json.loads(artists)
-            if len(parsed_artists) == 0:
-                raise ValueError
-            for artist_name in json.loads(artists):
-                artists_list.append(ArtistModel(name=artist_name))
-            song.artists = artists_list
+    song_update = song_update.dict()
 
-        except ValueError as e:
+    for song_attr in song_update:
+        if song_update[song_attr] is not None:
+            setattr(song, song_attr, song_update[song_attr])
+    if song_update["artists_names"] is not None:
+        song.artists = create_song_artists_models(song_update["artists_names"])
+
+    if song_update["blocked"] is not None:
+        if not role.can_block():
             raise HTTPException(
-                status_code=422, detail="Artists string is not well encoded"
-            ) from e
+                status_code=403,
+                detail=f"User {uid} without permissions tried to block song {song.id}",
+            )
+        song.blocked = song_update["blocked"]
 
     pdb.commit()
 
@@ -106,54 +112,22 @@ def update_song(
 
     pdb.commit()
 
-    return schemas.SongResponse(success=True, id=song.id if song else song_id)
 
-
-@router.post("/songs/")
+@router.post("/songs/", response_model=schemas.SongBase)
 def post_song(
-    uid: str = Header(...),
-    name: str = Form(...),
-    description: str = Form(...),
-    artists: str = Form(...),
-    genre: str = Form(...),
-    sub_level: int = Form(None),
+    song_info: schemas.SongPost = Depends(retrieve_song),
     file: UploadFile = File(...),
     pdb: Session = Depends(get_db),
     bucket=Depends(get_bucket),
 ):
     """Creates a song and returns its id. Artists form is encoded like '["artist1", "artist2", ...]'"""
 
-    # The user is not in the database
-    if not pdb.query(UserModel).filter(UserModel.id == uid).all():
-        raise HTTPException(status_code=403, detail=f"User with ID {uid} not found")
-
-    artists_models = []
-    try:
-        parsed_artists = json.loads(artists)
-        if len(parsed_artists) == 0:
-            raise ValueError
-        for artist_name in parsed_artists:
-            artists_models.append(ArtistModel(name=artist_name))
-    except ValueError as e:
-        raise HTTPException(
-            status_code=422, detail="Artists string is not well encoded"
-        ) from e
-
-    if sub_level is None:
-        sub_level = 0
-
     new_song = SongModel(
-        name=name,
-        description=description,
-        creator_id=uid,
-        artists=artists_models,
-        genre=genre,
-        sub_level=sub_level,
+        **song_info.dict(exclude={"artists_names"}),
+        artists=create_song_artists_models(song_info.artists_names),
         file_last_update=datetime.datetime.now(),
     )
     pdb.add(new_song)
-    pdb.commit()
-    pdb.refresh(new_song)
 
     try:
         blob = bucket.blob(f"songs/{new_song.id}")
@@ -166,21 +140,18 @@ def post_song(
                 detail=f"Could not upload Files for new Song {new_song.id}",
             )
 
-    return schemas.SongResponse(
-        success=True,
-        id=new_song.id,
-        file=STORAGE_PATH
-        + "songs/"
-        + str(new_song.id)
-        + "?t="
-        + str(new_song.file_last_update),
-    )
+    # Changes to the db should not be committed if there is an error
+    # uploading the file
+    pdb.commit()
+    pdb.refresh(new_song)
+
+    return new_song
 
 
 @router.delete("/songs/{song_id}")
 def delete_song(
     song_id: str,
-    uid: str = Header(...),
+    uid: str = Depends(retrieve_uid),
     pdb: Session = Depends(get_db),
     bucket=Depends(get_bucket),
 ):
@@ -211,5 +182,5 @@ def delete_song(
 
 
 @router.get("/my_songs/", response_model=List[schemas.SongBase])
-def get_my_songs(uid: str = Header(...), pdb: Session = Depends(get_db)):
-    return crud_songs.get_songs(pdb, uid)
+def get_my_songs(uid: str = Depends(retrieve_uid), pdb: Session = Depends(get_db)):
+    return crud_songs.get_songs(pdb, roles.Role.admin(), uid)

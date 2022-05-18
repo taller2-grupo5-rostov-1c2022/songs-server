@@ -172,7 +172,9 @@ def test_update_songs_in_album_with_songs_of_another_user_should_fail(client):
 def test_update_songs_in_album(client):
     post_user(client, "album_creator_id", "album_creator_name")
     response_post_song = post_song(client, uid="album_creator_id")
-    response_post_album = post_album(client, songs_ids=response_post_song.json()["id"])
+    response_post_album = post_album(
+        client, songs_ids=[response_post_song.json()["id"]]
+    )
 
     response_update = client.put(
         API_VERSION_PREFIX + "/albums/" + str(response_post_album.json()["id"]),
@@ -191,6 +193,8 @@ def test_update_songs_in_album(client):
 
 def test_cannot_put_album_of_another_user(client):
     post_user(client, "album_creator_id", "album_creator_name")
+    post_user(client, "another_creator_id", "another_creator_name")
+
     response_post = post_album(client)
     assert response_post.status_code == 200
 
