@@ -91,6 +91,7 @@ def set_cover(pdb: Session, bucket, album: AlbumModel, file: IO):
     try:
         blob = bucket.blob("covers/" + str(album.id))
         blob.upload_from_file(file)
+        blob.make_public()
         album.cover_last_update = datetime.datetime.now()
         pdb.commit()
     except Exception as entry_not_found:

@@ -158,8 +158,6 @@ def update_album(
     if cover is not None:
         crud_albums.set_cover(pdb, bucket, album, cover.file)
 
-    return {"id": album_id}
-
 
 @router.delete("/albums/{album_id}")
 def delete_album(
