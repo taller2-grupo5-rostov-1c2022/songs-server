@@ -9,6 +9,9 @@ from src.firebase.access import get_bucket, get_auth
 from src.postgres.models import UserModel
 import datetime
 
+from src.repositories.resources_repository import retrieve_uid
+import src.repositories.comments_repository as crud_comments
+
 router = APIRouter(tags=["users"])
 
 
@@ -188,3 +191,10 @@ def delete_user(
             )
 
     pdb.commit()
+
+
+@router.get("/users/{uid}/comments/", response_model=List[schemas.CommentMyComments])
+def get_comments_of_user(
+    uid: str = Depends(retrieve_uid), pdb: Session = Depends(get_db)
+):
+    return crud_comments.get_comments_by_uid(pdb, uid)

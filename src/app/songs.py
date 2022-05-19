@@ -162,7 +162,7 @@ def delete_song(
             detail=f"User with ID {uid} attempted to delete song of creator with ID {song.creator_id}",
         )
 
-    pdb.query(SongModel).filter(SongModel.id == song.id).delete()
+    pdb.delete(song)
 
     try:
         bucket.blob(f"songs/{song.id}").delete()

@@ -11,12 +11,12 @@ from sqlalchemy.orm import Session
 from src.postgres.database import get_db
 from src.postgres.models import AlbumModel, UserModel
 from src import roles
-from src.repositories.albums_repository import get_comment_by_uid
 from src.repositories.resources_repository import (
     retrieve_album_update,
     retrieve_album,
     retrieve_uid,
     get_album,
+    get_comment,
 )
 from src.roles import get_role
 from src.postgres.models import CommentModel
@@ -215,9 +215,29 @@ def get_comments(
     return album.comments
 
 
-@router.put("/albums/{album_id}/comments/", response_model=List[schemas.CommentGet])
-def edit_comment(
-        comment_info_update: schemas.CommentUpdate,
-        comment: CommentModel = Depends(get_comment_by_uid),
-):
+@router.get("/albums/{album_id}/my_comment/", response_model=schemas.CommentBase)
+def get_my_comment(comment: CommentModel = Depends(get_comment)):
+    return comment
 
+
+@router.put("/albums/{album_id}/comments/")
+def edit_comment(
+    comment_info_update: schemas.CommentUpdate,
+    comment: CommentModel = Depends(get_comment),
+    pdb: Session = Depends(get_db),
+):
+    comment_attrs = comment_info_update.dict()
+    print(comment)
+    for comment_attr_key in comment_attrs:
+        if comment_attrs[comment_attr_key] is not None:
+            setattr(comment, comment_attr_key, comment_attrs[comment_attr_key])
+
+    pdb.commit()
+
+
+@router.delete("/albums/{album_id}/comments/")
+def delete_comment(
+    comment: CommentModel = Depends(get_comment), pdb: Session = Depends(get_db)
+):
+    pdb.delete(comment)
+    pdb.commit()

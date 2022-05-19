@@ -195,17 +195,15 @@ def get_album(
 
 
 def get_song(
-    song_id: int,
-    role: roles.Role = Depends(get_role),
-    pdb: Session = Depends(get_db)
+    song_id: int, role: roles.Role = Depends(get_role), pdb: Session = Depends(get_db)
 ):
     return crud_songs.get_song_by_id(pdb, role, song_id)
 
 
-def get_comment_by_id(
-        album: AlbumModel = Depends(retrieve_album),
-        role: roles.Role = Depends(get_role),
-        pdb: Session = Depends(get_db),
-        uid: str = Depends(retrieve_uid)
+def get_comment(
+    album: AlbumModel = Depends(get_album),
+    role: roles.Role = Depends(get_role),
+    pdb: Session = Depends(get_db),
+    uid: str = Depends(retrieve_uid),
 ):
-    crud_albums.get_comment_by_uid(pdb, role, album, uid)
+    return crud_albums.get_comment_by_uid(pdb, role, album, uid)

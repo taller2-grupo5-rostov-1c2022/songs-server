@@ -21,6 +21,7 @@ ignore =
     E722, # do not use bare 'except'
     W0703, # Catching too general exception Exception (broad-except)
     E712, # comparison to True should be 'if cond is True:' or 'if cond:'
+    E711, # comparison to None should be 'if cond is not None:'
 select =
     C, # McCabe complexity
     E, # pep8 errors

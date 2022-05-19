@@ -29,31 +29,6 @@ class UserInfo(BaseModel):
         orm_mode = True
 
 
-class CommentBase(BaseModel):
-    text: Optional[str] = None
-    score: Optional[int] = None
-
-    class Config:
-        orm_mode = True
-
-
-class CommentGet(CommentBase):
-    commenter: UserInfo
-
-    class Config:
-        orm_mode = True
-
-
-# This is identical to CommentBase, but
-# they are conceptually different
-class CommentUpdate(CommentBase):
-    text: Optional[str] = None
-    score: Optional[int] = None
-
-    class Config:
-        orm_mode = True
-
-
 class ResourceCreator(ResourceBase):
     genre: str
     sub_level: int
@@ -177,6 +152,38 @@ class UserBase(BaseModel):
     songs: List[SongBase]
     albums: List[AlbumBase]
     my_playlists: List[PlaylistBase]
+
+    class Config:
+        orm_mode = True
+
+
+class CommentBase(BaseModel):
+    text: Optional[str] = None
+    score: Optional[int] = None
+
+    class Config:
+        orm_mode = True
+
+
+class CommentMyComments(CommentBase):
+    album: AlbumInfoBase
+
+    class Config:
+        orm_mode = True
+
+
+class CommentGet(CommentBase):
+    commenter: UserInfo
+
+    class Config:
+        orm_mode = True
+
+
+# This is identical to CommentBase, but
+# they are conceptually different
+class CommentUpdate(BaseModel):
+    text: Optional[str] = None
+    score: Optional[int] = None
 
     class Config:
         orm_mode = True

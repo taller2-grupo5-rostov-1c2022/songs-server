@@ -159,6 +159,25 @@ def test_post_comment_without_text_or_score_should_fail(client):
     assert response_post.status_code == 422
 
 
+def test_post_comment_does_not_affect_another_album(client):
+    post_user(client, uid="creator_id", user_name="creator_name")
+    post_user(client, uid="commenter_id", user_name="commenter_name")
+
+    album_id_1 = post_album(client, uid="creator_id").json()["id"]
+    album_id_2 = post_album(client, uid="creator_id").json()["id"]
+
+    post_comment(client, uid="commenter_id", album_id=album_id_1, text="text", score=3)
+
+    response_get = client.get(
+        f"{API_VERSION_PREFIX}/albums/{album_id_2}/comments/",
+        json={"text": "updated text", "score": 5},
+        headers={"api_key": "key", "uid": "commenter_id"},
+    )
+    comments = response_get.json()
+    assert response_get.status_code == 200
+    assert len(comments) == 0
+
+
 def test_edit_comment_without_comment_should_fail(client):
     post_user(client, uid="creator_id", user_name="creator_name")
     post_user(client, uid="commenter_id", user_name="commenter_name")
@@ -167,13 +186,138 @@ def test_edit_comment_without_comment_should_fail(client):
 
     response_put = client.put(
         f"{API_VERSION_PREFIX}/albums/{album_id}/comments/",
-        json={
-            "text": "my text",
-            "score": 4
-        },
+        json={"text": "my text", "score": 4},
         headers={"api_key": "key", "uid": "commenter_id"},
     )
+    print(response_put.json())
     assert response_put.status_code == 404
+
+
+def test_edit_comment_in_album_with_one_comment(client):
+    post_user(client, uid="creator_id", user_name="creator_name")
+    post_user(client, uid="commenter_id", user_name="commenter_name")
+
+    album_id = post_album(client, uid="creator_id").json()["id"]
+    post_comment(
+        client, uid="commenter_id", album_id=album_id, text="original text", score=2
+    )
+
+    response_put = client.put(
+        f"{API_VERSION_PREFIX}/albums/{album_id}/comments/",
+        json={"text": "updated text", "score": 5},
+        headers={"api_key": "key", "uid": "commenter_id"},
+    )
+    assert response_put.status_code == 200
+
+    response_get = client.get(
+        f"{API_VERSION_PREFIX}/albums/{album_id}/comments/",
+        headers={"api_key": "key", "uid": "commenter_id"},
+    )
+    comments = response_get.json()
+    assert response_get.status_code == 200
+    assert len(comments) == 1
+    assert comments[0]["text"] == "updated text"
+    assert comments[0]["score"] == 5
+
+
+def test_edit_comment_in_album_with_many_comments(client):
+    post_user(client, uid="creator_id", user_name="creator_name")
+    post_user(client, uid="first_commenter_id", user_name="first_commenter_name")
+    post_user(client, uid="second_commenter_id", user_name="second_commenter_name")
+
+    album_id = post_album(client, uid="creator_id").json()["id"]
+    post_comment(
+        client, uid="first_commenter_id", album_id=album_id, text="awful album", score=2
+    )
+    post_comment(
+        client, uid="second_commenter_id", album_id=album_id, text="text", score=2
+    )
+
+    new_text = "I changed my mind, this album is awesome"
+
+    response_put = client.put(
+        f"{API_VERSION_PREFIX}/albums/{album_id}/comments/",
+        json={"text": new_text, "score": 5},
+        headers={"api_key": "key", "uid": "first_commenter_id"},
+    )
+    assert response_put.status_code == 200
+
+    response_get = client.get(
+        f"{API_VERSION_PREFIX}/albums/{album_id}/my_comment/",
+        headers={"api_key": "key", "uid": "first_commenter_id"},
+    )
+    comment = response_get.json()
+    assert response_get.status_code == 200
+    assert comment["text"] == new_text
+    assert comment["score"] == 5
+
+
+def test_cannot_edit_comment_of_another_user(client):
+    post_user(client, uid="creator_id", user_name="creator_name")
+    post_user(client, uid="first_commenter_id", user_name="first_commenter_name")
+    post_user(client, uid="second_commenter_id", user_name="second_commenter_name")
+
+    album_id = post_album(client, uid="creator_id").json()["id"]
+    post_comment(
+        client,
+        uid="first_commenter_id",
+        album_id=album_id,
+        text="original text",
+        score=2,
+    )
+
+    response_put = client.put(
+        f"{API_VERSION_PREFIX}/albums/{album_id}/comments/",
+        json={"text": "I'm trying to change a comment", "score": 3},
+        headers={"api_key": "key", "uid": "second_commenter_id"},
+    )
+    assert response_put.status_code == 404
+
+    response_get = client.get(
+        f"{API_VERSION_PREFIX}/albums/{album_id}/my_comment/",
+        headers={"api_key": "key", "uid": "first_commenter_id"},
+    )
+    comment = response_get.json()
+    assert response_get.status_code == 200
+    assert comment["text"] == "original text"
+    assert comment["score"] == 2
+
+
+def test_delete_comment_in_album_with_zero_comments_should_fail(client):
+    post_user(client, uid="creator_id", user_name="creator_name")
+    post_user(client, uid="commenter_id", user_name="commenter_name")
+
+    album_id = post_album(client, uid="creator_id").json()["id"]
+
+    response_delete = client.delete(
+        f"{API_VERSION_PREFIX}/albums/{album_id}/comments/",
+        headers={"api_key": "key", "uid": "commenter_id"},
+    )
+    assert response_delete.status_code == 404
+
+
+def test_delete_comment_in_album_with_comment(client):
+    post_user(client, uid="creator_id", user_name="creator_name")
+    post_user(client, uid="commenter_id", user_name="commenter_name")
+
+    album_id = post_album(client, uid="creator_id").json()["id"]
+    post_comment(
+        client, uid="commenter_id", album_id=album_id, text="original text", score=2
+    )
+
+    response_delete = client.delete(
+        f"{API_VERSION_PREFIX}/albums/{album_id}/comments/",
+        headers={"api_key": "key", "uid": "commenter_id"},
+    )
+    assert response_delete.status_code == 200
+
+    response_get = client.get(
+        f"{API_VERSION_PREFIX}/albums/{album_id}/comments/",
+        headers={"api_key": "key", "uid": "commenter_id"},
+    )
+    comments = response_get.json()
+    assert response_get.status_code == 200
+    assert len(comments) == 0
 
 
 def test_post_comment_in_album_with_blocked_songs_should_not_remove_songs(client):
@@ -197,6 +341,3 @@ def test_post_comment_in_album_with_blocked_songs_should_not_remove_songs(client
         headers={"api_key": "key", "uid": "song_creator_id", "role": "admin"},
     )
     assert response_get.status_code == 200
-
-
-

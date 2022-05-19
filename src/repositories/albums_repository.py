@@ -1,4 +1,4 @@
-from sqlalchemy.orm import Session, joinedload, contains_eager
+from sqlalchemy.orm import Session, contains_eager
 from src.postgres.models import AlbumModel, ArtistModel, SongModel, CommentModel
 from fastapi import HTTPException
 from sqlalchemy import func
@@ -42,7 +42,9 @@ def get_albums(
     )
 
     if artist is not None:
-        results = results.join(ArtistModel, SongModel.artists.any(criterion=and_(True, *artist_queries)))
+        results = results.join(
+            ArtistModel, SongModel.artists.any(criterion=and_(True, *artist_queries))
+        )
 
     return results.all()
 
@@ -127,6 +129,10 @@ def calculate_scores_amount(pdb: Session, album: AlbumModel):
 
 
 def calculate_score(pdb: Session, album: AlbumModel):
+    scores_amount = calculate_scores_amount(pdb, album)
+    if scores_amount == 0:
+        return 0
+
     comments = (
         pdb.query(CommentModel.score)
         .join(CommentModel.album)
@@ -134,9 +140,15 @@ def calculate_score(pdb: Session, album: AlbumModel):
         .all()
     )
     sum_scores = sum(comment.score for comment in comments)
-    scores_amount = calculate_scores_amount(pdb, album)
-    return sum_scores/scores_amount
+
+    return sum_scores / scores_amount
 
 
 def get_comment_by_uid(pdb: Session, role: roles.Role, album: AlbumModel, uid: str):
-    if
+    if album.blocked and not role.can_see_blocked():
+        raise HTTPException(status_code=403, detail="Album is blocked")
+
+    comment = pdb.query(CommentModel).filter(CommentModel.commenter_id == uid).first()
+    if comment is None:
+        raise HTTPException(status_code=404, detail="Comment not found")
+    return comment

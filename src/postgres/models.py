@@ -91,7 +91,7 @@ class CommentModel(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     commenter = relationship("UserModel", back_populates="comments")
-    commenter_id = Column(String, ForeignKey("users.id"))
+    commenter_id = Column(String, ForeignKey("users.id"), unique=True)
 
     album = relationship("AlbumModel", back_populates="comments")
     album_id = Column(Integer, ForeignKey("albums.id"), nullable=False)
