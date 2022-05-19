@@ -126,6 +126,7 @@ def post_song(
         file_last_update=datetime.datetime.now(),
     )
     pdb.add(new_song)
+    pdb.commit()
 
     try:
         blob = bucket.blob(f"songs/{new_song.id}")
@@ -140,8 +141,8 @@ def post_song(
 
     # Changes to the db should not be committed if there is an error
     # uploading the file
+    pdb.add(new_song)
     pdb.commit()
-    pdb.refresh(new_song)
 
     return new_song
 
