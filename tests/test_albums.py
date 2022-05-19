@@ -297,3 +297,28 @@ def test_update_cover_updates_cover_timestamp(client):
     timestamp_2 = parse_qs(urlparse(url_2).query)["t"][0]
 
     assert timestamp_1 != timestamp_2
+
+
+def test_add_song_to_album(client):
+    post_user(client, "album_creator_id", "album_creator_name")
+    song_id_1 = post_song(client, uid="album_creator_id", name="song1").json()["id"]
+    song_id_2 = post_song(client, uid="album_creator_id", name="song2").json()["id"]
+
+    album_id = post_album(client, uid="album_creator_id", songs_ids=[song_id_1]).json()[
+        "id"
+    ]
+
+    response_put = client.put(
+        f"{API_VERSION_PREFIX}/albums/{album_id}",
+        data={"songs_ids": f"[{song_id_1}, {song_id_2}]"},
+        headers={"api_key": "key", "uid": "album_creator_id"},
+    )
+    assert response_put.status_code == 200
+
+    response_get = client.get(
+        f"{API_VERSION_PREFIX}/albums/{album_id}",
+        headers={"api_key": "key", "uid": "album_creator_id"},
+    )
+    album = response_get.json()
+    assert response_get.status_code == 200
+    assert len(album["songs"]) == 2

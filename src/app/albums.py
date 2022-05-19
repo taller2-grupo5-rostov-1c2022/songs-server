@@ -98,16 +98,14 @@ def post_album(
     if creator is None:
         raise HTTPException(status_code=404, detail=f"User with id {uid} not found")
 
-    songs = crud_albums.get_songs_list(pdb, uid, role, album_info.songs_ids)
-    album_info = album_info.dict()
-    del album_info["songs_ids"]
-
     album = models.AlbumModel(
         cover_last_update=datetime.datetime.now(),
-        songs=songs,
+        songs=[],
         creator=creator,
-        **album_info,
+        **album_info.dict(exclude={"songs_ids"}),
     )
+    crud_albums.update_songs(pdb, uid, role, album, album_info.songs_ids)
+
     pdb.add(album)
 
     crud_albums.set_cover(bucket, album, cover.file)
@@ -142,8 +140,7 @@ def update_album(
         if album_update[album_attr] is not None:
             setattr(album, album_attr, album_update[album_attr])
     if album_update["songs_ids"] is not None:
-        songs = crud_albums.get_songs_list(pdb, uid, role, album_update["songs_ids"])
-        album.songs = songs
+        crud_albums.update_songs(pdb, uid, role, album, album_update["songs_ids"])
 
     if album_update["blocked"] is not None:
         if not role.can_block():

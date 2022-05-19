@@ -68,7 +68,9 @@ def get_album_by_id(pdb: Session, role: roles.Role, album_id: int):
     return album
 
 
-def get_songs_list(pdb: Session, uid: str, role: roles.Role, songs_ids: List[int]):
+def update_songs(
+    pdb: Session, uid: str, role: roles.Role, album: AlbumModel, songs_ids: List[int]
+):
     songs = []
     for song_id in songs_ids:
         song = crud_songs.get_song_by_id(pdb, role, song_id)
@@ -78,13 +80,13 @@ def get_songs_list(pdb: Session, uid: str, role: roles.Role, songs_ids: List[int
                 detail=f"User {uid} attempted to add song of another artist to its album",
             )
 
-        if song.album is not None:
+        if song.album is not None and song.album != album:
             raise HTTPException(
                 status_code=403,
                 detail=f"User {uid} attempted to add song to album but it was already in one",
             )
         songs.append(song)
-    return songs
+    album.songs = songs
 
 
 def set_cover(bucket, album: AlbumModel, file: IO):
