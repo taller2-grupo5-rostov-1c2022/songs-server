@@ -1,11 +1,16 @@
 from fastapi import Form, Depends, HTTPException, Header
 from typing import Optional, List
 import json
+
+from src import roles
 from src.postgres import schemas
 from src.postgres.database import get_db
 from src.postgres.models import AlbumModel, UserModel
 from src.postgres.schemas import AlbumInfoBase
 from sqlalchemy.orm import Session
+from src.repositories import songs_repository as crud_songs
+
+from src.roles import get_role
 
 
 def retrieve_uid(uid: str = Header(...), pdb=Depends(get_db)):
@@ -180,3 +185,12 @@ def retrieve_playlist_update(
     return schemas.PlaylistUpdate(
         songs_ids=songs_ids, colabs_ids=colabs_ids, **resource_update.dict()
     )
+
+
+def get_song(
+        song_id: int,
+        role: roles.Role = Depends(get_role),
+        pdb: Session = Depends(get_db),
+
+):
+    return crud_songs.get_song_by_id(pdb, role, song_id)

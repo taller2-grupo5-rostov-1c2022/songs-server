@@ -14,7 +14,7 @@ from src.postgres.models import SongModel, ArtistModel
 from src.repositories.resources_repository import (
     retrieve_song,
     retrieve_uid,
-    retrieve_song_update,
+    retrieve_song_update, get_song,
 )
 from src.roles import get_role
 
@@ -44,17 +44,14 @@ def get_songs(
 
 @router.get("/songs/{song_id}", response_model=schemas.SongGet)
 def get_song_by_id(
-    song_id: int,
-    role: roles.Role = Depends(get_role),
-    pdb: Session = Depends(get_db),
+    song: SongModel = Depends(get_song),
 ):
     """Returns a song by its id or 404 if not found"""
-    song = crud_songs.get_song_by_id(pdb, role, song_id)
 
     song.file = (
         STORAGE_PATH
         + "songs/"
-        + str(song_id)
+        + str(song.id)
         + "?t="
         + str(int(datetime.datetime.timestamp(song.file_last_update)))
     )
@@ -64,7 +61,7 @@ def get_song_by_id(
 
 @router.put("/songs/{song_id}")
 def update_song(
-    song_id: str,
+    song: SongModel = Depends(get_song),
     uid: str = Depends(retrieve_uid),
     role: roles.Role = Depends(get_role),
     song_update: schemas.SongUpdate = Depends(retrieve_song_update),
@@ -74,10 +71,6 @@ def update_song(
 ):
     """Updates song by its id"""
 
-    # even though id is an integer, we can compare with a string
-    song = pdb.get(SongModel, song_id)
-    if song is None:
-        raise HTTPException(status_code=404, detail=f"Song '{song_id}' not found")
     if song.creator_id != uid and not role.can_edit_everything():
         raise HTTPException(
             status_code=403,
@@ -102,7 +95,7 @@ def update_song(
 
     if file is not None:
         try:
-            blob = bucket.blob("songs/" + song_id)
+            blob = bucket.blob("songs/" + song.id)
             blob.upload_from_file(file.file)
             blob.make_public()
             song.file_last_update = datetime.datetime.now() + datetime.timedelta(
@@ -111,7 +104,7 @@ def update_song(
         except:  # noqa: W0707 # Want to catch all exceptions
             if not SUPPRESS_BLOB_ERRORS:
                 raise HTTPException(
-                    status_code=507, detail=f"Files for Song '{song_id}' not found"
+                    status_code=507, detail=f"Files for Song '{song.id}' not found"
                 )
 
     pdb.commit()
@@ -154,16 +147,12 @@ def post_song(
 
 @router.delete("/songs/{song_id}")
 def delete_song(
-    song_id: str,
+    song: SongModel = Depends(get_song),
     uid: str = Depends(retrieve_uid),
     pdb: Session = Depends(get_db),
     bucket=Depends(get_bucket),
 ):
     """Deletes a song by its id"""
-
-    song = pdb.query(SongModel).filter(SongModel.id == song_id).first()
-    if song is None:
-        raise HTTPException(status_code=404, detail=f"Song '{song_id}' not found")
 
     if uid != song.creator_id:
         raise HTTPException(
@@ -171,14 +160,14 @@ def delete_song(
             detail=f"User with ID {uid} attempted to delete song of creator with ID {song.creator_id}",
         )
 
-    pdb.query(SongModel).filter(SongModel.id == song_id).delete()
+    pdb.query(SongModel).filter(SongModel.id == song.id).delete()
 
     try:
-        bucket.blob("songs/" + song_id).delete()
+        bucket.blob("songs/" + song.id).delete()
     except:  # noqa: W0707 # Want to catch all exceptions
         if not SUPPRESS_BLOB_ERRORS:
             raise HTTPException(
-                status_code=507, detail=f"Could not delete Song {song_id}"
+                status_code=507, detail=f"Could not delete Song {song.id}"
             )
 
     pdb.commit()
