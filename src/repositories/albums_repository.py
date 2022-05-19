@@ -1,12 +1,12 @@
 from sqlalchemy.orm import Session, joinedload
-from src.postgres.models import AlbumModel, ArtistModel, SongModel
+from src.postgres.models import AlbumModel, ArtistModel, SongModel, CommentModel
 from fastapi import HTTPException
 from sqlalchemy import func
 from .. import roles
 from . import songs_repository as crud_songs
 from typing import List, IO
 import datetime
-from src.constants import SUPPRESS_BLOB_ERRORS
+from src.constants import SUPPRESS_BLOB_ERRORS, STORAGE_PATH
 
 
 def get_albums(
@@ -89,7 +89,7 @@ def update_songs(
     album.songs = songs
 
 
-def set_cover(bucket, album: AlbumModel, file: IO):
+def upload_cover(bucket, album: AlbumModel, file: IO):
     try:
         blob = bucket.blob("covers/" + str(album.id))
         blob.upload_from_file(file)
@@ -103,3 +103,32 @@ def set_cover(bucket, album: AlbumModel, file: IO):
                 status_code=507,
                 detail=f"Could not upload cover for album {album.id}",
             ) from entry_not_found
+
+
+def cover_url(album: AlbumModel):
+    return (
+        STORAGE_PATH + "covers/" + str(album.id) + "?t=" + str(album.cover_last_update)
+    )
+
+
+def calculate_scores_amount(pdb: Session, album: AlbumModel):
+    scores_amount = (
+        pdb.query(AlbumModel)
+        .join(CommentModel.album)
+        .filter(AlbumModel.id == album.id, CommentModel.score != None)
+        .count()
+    )
+    return scores_amount
+
+
+def calculate_score(pdb: Session, album: AlbumModel):
+    comments = (
+        pdb.query(CommentModel.score)
+        .join(CommentModel.album)
+        .filter(AlbumModel.id == album.id, CommentModel.score != None)
+        .all()
+    )
+    sum_scores = sum(comment.score for comment in comments)
+    scores_amount = calculate_scores_amount(pdb, album)
+    print(sum_scores)
+    return sum_scores

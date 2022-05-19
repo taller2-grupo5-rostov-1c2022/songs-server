@@ -24,8 +24,8 @@ class ResourceUpdate(BaseModel):
 
 class CommentBase(BaseModel):
     user_id: str
-    text: Optional[str]
-    score: Optional[int]
+    text: Optional[str] = None
+    score: Optional[int] = None
 
 
 class ResourceCreator(ResourceBase):
@@ -101,8 +101,6 @@ class SongResponse(BaseModel):
 
 class AlbumBase(ResourceCreator):
     songs: List[SongBase]
-    score: int
-    scores_amount: int
 
     class Config:
         orm_mode = True
@@ -118,6 +116,8 @@ class AlbumUpdate(ResourceCreatorUpdate):
 
 class AlbumGet(AlbumBase):
     cover: str
+    score: int
+    scores_amount: int
 
     class Config:
         orm_mode = True

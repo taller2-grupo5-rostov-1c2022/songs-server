@@ -14,9 +14,11 @@ from src import roles
 from src.repositories.resources_repository import (
     retrieve_album_update,
     retrieve_album,
-    retrieve_uid, get_album,
+    retrieve_uid,
+    get_album,
 )
 from src.roles import get_role
+from src.postgres.models import CommentModel
 
 router = APIRouter(tags=["albums"])
 
@@ -37,14 +39,7 @@ def get_albums(
     albums = list(filter(None, albums))
 
     for album in albums:
-
-        album.cover = (
-            STORAGE_PATH
-            + "covers/"
-            + str(album.id)
-            + "?t="
-            + str(album.cover_last_update)
-        )
+        album.cover = crud_albums.cover_url(album)
 
     return albums
 
@@ -58,31 +53,21 @@ def get_my_albums(
     albums = crud_albums.get_albums(pdb, roles.Role.admin(), uid)
 
     for album in albums:
-        album.cover = (
-            STORAGE_PATH
-            + "covers/"
-            + str(album.id)
-            + "?t="
-            + str(int(datetime.datetime.timestamp(album.cover_last_update)))
-        )
+        album.cover = crud_albums.cover_url(album)
 
     return albums
 
 
 @router.get("/albums/{album_id}", response_model=schemas.AlbumGet)
-def get_album_by_id(
-    album: AlbumModel = Depends(get_album)
-):
+def get_album_by_id(album: AlbumModel = Depends(get_album)):
     """Returns an album by its id or 404 if not found"""
 
-    album.cover = (
-        STORAGE_PATH + "covers/" + str(album.id) + "?t=" + str(album.cover_last_update)
-    )
+    album.cover = crud_albums.cover_url(album)
 
     return album
 
 
-@router.post("/albums/", response_model=schemas.AlbumBase)
+@router.post("/albums/", response_model=schemas.AlbumGet)
 def post_album(
     uid: str = Depends(retrieve_uid),
     role: roles.Role = Depends(get_role),
@@ -105,9 +90,12 @@ def post_album(
     crud_albums.update_songs(pdb, uid, role, album, album_info.songs_ids)
 
     pdb.add(album)
-
-    crud_albums.set_cover(bucket, album, cover.file)
+    crud_albums.upload_cover(bucket, album, cover.file)
     pdb.commit()
+
+    album.score = crud_albums.calculate_score(pdb, album)
+    album.scores_amount = crud_albums.calculate_scores_amount(pdb, album)
+    album.cover = crud_albums.cover_url(album)
     return album
 
 
@@ -146,7 +134,7 @@ def update_album(
         album.blocked = album_update["blocked"]
 
     if cover is not None:
-        crud_albums.set_cover(bucket, album, cover.file)
+        crud_albums.upload_cover(bucket, album, cover.file)
 
     pdb.commit()
 
@@ -159,9 +147,6 @@ def delete_album(
     bucket=Depends(get_bucket),
 ):
     """Deletes an album by its id"""
-    album = pdb.get(AlbumModel, album.id)
-    if album is None:
-        raise HTTPException(status_code=404, detail=f"Album '{album.id}' not found")
 
     if uid != album.creator_id:
         raise HTTPException(
@@ -178,18 +163,30 @@ def delete_album(
             ) from entry_not_found
 
 
-@router.post("/albums/{album_id}/comments/")
-def comment_album(
-        album: AlbumModel = Depends(get_album),
-        uid: str = Depends(retrieve_uid),
-        text: Optional[str] = None,
-        score: Optional[int] = None,
-        pdb: Session = Depends(get_db)
+@router.post("/albums/{album_id}/comments/", response_model=schemas.CommentBase)
+def post_comment(
+    comment_info: schemas.CommentBase,
+    album: AlbumModel = Depends(get_album),
+    uid: str = Depends(retrieve_uid),
+    pdb: Session = Depends(get_db),
 ):
-    if text is None and score is None:
-        raise HTTPException(status_code=422, detail="Text and score cannot be None at the same time")
+    if comment_info.text is None and comment_info.score is None:
+        raise HTTPException(
+            status_code=422, detail="Text and score cannot be None at the same time"
+        )
 
-    comments = album.comments
+    comment = (
+        pdb.query(AlbumModel)
+        .join(CommentModel.album)
+        .filter(AlbumModel.id == album.id, CommentModel.commenter_id == uid)
+        .first()
+    )
+    if comment is not None:
+        raise HTTPException(
+            status_code=403, detail=f"User {uid} already commented in album {album.id}"
+        )
 
-
-
+    new_comment = CommentModel(**comment_info.dict(), commenter_id=uid)
+    pdb.add(new_comment)
+    pdb.commit()
+    return comment

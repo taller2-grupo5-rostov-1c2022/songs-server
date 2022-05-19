@@ -2,6 +2,7 @@ from sqlalchemy import Column, ForeignKey, Integer, String, TIMESTAMP, Boolean
 from sqlalchemy.orm import relationship
 from sqlalchemy import Table
 
+from src.constants import STORAGE_PATH
 from src.postgres.database import Base
 
 
@@ -98,6 +99,9 @@ class CommentModel(Base):
 
     score = Column(Integer, nullable=True)
     text = Column(String, nullable=True)
+
+    album = relationship("AlbumModel", back_populates="comments")
+    album_id = Column(Integer, ForeignKey("albums.id"))
 
 
 class AlbumModel(ResourceCreatorModel):
