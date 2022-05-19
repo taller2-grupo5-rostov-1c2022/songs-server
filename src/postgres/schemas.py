@@ -22,10 +22,36 @@ class ResourceUpdate(BaseModel):
         orm_mode = True
 
 
+class UserInfo(BaseModel):
+    name: str
+
+    class Config:
+        orm_mode = True
+
+
 class CommentBase(BaseModel):
-    user_id: str
     text: Optional[str] = None
     score: Optional[int] = None
+
+    class Config:
+        orm_mode = True
+
+
+class CommentGet(CommentBase):
+    commenter: UserInfo
+
+    class Config:
+        orm_mode = True
+
+
+# This is identical to CommentBase, but
+# they are conceptually different
+class CommentUpdate(CommentBase):
+    text: Optional[str] = None
+    score: Optional[int] = None
+
+    class Config:
+        orm_mode = True
 
 
 class ResourceCreator(ResourceBase):
@@ -46,13 +72,6 @@ class ResourceCreatorUpdate(ResourceUpdate):
 
 class AlbumInfoBase(BaseModel):
     id: int
-    name: str
-
-    class Config:
-        orm_mode = True
-
-
-class UserInfo(BaseModel):
     name: str
 
     class Config:

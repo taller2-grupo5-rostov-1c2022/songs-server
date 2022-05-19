@@ -1,4 +1,4 @@
-from sqlalchemy.orm import Session, joinedload
+from sqlalchemy.orm import Session, joinedload, contains_eager
 from src.postgres.models import AlbumModel, ArtistModel, SongModel, CommentModel
 from fastapi import HTTPException
 from sqlalchemy import func
@@ -7,6 +7,7 @@ from . import songs_repository as crud_songs
 from typing import List, IO
 import datetime
 from src.constants import SUPPRESS_BLOB_ERRORS, STORAGE_PATH
+from sqlalchemy import and_
 
 
 def get_albums(
@@ -17,51 +18,55 @@ def get_albums(
     genre: str = None,
     sub_level: int = None,
 ):
-    queries = []
+    artist_queries = []
+    album_queries = []
+    join_conditions = [SongModel.album_id == AlbumModel.id]
+
     if not role.can_see_blocked():
-        # This action should not be committed
-        pdb.query(SongModel).filter(SongModel.blocked == True).delete()
-        queries.append(AlbumModel.blocked == False)
+        join_conditions.append(SongModel.blocked == False)
+        album_queries.append(AlbumModel.blocked == False)
 
     if creator_id is not None:
-        queries.append(AlbumModel.creator_id == creator_id)
+        album_queries.append(AlbumModel.creator_id == creator_id)
     if artist is not None:
-        queries.append(func.lower(ArtistModel.name).contains(artist.lower()))
+        artist_queries.append(func.lower(ArtistModel.name).contains(artist.lower()))
     if genre is not None:
-        queries.append(func.lower(AlbumModel.genre).contains(genre.lower()))
+        album_queries.append(func.lower(AlbumModel.genre).contains(genre.lower()))
     if sub_level is not None:
-        queries.append(AlbumModel.sub_level == sub_level)
+        album_queries.append(AlbumModel.sub_level == sub_level)
 
     results = (
         pdb.query(AlbumModel)
-        .join(ArtistModel.songs, full=True)
-        .join(SongModel.album, full=True)
-        .filter(*queries)
-        .all()
+        .join(SongModel, and_(*join_conditions), full=True)
+        .filter(*album_queries)
     )
 
-    return results
+    if artist is not None:
+        results = results.join(ArtistModel, SongModel.artists.any(criterion=and_(True, *artist_queries)))
+
+    return results.all()
 
 
 def get_album_by_id(pdb: Session, role: roles.Role, album_id: int):
-    queries = []
-    if not role.can_see_blocked():
-        # This action should not be committed
-        pdb.query(SongModel).filter(SongModel.blocked == True).delete()
-        queries.append(AlbumModel.blocked == False)
+    join_conditions = [SongModel.album_id == AlbumModel.id]
 
-    album = (
+    if not role.can_see_blocked():
+        join_conditions.append(SongModel.blocked == False)
+
+    albums = (
         pdb.query(AlbumModel)
-        .options(joinedload(AlbumModel.songs))
+        .options(contains_eager("songs"))
+        .join(SongModel, and_(*join_conditions), full=True)
         .filter(AlbumModel.id == album_id)
-        .first()
+        .all()
     )
 
-    if album is None:
+    if len(albums) == 0:
         raise HTTPException(
             status_code=404,
             detail=f"Album '{str(album_id)}' not found",
         )
+    album = albums[0]
     if album.blocked and not role.can_see_blocked():
         raise HTTPException(status_code=403, detail="Album is blocked")
 
@@ -130,5 +135,8 @@ def calculate_score(pdb: Session, album: AlbumModel):
     )
     sum_scores = sum(comment.score for comment in comments)
     scores_amount = calculate_scores_amount(pdb, album)
-    print(sum_scores)
-    return sum_scores
+    return sum_scores/scores_amount
+
+
+def get_comment_by_uid(pdb: Session, role: roles.Role, album: AlbumModel, uid: str):
+    if

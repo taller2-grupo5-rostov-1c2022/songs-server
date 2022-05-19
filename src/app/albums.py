@@ -1,16 +1,17 @@
 import datetime
 from src.postgres import schemas
 from src.postgres import models
-from src.constants import STORAGE_PATH, SUPPRESS_BLOB_ERRORS
+from src.constants import SUPPRESS_BLOB_ERRORS
 from fastapi import APIRouter
 from fastapi import Depends, File, HTTPException, UploadFile
 from src.firebase.access import get_bucket
 from src.repositories import albums_repository as crud_albums
-from typing import List, Optional
+from typing import List
 from sqlalchemy.orm import Session
 from src.postgres.database import get_db
 from src.postgres.models import AlbumModel, UserModel
 from src import roles
+from src.repositories.albums_repository import get_comment_by_uid
 from src.repositories.resources_repository import (
     retrieve_album_update,
     retrieve_album,
@@ -40,6 +41,8 @@ def get_albums(
 
     for album in albums:
         album.cover = crud_albums.cover_url(album)
+        album.score = crud_albums.calculate_score(pdb, album)
+        album.scores_amount = crud_albums.calculate_scores_amount(pdb, album)
 
     return albums
 
@@ -54,15 +57,21 @@ def get_my_albums(
 
     for album in albums:
         album.cover = crud_albums.cover_url(album)
+        album.score = crud_albums.calculate_score(pdb, album)
+        album.scores_amount = crud_albums.calculate_scores_amount(pdb, album)
 
     return albums
 
 
 @router.get("/albums/{album_id}", response_model=schemas.AlbumGet)
-def get_album_by_id(album: AlbumModel = Depends(get_album)):
+def get_album_by_id(
+    album: AlbumModel = Depends(get_album), pdb: Session = Depends(get_db)
+):
     """Returns an album by its id or 404 if not found"""
 
     album.cover = crud_albums.cover_url(album)
+    album.score = crud_albums.calculate_score(pdb, album)
+    album.scores_amount = crud_albums.calculate_scores_amount(pdb, album)
 
     return album
 
@@ -88,10 +97,9 @@ def post_album(
         **album_info.dict(exclude={"songs_ids"}),
     )
     crud_albums.update_songs(pdb, uid, role, album, album_info.songs_ids)
-    crud_albums.set_cover(bucket, album, cover.file)
+    crud_albums.upload_cover(bucket, album, cover.file)
 
     pdb.add(album)
-    crud_albums.upload_cover(bucket, album, cover.file)
     pdb.commit()
 
     album.score = crud_albums.calculate_score(pdb, album)
@@ -162,9 +170,10 @@ def delete_album(
             raise HTTPException(
                 status_code=507, detail=f"Could not delete cover for album {album.id}"
             ) from entry_not_found
+    pdb.commit()
 
 
-@router.post("/albums/{album_id}/comments/", response_model=schemas.CommentBase)
+@router.post("/albums/{album_id}/comments/", response_model=schemas.CommentGet)
 def post_comment(
     comment_info: schemas.CommentBase,
     album: AlbumModel = Depends(get_album),
@@ -187,7 +196,24 @@ def post_comment(
             status_code=403, detail=f"User {uid} already commented in album {album.id}"
         )
 
-    new_comment = CommentModel(**comment_info.dict(), commenter_id=uid)
+    new_comment = CommentModel(
+        **comment_info.dict(), commenter=pdb.get(UserModel, uid), album=album
+    )
     pdb.add(new_comment)
     pdb.commit()
-    return comment
+    return new_comment
+
+
+@router.get("/albums/{album_id}/comments/", response_model=List[schemas.CommentGet])
+def get_comments(
+    album: AlbumModel = Depends(get_album),
+):
+    return album.comments
+
+
+@router.put("/albums/{album_id}/comments/", response_model=List[schemas.CommentGet])
+def edit_comment(
+        comment_info_update: schemas.CommentUpdate,
+        comment: CommentModel = Depends(get_comment_by_uid),
+):
+

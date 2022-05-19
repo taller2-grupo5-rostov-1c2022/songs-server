@@ -206,3 +206,18 @@ def block_song(client, id: int):
     )
     assert response_put.status_code == 200
     return response_put
+
+
+def post_comment(
+    client,
+    uid: str,
+    album_id: int,
+    text: Optional[str] = "comment text",
+    score: Optional[int] = 5,
+):
+    response_post = client.post(
+        f"{API_VERSION_PREFIX}/albums/{album_id}/comments/",
+        json={"text": text, "score": score},
+        headers={"api_key": "key", "uid": uid},
+    )
+    return response_post
