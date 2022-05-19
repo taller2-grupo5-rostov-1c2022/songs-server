@@ -175,7 +175,7 @@ def delete_album(
         )
     pdb.delete(album)
     try:
-        bucket.blob("covers/" + str(album_id)).delete()
+        bucket.blob(f"covers/{album_id}").delete()
     except Exception as entry_not_found:
         if not SUPPRESS_BLOB_ERRORS:
             raise HTTPException(

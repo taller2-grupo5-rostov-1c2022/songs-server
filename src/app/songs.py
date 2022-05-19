@@ -14,7 +14,8 @@ from src.postgres.models import SongModel, ArtistModel
 from src.repositories.resources_repository import (
     retrieve_song,
     retrieve_uid,
-    retrieve_song_update, get_song,
+    retrieve_song_update,
+    get_song,
 )
 from src.roles import get_role
 
@@ -95,7 +96,7 @@ def update_song(
 
     if file is not None:
         try:
-            blob = bucket.blob("songs/" + song.id)
+            blob = bucket.blob(f"songs/{song.id}")
             blob.upload_from_file(file.file)
             blob.make_public()
             song.file_last_update = datetime.datetime.now() + datetime.timedelta(
@@ -163,7 +164,7 @@ def delete_song(
     pdb.query(SongModel).filter(SongModel.id == song.id).delete()
 
     try:
-        bucket.blob("songs/" + song.id).delete()
+        bucket.blob(f"songs/{song.id}").delete()
     except:  # noqa: W0707 # Want to catch all exceptions
         if not SUPPRESS_BLOB_ERRORS:
             raise HTTPException(

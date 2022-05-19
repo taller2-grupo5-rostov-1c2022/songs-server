@@ -34,6 +34,8 @@ def post_user(
                 data=data,
                 files=files,
             )
+            print(response_post.json())
+            assert response_post.status_code == 200
     else:
         response_post = client.post(
             API_VERSION_PREFIX + "/users/",

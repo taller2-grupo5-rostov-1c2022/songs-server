@@ -188,9 +188,8 @@ def retrieve_playlist_update(
 
 
 def get_song(
-        song_id: int,
-        role: roles.Role = Depends(get_role),
-        pdb: Session = Depends(get_db),
-
+    song_id: int,
+    role: roles.Role = Depends(get_role),
+    pdb: Session = Depends(get_db),
 ):
     return crud_songs.get_song_by_id(pdb, role, song_id)
