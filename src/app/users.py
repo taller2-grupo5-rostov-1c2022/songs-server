@@ -147,7 +147,7 @@ def put_user(
             user.pfp_last_update = datetime.datetime.now() + datetime.timedelta(
                 seconds=1
             )
-        except Exception as e:  # noqa: E722 # Want to catch all exceptions
+        except Exception:  # noqa: E722 # Want to catch all exceptions
             if not SUPPRESS_BLOB_ERRORS:
                 raise HTTPException(
                     status_code=507,
