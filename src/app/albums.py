@@ -88,6 +88,7 @@ def post_album(
         **album_info.dict(exclude={"songs_ids"}),
     )
     crud_albums.update_songs(pdb, uid, role, album, album_info.songs_ids)
+    crud_albums.set_cover(bucket, album, cover.file)
 
     pdb.add(album)
     crud_albums.upload_cover(bucket, album, cover.file)
