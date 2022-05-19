@@ -9,6 +9,7 @@ from src.postgres.models import AlbumModel, UserModel
 from src.postgres.schemas import AlbumInfoBase
 from sqlalchemy.orm import Session
 from src.repositories import albums_repository as crud_albums
+from src.repositories import songs_repository as crud_songs
 
 from src.roles import get_role
 
@@ -194,3 +195,10 @@ def get_album(
 ):
     return crud_albums.get_album_by_id(pdb, role, album_id)
 
+
+def get_song(
+    song_id: int,
+    role: roles.Role = Depends(get_role),
+    pdb: Session = Depends(get_db),
+):
+    return crud_songs.get_song_by_id(pdb, role, song_id)

@@ -87,12 +87,12 @@ def post_user(
             blob.upload_from_file(img.file)
             blob.make_public()
             auth.update_user(uid=uid, photo_url=blob.public_url)
-        except Exception as entry_not_found:
+        except Exception as e:
             if not SUPPRESS_BLOB_ERRORS:
                 raise HTTPException(
                     status_code=507,
                     detail=f"Image for User '{uid}' could not be uploaded",
-                ) from entry_not_found
+                ) from e
 
     pdb.add(new_user)
     pdb.commit()
@@ -122,6 +122,7 @@ def put_user(
         )
 
     user = pdb.query(UserModel).filter(UserModel.id == uid_to_modify).first()
+
     if user is None:
         raise HTTPException(status_code=404, detail=f"User '{uid}' not found")
 
@@ -140,7 +141,7 @@ def put_user(
 
     if img is not None:
         try:
-            blob = bucket.blob("pfp/" + uid)
+            blob = bucket.blob(f"pfp/{uid}")
             blob.upload_from_file(img.file)
             blob.make_public()
             user.pfp_last_update = datetime.datetime.now() + datetime.timedelta(
