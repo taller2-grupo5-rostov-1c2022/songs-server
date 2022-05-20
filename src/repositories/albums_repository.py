@@ -17,6 +17,7 @@ def get_albums(
     artist: str = None,
     genre: str = None,
     sub_level: int = None,
+    name: str = None
 ):
     artist_queries = []
     album_queries = []
@@ -34,6 +35,8 @@ def get_albums(
         album_queries.append(func.lower(AlbumModel.genre).contains(genre.lower()))
     if sub_level is not None:
         album_queries.append(AlbumModel.sub_level == sub_level)
+    if name is not None:
+        album_queries.append(func.lower(AlbumModel.name).contains(name.lower()))
 
     results = (
         pdb.query(AlbumModel)

@@ -324,7 +324,6 @@ def test_add_song_to_album(client):
         f"{API_VERSION_PREFIX}/albums/",
         headers={"api_key": "key"},
     )
-    print(tmp.json())
 
     album = response_get.json()
     assert response_get.status_code == 200

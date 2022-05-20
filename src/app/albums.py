@@ -31,11 +31,12 @@ def get_albums(
     artist: str = None,
     genre: str = None,
     sub_level: int = None,
+    name: str = None,
     pdb: Session = Depends(get_db),
 ):
     """Returns all Albums"""
 
-    albums = crud_albums.get_albums(pdb, role, creator, artist, genre, sub_level)
+    albums = crud_albums.get_albums(pdb, role, creator, artist, genre, sub_level, name)
 
     albums = list(filter(None, albums))
 

@@ -21,6 +21,7 @@ def get_songs(
     artist: str = None,
     genre: str = None,
     sub_level: int = None,
+    name: str = None
 ):
     queries = []
     if not role.can_see_blocked():
@@ -34,6 +35,8 @@ def get_songs(
         queries.append(func.lower(SongModel.genre).contains(genre.lower()))
     if sub_level is not None:
         queries.append(SongModel.sub_level == sub_level)
+    if name is not None:
+        queries.append(func.lower(SongModel.name).contains(name.lower()))
 
     return pdb.query(SongModel).join(ArtistModel.songs).filter(*queries).all()
 

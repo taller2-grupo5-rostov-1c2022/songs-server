@@ -36,11 +36,12 @@ def get_songs(
     artist: str = None,
     genre: str = None,
     sub_level: int = None,
+    name: str = None,
     pdb: Session = Depends(get_db),
 ):
     """Returns all songs"""
 
-    return crud_songs.get_songs(pdb, role, creator, artist, genre, sub_level)
+    return crud_songs.get_songs(pdb, role, creator, artist, genre, sub_level, name)
 
 
 @router.get("/songs/{song_id}", response_model=schemas.SongGet)

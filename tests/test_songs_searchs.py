@@ -259,3 +259,20 @@ def test_search_song_multiple_queries(client):
 
     assert response.status_code == 200
     assert len(response.json()) == 1
+
+
+def test_search_song_by_name(client):
+    post_user(client, "user_id", "user_name")
+    post_song(client, uid="user_id", name="my_song_name", sub_level=1)
+    post_song(client, uid="user_id", name="another_song_name", sub_level=2)
+
+    response = client.get(
+        f"{API_VERSION_PREFIX}/songs/?name=my_song_name",
+        headers={"api_key": "key"},
+    )
+    songs = response.json()
+
+    assert response.status_code == 200
+    assert len(songs) == 1
+    assert songs[0]["name"] == "my_song_name"
+

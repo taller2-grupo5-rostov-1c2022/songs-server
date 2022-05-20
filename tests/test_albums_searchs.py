@@ -342,3 +342,19 @@ def test_search_album_multiple_queries(client):
     assert response.status_code == 200
     assert len(response.json()) == 1
     assert response.json()[0]["name"] == "expected_album"
+
+
+def test_search_album_by_name(client):
+    post_user(client, "album_creator_id", "album_creator_name")
+    album_id = post_album(client, name="my_album", uid="album_creator_id").json()[
+        "id"
+    ]
+
+    response = client.get(
+        f"{API_VERSION_PREFIX}/albums/?name=ALBUM",
+        headers={"api_key": "key"},
+    )
+
+    assert response.status_code == 200
+    assert len(response.json()) == 1
+    assert response.json()[0]["name"] == "my_album"
