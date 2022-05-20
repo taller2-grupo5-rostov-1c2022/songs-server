@@ -189,7 +189,6 @@ def test_edit_comment_without_comment_should_fail(client):
         json={"text": "my text", "score": 4},
         headers={"api_key": "key", "uid": "commenter_id"},
     )
-    print(response_put.json())
     assert response_put.status_code == 404
 
 

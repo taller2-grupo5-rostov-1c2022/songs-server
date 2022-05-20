@@ -1,18 +1,12 @@
 from src import roles
 from src.postgres import schemas
-from src.postgres import models
 from fastapi import APIRouter
 from fastapi import Depends, Form, HTTPException
-from src.repositories import playlists_repository as crud_playlists
 from typing import List
 from sqlalchemy.orm import Session
 from src.postgres.database import get_db
-from src.postgres.models import PlaylistModel, SongModel
-from src.repositories.resources_repository import (
-    retrieve_uid,
-    retrieve_playlist,
-    retrieve_playlist_update,
-)
+from src.postgres import models
+from src.repositories import playlist_utils, user_utils
 from src.roles import get_role
 
 router = APIRouter(tags=["playlists"])
@@ -26,12 +20,14 @@ def get_playlists(
 ):
     """Returns playlists either filtered by colab or all playlists"""
 
-    return crud_playlists.get_playlists(pdb, role, colab)
+    return playlist_utils.get_playlists(pdb, role, colab)
 
 
 @router.get("/my_playlists/", response_model=List[schemas.PlaylistBase])
-def get_my_playlists(uid: str = Depends(retrieve_uid), pdb: Session = Depends(get_db)):
-    return crud_playlists.get_playlists(pdb, roles.Role.admin(), uid)
+def get_my_playlists(
+    uid: str = Depends(user_utils.retrieve_uid), pdb: Session = Depends(get_db)
+):
+    return playlist_utils.get_playlists(pdb, roles.Role.admin(), uid)
 
 
 @router.get("/playlists/{playlist_id}", response_model=schemas.PlaylistBase)
@@ -42,22 +38,22 @@ def get_playlist_by_id(
 ):
     """Returns a playlist by its id or 404 if not found"""
 
-    playlist = crud_playlists.get_playlist_by_id(pdb, role, playlist_id)
+    playlist = playlist_utils.get_playlist_by_id(pdb, role, playlist_id)
 
     return playlist
 
 
 @router.post("/playlists/", response_model=schemas.PlaylistBase)
 def post_playlist(
-    playlist_info: schemas.PlaylistPost = Depends(retrieve_playlist),
+    playlist_info: schemas.PlaylistPost = Depends(playlist_utils.retrieve_playlist),
     role: roles.Role = Depends(get_role),
     pdb: Session = Depends(get_db),
 ):
     """Creates a playlist and returns its id. Songs_ids form is encoded like '["song_id_1", "song_id_2", ...]'.
     Colabs_ids form is encoded like '["colab_id_1", "colab_id_2", ...]'"""
 
-    songs = crud_playlists.get_songs_list(pdb, role, playlist_info.songs_ids)
-    colabs = crud_playlists.get_colabs_list(pdb, playlist_info.colabs_ids)
+    songs = playlist_utils.get_songs_list(pdb, role, playlist_info.songs_ids)
+    colabs = playlist_utils.get_colabs_list(pdb, playlist_info.colabs_ids)
 
     playlist = models.PlaylistModel(
         **playlist_info.dict(exclude={"songs_ids", "colabs_ids"}),
@@ -73,14 +69,16 @@ def post_playlist(
 @router.put("/playlists/{playlist_id}")
 def update_playlist(
     playlist_id: int,
-    uid: str = Depends(retrieve_uid),
+    uid: str = Depends(user_utils.retrieve_uid),
     role: roles.Role = Depends(get_role),
-    playlist_update: schemas.PlaylistUpdate = Depends(retrieve_playlist_update),
+    playlist_update: schemas.PlaylistUpdate = Depends(
+        playlist_utils.retrieve_playlist_update
+    ),
     pdb: Session = Depends(get_db),
 ):
     """Updates playlist by its id"""
     # even though id is an integer, we can compare with a string
-    playlist = pdb.get(PlaylistModel, playlist_id)
+    playlist = pdb.get(models.PlaylistModel, playlist_id)
     if playlist is None:
         raise HTTPException(
             status_code=404, detail=f"Playlist '{playlist_id}' not found"
@@ -103,11 +101,11 @@ def update_playlist(
             setattr(playlist, playlist_attr, playlist_update[playlist_attr])
 
     if playlist_update["colabs_ids"] is not None:
-        colabs = crud_playlists.get_colabs_list(pdb, playlist_update["colabs_ids"])
+        colabs = playlist_utils.get_colabs_list(pdb, playlist_update["colabs_ids"])
         playlist.colabs = colabs
 
     if playlist_update["songs_ids"] is not None:
-        songs = crud_playlists.get_songs_list(pdb, role, playlist_update["songs_ids"])
+        songs = playlist_utils.get_songs_list(pdb, role, playlist_update["songs_ids"])
         playlist.songs = songs
 
     if playlist_update["blocked"] is not None:
@@ -124,11 +122,15 @@ def update_playlist(
 @router.delete("/playlists/{playlist_id}")
 def delete_playlist(
     playlist_id: str,
-    uid: str = Depends(retrieve_uid),
+    uid: str = Depends(user_utils.retrieve_uid),
     pdb: Session = Depends(get_db),
 ):
     """Deletes a playlist by its id"""
-    playlist = pdb.query(PlaylistModel).filter(PlaylistModel.id == playlist_id).first()
+    playlist = (
+        pdb.query(models.PlaylistModel)
+        .filter(models.PlaylistModel.id == playlist_id)
+        .first()
+    )
     if playlist is None:
         raise HTTPException(
             status_code=404, detail=f"Playlist '{playlist_id}' not found"
@@ -139,7 +141,9 @@ def delete_playlist(
             status_code=403,
             detail=f"User '{uid} attempted to delete playlist of user with ID {playlist.creator_id}",
         )
-    pdb.query(PlaylistModel).filter(PlaylistModel.id == playlist_id).delete()
+    pdb.query(models.PlaylistModel).filter(
+        models.PlaylistModel.id == playlist_id
+    ).delete()
     pdb.commit()
 
 
@@ -147,11 +151,15 @@ def delete_playlist(
 def add_song_to_playlist(
     playlist_id: str,
     song_id: str = Form(...),
-    uid: str = Depends(retrieve_uid),
+    uid: str = Depends(user_utils.retrieve_uid),
     pdb: Session = Depends(get_db),
 ):
     """Adds a song to a playlist"""
-    playlist = pdb.query(PlaylistModel).filter(PlaylistModel.id == playlist_id).first()
+    playlist = (
+        pdb.query(models.PlaylistModel)
+        .filter(models.PlaylistModel.id == playlist_id)
+        .first()
+    )
 
     if playlist is None:
         raise HTTPException(
@@ -166,7 +174,7 @@ def add_song_to_playlist(
             detail=f"User {uid} attempted to add a song to playlist of user with ID {playlist.creator_id}",
         )
 
-    song = pdb.query(SongModel).filter(SongModel.id == song_id).first()
+    song = pdb.query(models.SongModel).filter(models.SongModel.id == song_id).first()
     if song is None:
         raise HTTPException(status_code=404, detail=f"Song '{song_id}' not found")
 
@@ -180,11 +188,15 @@ def add_song_to_playlist(
 def remove_song_from_playlist(
     playlist_id: str,
     song_id: str,
-    uid: str = Depends(retrieve_uid),
+    uid: str = Depends(user_utils.retrieve_uid),
     pdb: Session = Depends(get_db),
 ):
     """Removes a song from a playlist"""
-    playlist = pdb.query(PlaylistModel).filter(PlaylistModel.id == playlist_id).first()
+    playlist = (
+        pdb.query(models.PlaylistModel)
+        .filter(models.PlaylistModel.id == playlist_id)
+        .first()
+    )
 
     if playlist is None:
         raise HTTPException(
@@ -199,7 +211,7 @@ def remove_song_from_playlist(
             detail=f"User {uid} attempted to remove a song from playlist of user with ID {playlist.creator_id}",
         )
 
-    song = pdb.query(SongModel).filter(SongModel.id == song_id).first()
+    song = pdb.query(models.SongModel).filter(models.SongModel.id == song_id).first()
     if song is None:
         raise HTTPException(status_code=404, detail=f"Song '{song_id}' not found")
 

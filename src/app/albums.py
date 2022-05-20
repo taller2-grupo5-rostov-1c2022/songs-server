@@ -1,23 +1,15 @@
 import datetime
 from src.postgres import schemas
-from src.postgres import models
 from src.constants import SUPPRESS_BLOB_ERRORS
 from fastapi import APIRouter
 from fastapi import Depends, File, HTTPException, UploadFile
 from src.firebase.access import get_bucket
-from src.repositories import albums_repository as crud_albums
 from typing import List
 from sqlalchemy.orm import Session
 from src.postgres.database import get_db
-from src.postgres.models import AlbumModel, UserModel
+from src.postgres import models
 from src import roles
-from src.repositories.resources_repository import (
-    retrieve_album_update,
-    retrieve_album,
-    retrieve_uid,
-    get_album,
-    get_comment,
-)
+from src.repositories import album_utils, user_utils, comment_utils
 from src.roles import get_role
 from src.postgres.models import CommentModel
 
@@ -36,58 +28,59 @@ def get_albums(
 ):
     """Returns all Albums"""
 
-    albums = crud_albums.get_albums(pdb, role, creator, artist, genre, sub_level, name)
+    albums = album_utils.get_albums(pdb, role, creator, artist, genre, sub_level, name)
 
     albums = list(filter(None, albums))
 
     for album in albums:
-        album.cover = crud_albums.cover_url(album)
-        album.score = crud_albums.calculate_score(pdb, album)
-        album.scores_amount = crud_albums.calculate_scores_amount(pdb, album)
+        album.cover = album_utils.cover_url(album)
+        album.score = album_utils.calculate_score(pdb, album)
+        album.scores_amount = album_utils.calculate_scores_amount(pdb, album)
 
     return albums
 
 
 @router.get("/my_albums/", response_model=List[schemas.AlbumGet])
 def get_my_albums(
-    uid: str = Depends(retrieve_uid),
+    uid: str = Depends(user_utils.retrieve_uid),
     pdb: Session = Depends(get_db),
 ):
 
-    albums = crud_albums.get_albums(pdb, roles.Role.admin(), uid)
+    albums = album_utils.get_albums(pdb, roles.Role.admin(), uid)
 
     for album in albums:
-        album.cover = crud_albums.cover_url(album)
-        album.score = crud_albums.calculate_score(pdb, album)
-        album.scores_amount = crud_albums.calculate_scores_amount(pdb, album)
+        album.cover = album_utils.cover_url(album)
+        album.score = album_utils.calculate_score(pdb, album)
+        album.scores_amount = album_utils.calculate_scores_amount(pdb, album)
 
     return albums
 
 
 @router.get("/albums/{album_id}", response_model=schemas.AlbumGet)
 def get_album_by_id(
-    album: AlbumModel = Depends(get_album), pdb: Session = Depends(get_db)
+    album: models.AlbumModel = Depends(album_utils.get_album),
+    pdb: Session = Depends(get_db),
 ):
     """Returns an album by its id or 404 if not found"""
 
-    album.cover = crud_albums.cover_url(album)
-    album.score = crud_albums.calculate_score(pdb, album)
-    album.scores_amount = crud_albums.calculate_scores_amount(pdb, album)
+    album.cover = album_utils.cover_url(album)
+    album.score = album_utils.calculate_score(pdb, album)
+    album.scores_amount = album_utils.calculate_scores_amount(pdb, album)
 
     return album
 
 
 @router.post("/albums/", response_model=schemas.AlbumGet)
 def post_album(
-    uid: str = Depends(retrieve_uid),
+    uid: str = Depends(user_utils.retrieve_uid),
     role: roles.Role = Depends(get_role),
-    album_info: schemas.AlbumPost = Depends(retrieve_album),
+    album_info: schemas.AlbumPost = Depends(album_utils.retrieve_album),
     cover: UploadFile = File(...),
     pdb: Session = Depends(get_db),
     bucket=Depends(get_bucket),
 ):
     """Creates an album and returns its id. Songs_ids form is encoded like '["song_id_1", "song_id_2", ...]'"""
-    creator = pdb.get(UserModel, uid)
+    creator = pdb.get(models.UserModel, uid)
     if creator is None:
         raise HTTPException(status_code=404, detail=f"User with id {uid} not found")
 
@@ -101,24 +94,24 @@ def post_album(
     pdb.add(album)
     pdb.commit()
 
-    crud_albums.update_songs(pdb, uid, role, album, album_info.songs_ids)
-    crud_albums.upload_cover(bucket, album, cover.file)
+    album_utils.update_songs(pdb, uid, role, album, album_info.songs_ids)
+    album_utils.upload_cover(bucket, album, cover.file)
 
     pdb.add(album)
     pdb.commit()
 
-    album.score = crud_albums.calculate_score(pdb, album)
-    album.scores_amount = crud_albums.calculate_scores_amount(pdb, album)
-    album.cover = crud_albums.cover_url(album)
+    album.score = album_utils.calculate_score(pdb, album)
+    album.scores_amount = album_utils.calculate_scores_amount(pdb, album)
+    album.cover = album_utils.cover_url(album)
     return album
 
 
 @router.put("/albums/{album_id}")
 def update_album(
-    album: AlbumModel = Depends(get_album),
-    uid: str = Depends(retrieve_uid),
+    album: models.AlbumModel = Depends(album_utils.get_album),
+    uid: str = Depends(user_utils.retrieve_uid),
     role: roles.Role = Depends(get_role),
-    album_update: schemas.AlbumUpdate = Depends(retrieve_album_update),
+    album_update: schemas.AlbumUpdate = Depends(album_utils.retrieve_album_update),
     cover: UploadFile = File(None),
     pdb: Session = Depends(get_db),
     bucket=Depends(get_bucket),
@@ -137,7 +130,7 @@ def update_album(
         if album_update[album_attr] is not None:
             setattr(album, album_attr, album_update[album_attr])
     if album_update["songs_ids"] is not None:
-        crud_albums.update_songs(pdb, uid, role, album, album_update["songs_ids"])
+        album_utils.update_songs(pdb, uid, role, album, album_update["songs_ids"])
 
     if album_update["blocked"] is not None:
         if not role.can_block():
@@ -148,15 +141,15 @@ def update_album(
         album.blocked = album_update["blocked"]
 
     if cover is not None:
-        crud_albums.upload_cover(bucket, album, cover.file)
+        album_utils.upload_cover(bucket, album, cover.file)
 
     pdb.commit()
 
 
 @router.delete("/albums/{album_id}")
 def delete_album(
-    album: AlbumModel = Depends(get_album),
-    uid: str = Depends(retrieve_uid),
+    album: models.AlbumModel = Depends(album_utils.get_album),
+    uid: str = Depends(user_utils.retrieve_uid),
     pdb: Session = Depends(get_db),
     bucket=Depends(get_bucket),
 ):
@@ -181,8 +174,8 @@ def delete_album(
 @router.post("/albums/{album_id}/comments/", response_model=schemas.CommentGet)
 def post_comment(
     comment_info: schemas.CommentBase,
-    album: AlbumModel = Depends(get_album),
-    uid: str = Depends(retrieve_uid),
+    album: models.AlbumModel = Depends(album_utils.get_album),
+    uid: str = Depends(user_utils.retrieve_uid),
     pdb: Session = Depends(get_db),
 ):
     if comment_info.text is None and comment_info.score is None:
@@ -191,9 +184,9 @@ def post_comment(
         )
 
     comment = (
-        pdb.query(AlbumModel)
+        pdb.query(models.AlbumModel)
         .join(CommentModel.album)
-        .filter(AlbumModel.id == album.id, CommentModel.commenter_id == uid)
+        .filter(models.AlbumModel.id == album.id, CommentModel.commenter_id == uid)
         .first()
     )
     if comment is not None:
@@ -202,7 +195,7 @@ def post_comment(
         )
 
     new_comment = CommentModel(
-        **comment_info.dict(), commenter=pdb.get(UserModel, uid), album=album
+        **comment_info.dict(), commenter=pdb.get(models.UserModel, uid), album=album
     )
     pdb.add(new_comment)
     pdb.commit()
@@ -211,20 +204,20 @@ def post_comment(
 
 @router.get("/albums/{album_id}/comments/", response_model=List[schemas.CommentGet])
 def get_comments(
-    album: AlbumModel = Depends(get_album),
+    album: models.AlbumModel = Depends(album_utils.get_album),
 ):
     return album.comments
 
 
 @router.get("/albums/{album_id}/my_comment/", response_model=schemas.CommentBase)
-def get_my_comment(comment: CommentModel = Depends(get_comment)):
+def get_my_comment(comment: CommentModel = Depends(comment_utils.get_comment)):
     return comment
 
 
 @router.put("/albums/{album_id}/comments/")
 def edit_comment(
     comment_info_update: schemas.CommentUpdate,
-    comment: CommentModel = Depends(get_comment),
+    comment: CommentModel = Depends(comment_utils.get_comment),
     pdb: Session = Depends(get_db),
 ):
     comment_attrs = comment_info_update.dict()
@@ -238,7 +231,8 @@ def edit_comment(
 
 @router.delete("/albums/{album_id}/comments/")
 def delete_comment(
-    comment: CommentModel = Depends(get_comment), pdb: Session = Depends(get_db)
+    comment: CommentModel = Depends(comment_utils.get_comment),
+    pdb: Session = Depends(get_db),
 ):
     pdb.delete(comment)
     pdb.commit()

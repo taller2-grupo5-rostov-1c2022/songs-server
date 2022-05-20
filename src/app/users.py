@@ -6,11 +6,10 @@ from fastapi import Depends, HTTPException, Form, Header, UploadFile
 from sqlalchemy.orm import Session
 from src.postgres.database import get_db
 from src.firebase.access import get_bucket, get_auth
-from src.postgres.models import UserModel
+from src.postgres import models
 import datetime
 
-from src.repositories.resources_repository import retrieve_uid
-import src.repositories.comments_repository as crud_comments
+from src.repositories import user_utils, comment_utils
 
 router = APIRouter(tags=["users"])
 
@@ -18,7 +17,7 @@ router = APIRouter(tags=["users"])
 @router.get("/users/", response_model=List[schemas.UserBase])
 def get_all_users(pdb: Session = Depends(get_db)):
     """Returns all users"""
-    users = pdb.query(UserModel).all()
+    users = pdb.query(models.UserModel).all()
     return users
 
 
@@ -28,7 +27,7 @@ def get_user_by_id(
     pdb: Session = Depends(get_db),
 ):
     """Returns an user by its id or 404 if not found"""
-    user = pdb.get(UserModel, uid)
+    user = pdb.get(models.UserModel, uid)
 
     if user is None:
         raise HTTPException(status_code=404, detail="User not found")
@@ -44,7 +43,7 @@ def get_my_user(
     pdb: Session = Depends(get_db),
 ):
     """Returns own user"""
-    user = pdb.get(UserModel, uid)
+    user = pdb.get(models.UserModel, uid)
 
     if user is None:
         raise HTTPException(status_code=404, detail="User not found")
@@ -73,7 +72,7 @@ def post_user(
     auth=Depends(get_auth),
 ):
     """Creates a user and returns its id"""
-    new_user = UserModel(
+    new_user = models.UserModel(
         id=uid,
         name=name,
         wallet=wallet,
@@ -124,7 +123,9 @@ def put_user(
             detail=f"User with id {uid} attempted to modify user of id {uid_to_modify}",
         )
 
-    user = pdb.query(UserModel).filter(UserModel.id == uid_to_modify).first()
+    user = (
+        pdb.query(models.UserModel).filter(models.UserModel.id == uid_to_modify).first()
+    )
 
     if user is None:
         raise HTTPException(status_code=404, detail=f"User '{uid}' not found")
@@ -177,7 +178,7 @@ def delete_user(
             detail=f"User with id {uid} attempted to delete user of id {uid_to_delete}",
         )
 
-    user = pdb.query(UserModel).filter(UserModel.id == uid).first()
+    user = pdb.query(models.UserModel).filter(models.UserModel.id == uid).first()
     if user is None:
         raise HTTPException(status_code=404, detail=f"User '{uid}' not found")
     pdb.delete(user)
@@ -195,6 +196,6 @@ def delete_user(
 
 @router.get("/users/{uid}/comments/", response_model=List[schemas.CommentMyComments])
 def get_comments_of_user(
-    uid: str = Depends(retrieve_uid), pdb: Session = Depends(get_db)
+    uid: str = Depends(user_utils.retrieve_uid), pdb: Session = Depends(get_db)
 ):
-    return crud_comments.get_comments_by_uid(pdb, uid)
+    return comment_utils.get_comments_by_uid(pdb, uid)
