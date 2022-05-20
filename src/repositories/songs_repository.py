@@ -21,7 +21,7 @@ def get_songs(
     artist: str = None,
     genre: str = None,
     sub_level: int = None,
-    name: str = None
+    name: str = None,
 ):
     queries = []
     if not role.can_see_blocked():

@@ -346,9 +346,7 @@ def test_search_album_multiple_queries(client):
 
 def test_search_album_by_name(client):
     post_user(client, "album_creator_id", "album_creator_name")
-    album_id = post_album(client, name="my_album", uid="album_creator_id").json()[
-        "id"
-    ]
+    album_id = post_album(client, name="my_album", uid="album_creator_id").json()["id"]
 
     response = client.get(
         f"{API_VERSION_PREFIX}/albums/?name=ALBUM",

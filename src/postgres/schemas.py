@@ -110,7 +110,7 @@ class AlbumUpdate(ResourceCreatorUpdate):
 
 class AlbumGet(AlbumBase):
     cover: str
-    score: int
+    score: float
     scores_amount: int
 
     class Config:
@@ -159,7 +159,7 @@ class UserBase(BaseModel):
 
 class CommentBase(BaseModel):
     text: Optional[str] = None
-    score: Optional[int] = None
+    score: Optional[float] = None
 
     class Config:
         orm_mode = True
@@ -183,7 +183,7 @@ class CommentGet(CommentBase):
 # they are conceptually different
 class CommentUpdate(BaseModel):
     text: Optional[str] = None
-    score: Optional[int] = None
+    score: Optional[float] = None
 
     class Config:
         orm_mode = True

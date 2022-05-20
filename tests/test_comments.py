@@ -341,3 +341,37 @@ def test_post_comment_in_album_with_blocked_songs_should_not_remove_songs(client
         headers={"api_key": "key", "uid": "song_creator_id", "role": "admin"},
     )
     assert response_get.status_code == 200
+
+
+def test_post_one_comment_affects_album_score(client):
+    post_user(client, uid="creator_id", user_name="creator_name")
+    post_user(client, uid="commenter_id", user_name="commenter_name")
+
+    album_id = post_album(client, uid="creator_id").json()["id"]
+    post_comment(client, "commenter_id", album_id, "bad song", 2)
+
+    response_get = client.get(
+        f"{API_VERSION_PREFIX}/albums/{album_id}",
+        headers={"api_key": "key", "uid": "song_creator_id", "role": "admin"},
+    )
+    album = response_get.json()
+    assert response_get.status_code == 200
+    assert album["score"] == 2
+
+
+def test_post_many_comments_affects_score(client):
+    post_user(client, uid="creator_id", user_name="creator_name")
+    post_user(client, uid="first_commenter_id", user_name="first_commenter_name")
+    post_user(client, uid="second_commenter_id", user_name="second_commenter_name")
+
+    album_id = post_album(client, uid="creator_id").json()["id"]
+    post_comment(client, "first_commenter_id", album_id, "bad song", 2)
+    post_comment(client, "second_commenter_id", album_id, "good song", 5)
+
+    response_get = client.get(
+        f"{API_VERSION_PREFIX}/albums/{album_id}",
+        headers={"api_key": "key", "uid": "song_creator_id", "role": "admin"},
+    )
+    album = response_get.json()
+    assert response_get.status_code == 200
+    assert album["score"] == 3.5

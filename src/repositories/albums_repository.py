@@ -17,7 +17,7 @@ def get_albums(
     artist: str = None,
     genre: str = None,
     sub_level: int = None,
-    name: str = None
+    name: str = None,
 ):
     artist_queries = []
     album_queries = []
@@ -144,7 +144,7 @@ def calculate_score(pdb: Session, album: AlbumModel):
     )
     sum_scores = sum(comment.score for comment in comments)
 
-    return sum_scores / scores_amount
+    return round(sum_scores / scores_amount, 1)
 
 
 def get_comment_by_uid(pdb: Session, role: roles.Role, album: AlbumModel, uid: str):

@@ -275,4 +275,3 @@ def test_search_song_by_name(client):
     assert response.status_code == 200
     assert len(songs) == 1
     assert songs[0]["name"] == "my_song_name"
-
