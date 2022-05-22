@@ -7,7 +7,7 @@ from src.repositories import playlists_repository as crud_playlists
 from typing import List
 from sqlalchemy.orm import Session
 from src.postgres.database import get_db
-from src.postgres.models import PlaylistModel, SongModel
+from src.postgres.models import PlaylistModel, SongModel, UserModel
 from src.repositories.resources_repository import (
     retrieve_uid,
     retrieve_playlist,
@@ -205,3 +205,34 @@ def remove_song_from_playlist(
 
     playlist.songs.remove(song)
     pdb.commit()
+
+
+@router.post("/playlists/{playlist_id}/colabs/")
+def add_colab_to_playlist(
+    playlist_id: str,
+    colab_id: str = Form(...),
+    uid: str = Depends(retrieve_uid),
+    pdb: Session = Depends(get_db),
+):
+    """Adds a song to a playlist"""
+    playlist = pdb.query(PlaylistModel).filter(PlaylistModel.id == playlist_id).first()
+
+    if playlist is None:
+        raise HTTPException(
+            status_code=404, detail=f"Playlist '{playlist_id}' not found"
+        )
+
+    if uid != playlist.creator_id:
+        raise HTTPException(
+            status_code=403,
+            detail=f"User {uid} attempted to add a song to playlist of user with ID {playlist.creator_id}",
+        )
+
+    colab = pdb.query(UserModel).filter(UserModel.id == colab_id).first()
+    if colab is None:
+        raise HTTPException(status_code=404, detail=f"Song '{colab_id}' not found")
+
+    playlist.colabs.append(colab)
+    pdb.commit()
+
+    return {"id": playlist_id}

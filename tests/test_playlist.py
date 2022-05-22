@@ -331,3 +331,70 @@ def test_get_playlists_by_colab(client):
     assert response_get.status_code == 200
     assert len(playlists) == 1
     assert playlists[0]["name"] == "playlist_name"
+
+
+def test_add_playlists_colab(client):
+    res_post_playlist = wrap_post_playlist(client)
+    post_user(client, uid="user_playlist_new_colab", user_name="Paquito")
+
+    client.post(
+        f"{API_VERSION_PREFIX}/playlists/{res_post_playlist.json()['id']}/colabs/",
+        headers={"api_key": "key", "uid": "user_playlist_owner"},
+        data={
+            "colab_id": "user_playlist_new_colab",
+        },
+    )
+
+    response_get = client.get(
+        f"{API_VERSION_PREFIX}/playlists/?colab=user_playlist_colab",
+        headers={"api_key": "key", "uid": "user_playlist_new_colab"},
+    )
+    playlists = response_get.json()
+
+    assert response_get.status_code == 200
+    assert len(playlists) == 1
+    assert playlists[0]["name"] == "playlist_name"
+
+
+def test_colab_cant_add_colab(client):
+    res_post_playlist = wrap_post_playlist(client)
+    post_user(client, uid="user_playlist_new_colab", user_name="Paquito")
+
+    response_post = client.post(
+        f"{API_VERSION_PREFIX}/playlists/{res_post_playlist.json()['id']}/colabs/",
+        headers={"api_key": "key", "uid": "user_playlist_colab"},
+        data={
+            "colab_id": "user_playlist_new_colab",
+        },
+    )
+
+    assert response_post.status_code == 403
+
+
+def test_cant_add_colab_to_nonesxistent_playlist(client):
+    wrap_post_playlist(client)
+    post_user(client, uid="user_playlist_new_colab", user_name="Paquito")
+
+    response_post = client.post(
+        f"{API_VERSION_PREFIX}/playlists/999/colabs/",
+        headers={"api_key": "key", "uid": "user_playlist_owner"},
+        data={
+            "colab_id": "user_playlist_new_colab",
+        },
+    )
+
+    assert response_post.status_code == 404
+
+
+def test_cant_add_nonesxistent_colab_to_playlist(client):
+    res_post_playlist = wrap_post_playlist(client)
+
+    response_post = client.post(
+        f"{API_VERSION_PREFIX}/playlists/{res_post_playlist.json()['id']}/colabs/",
+        headers={"api_key": "key", "uid": "user_playlist_owner"},
+        data={
+            "colab_id": "nonexistent_colab",
+        },
+    )
+
+    assert response_post.status_code == 404
