@@ -47,6 +47,14 @@ song_artist_association_table = Table(
 )
 
 
+song_favorites_association_table = Table(
+    "song_favorites_association",
+    Base.metadata,
+    Column("user_id", ForeignKey("users.id", onupdate="CASCADE"), primary_key=True),
+    Column("song_id", ForeignKey("songs.id", onupdate="CASCADE"), primary_key=True),
+)
+
+
 class UserModel(Base):
     __tablename__ = "users"
 
@@ -69,6 +77,12 @@ class UserModel(Base):
     )
 
     comments = relationship("CommentModel", back_populates="commenter")
+
+    favorite_songs = relationship(
+        "SongModel",
+        secondary=song_favorites_association_table,
+        back_populates="favorited_by",
+    )
 
 
 class ResourceModel(Base):
@@ -143,6 +157,12 @@ class SongModel(ResourceCreatorModel):
 
     creator = relationship("UserModel", back_populates="songs")
     creator_id = Column(String, ForeignKey("users.id"))
+
+    favorited_by = relationship(
+        "UserModel",
+        secondary=song_favorites_association_table,
+        back_populates="favorite_songs",
+    )
 
 
 class PlaylistModel(ResourceModel):

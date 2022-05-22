@@ -221,3 +221,34 @@ def post_comment(
         headers={"api_key": "key", "uid": uid},
     )
     return response_post
+
+
+def add_song_to_favorites(client, uid, song_id):
+    response_post = client.post(
+        f"{API_VERSION_PREFIX}/users/{uid}/favorites/songs/?song_id={song_id}",
+        headers={"api_key": "key", "uid": uid},
+    )
+    return response_post
+
+
+def get_favorite_songs(client, uid):
+    response = client.get(
+        f"{API_VERSION_PREFIX}/users/{uid}/favorites/songs/",
+        headers={"api_key": "key", "uid": uid},
+    )
+    return response
+
+
+def delete_song_from_favorites(client, uid, song_id):
+    response_delete = client.delete(
+        f"{API_VERSION_PREFIX}/users/{uid}/favorites/songs/?song_id={song_id}",
+        headers={"api_key": "key", "uid": uid},
+    )
+    return response_delete
+
+def get_favorite_albums(client, uid):
+    response = client.get(
+        f"{API_VERSION_PREFIX}/users/{uid}/favorites/albums/",
+        headers={"api_key": "key", "uid": uid},
+    )
+    return response

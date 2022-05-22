@@ -1,3 +1,4 @@
+from src import roles
 from src.constants import STORAGE_PATH, SUPPRESS_BLOB_ERRORS
 from src.postgres import schemas
 from typing import List
@@ -9,7 +10,7 @@ from src.firebase.access import get_bucket, get_auth
 from src.postgres import models
 import datetime
 
-from src.repositories import user_utils, comment_utils
+from src.repositories import user_utils, comment_utils, song_utils
 
 router = APIRouter(tags=["users"])
 
@@ -199,3 +200,40 @@ def get_comments_of_user(
     uid: str = Depends(user_utils.retrieve_uid), pdb: Session = Depends(get_db)
 ):
     return comment_utils.get_comments_by_uid(pdb, uid)
+
+
+@router.get("/users/{uid}/favorites/songs/", response_model=List[schemas.SongBase])
+def get_favorite_songs(
+    uid: str = Depends(user_utils.retrieve_uid),
+    role: roles.Role = Depends(roles.get_role),
+    pdb: Session = Depends(get_db),
+):
+    return user_utils.get_favorite_songs(pdb, uid, role)
+
+
+@router.post("/users/{uid}/favorites/songs/", response_model=List[schemas.SongBase])
+def add_song_to_favorites(
+    song: models.SongModel = Depends(song_utils.get_song),
+    user: models.UserModel = Depends(user_utils.get_user),
+    role: roles.Role = Depends(roles.get_role),
+    pdb: Session = Depends(get_db),
+):
+    return user_utils.add_song_to_favorites(pdb, user, song, role)
+
+
+@router.delete("/users/{uid}/favorites/songs/")
+def remove_song_from_favorites(
+    song: models.SongModel = Depends(song_utils.get_song),
+    user: models.UserModel = Depends(user_utils.get_user),
+    pdb: Session = Depends(get_db),
+):
+    return user_utils.remove_song_from_favorites(pdb, user, song)
+
+
+@router.get("/users/{uid}/favorites/albums/", response_model=List[schemas.AlbumBase])
+def get_favorite_albums(
+            uid: str = Depends(user_utils.retrieve_uid),
+    role: roles.Role = Depends(roles.get_role),
+    pdb: Session = Depends(get_db),
+):
+    return user_utils.get_favorite_albums(pdb, uid, role)
