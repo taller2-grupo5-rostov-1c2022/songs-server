@@ -16,76 +16,69 @@ from ..roles import get_role
 
 
 def get_albums(
-    pdb,
-    role: roles.Role,
-    creator_id: str = None,
+    pdb: Session = Depends(get_db),
+    role: roles.Role = Depends(get_role),
+    creator: str = None,
     artist: str = None,
     genre: str = None,
     sub_level: int = None,
     name: str = None,
 ):
-    artist_queries = []
-    album_queries = []
     join_conditions = [models.SongModel.album_id == models.AlbumModel.id]
+    filters = []
 
     if not role.can_see_blocked():
         join_conditions.append(models.SongModel.blocked == False)
-        album_queries.append(models.AlbumModel.blocked == False)
+        filters.append(models.AlbumModel.blocked == False)
 
-    if creator_id is not None:
-        album_queries.append(models.AlbumModel.creator_id == creator_id)
+    if creator is not None:
+        filters.append(models.AlbumModel.creator_id == creator)
     if artist is not None:
-        artist_queries.append(
-            func.lower(models.ArtistModel.name).contains(artist.lower())
+        filters.append(
+            models.SongModel.artists.any(
+                func.lower(models.ArtistModel.name).contains(artist.lower())
+            )
         )
-    if genre is not None:
-        album_queries.append(
-            func.lower(models.AlbumModel.genre).contains(genre.lower())
-        )
+
     if sub_level is not None:
-        album_queries.append(models.AlbumModel.sub_level == sub_level)
+        filters.append(models.AlbumModel.sub_level == sub_level)
+    if genre is not None:
+        filters.append(func.lower(models.AlbumModel.genre).contains(genre.lower()))
     if name is not None:
-        album_queries.append(func.lower(models.AlbumModel.name).contains(name.lower()))
-
-    results = (
-        pdb.query(models.AlbumModel)
-        .join(models.SongModel, and_(*join_conditions), full=True)
-        .filter(*album_queries)
-    )
-
-    if artist is not None:
-        results = results.join(
-            models.ArtistModel,
-            models.SongModel.artists.any(criterion=and_(True, *artist_queries)),
-        )
-
-    return results.all()
-
-
-def get_album_by_id(pdb, role: roles.Role, album_id: int):
-    join_conditions = [models.SongModel.album_id == models.AlbumModel.id]
-
-    if not role.can_see_blocked():
-        join_conditions.append(models.SongModel.blocked == False)
+        filters.append(func.lower(models.AlbumModel.name).contains(name.lower()))
 
     albums = (
         pdb.query(models.AlbumModel)
         .options(contains_eager("songs"))
         .join(models.SongModel, and_(*join_conditions), full=True)
-        .filter(models.AlbumModel.id == album_id)
+        .filter(and_(True, *filters))
         .all()
     )
 
-    if len(albums) == 0:
+    return albums
+
+
+def get_album_by_id(pdb, role: roles.Role, album_id: int):
+    join_conditions = [models.SongModel.album_id == models.AlbumModel.id]
+    filters = [album_id == models.AlbumModel.id]
+
+    if not role.can_see_blocked():
+        join_conditions.append(models.SongModel.blocked == False)
+        filters.append(models.AlbumModel.blocked == False)
+
+    album = (
+        pdb.query(models.AlbumModel)
+        .options(contains_eager("songs"))
+        .join(models.SongModel, and_(*join_conditions), full=True)
+        .filter(and_(True, *filters))
+        .all()
+    )
+    if len(album) == 0:
         raise HTTPException(
             status_code=404,
-            detail=f"Album '{str(album_id)}' not found",
+            detail="Album not found",
         )
-    album = albums[0]
-    if album.blocked and not role.can_see_blocked():
-        raise HTTPException(status_code=403, detail="Album is blocked")
-
-    return album
+    return album[0]
 
 
 def update_songs(

@@ -1,19 +1,23 @@
 import json
+
+from src.postgres.database import get_db
 from src.repositories import resource_utils, song_utils
-from sqlalchemy.orm import joinedload
 from src import roles
 from src.postgres import models, schemas
 from typing import Optional, List
 from fastapi import HTTPException, Depends, Form
-from sqlalchemy import or_
+from sqlalchemy import or_, and_
+from sqlalchemy.orm import contains_eager
+
+from src.roles import get_role
 
 
 def get_playlists(pdb, role: roles.Role, colab_id: Optional[str]):
     queries = []
+    join_conditions = []
     if not role.can_see_blocked():
-        # This action should not be committed
-        pdb.query(models.SongModel).filter(models.SongModel.blocked == True).delete()
         queries.append(models.PlaylistModel.blocked == False)
+        join_conditions.append(models.SongModel.blocked == False)
 
     if colab_id is not None:
         queries.append(
@@ -26,6 +30,7 @@ def get_playlists(pdb, role: roles.Role, colab_id: Optional[str]):
     playlists = (
         pdb.query(models.PlaylistModel)
         .join(models.UserModel.other_playlists, full=True)
+        .join(models.SongModel, and_(True, *join_conditions), full=True)
         .filter(*queries)
         .all()
     )
@@ -34,28 +39,23 @@ def get_playlists(pdb, role: roles.Role, colab_id: Optional[str]):
 
 
 def get_playlist_by_id(pdb, role: roles.Role, playlist_id: int):
-    queries = []
+    filters = [playlist_id == models.PlaylistModel.id]
+    join_conditions = []
     if not role.can_see_blocked():
-        # This action should not be committed
-        pdb.query(models.SongModel).filter(models.SongModel.blocked == True).delete()
-        queries.append(models.PlaylistModel.blocked == False)
+        join_conditions.append(models.SongModel.blocked == False)
+        filters.append(models.PlaylistModel.blocked == False)
 
-    playlist = (
+    playlists = (
         pdb.query(models.PlaylistModel)
-        .options(joinedload(models.PlaylistModel.songs))
-        .options(joinedload(models.PlaylistModel.colabs))
-        .filter(models.PlaylistModel.id == playlist_id)
-        .first()
+        .options(contains_eager("songs"))
+        .join(models.SongModel, and_(True, *join_conditions), full=True)
+        .filter(and_(True, *filters))
+        .all()
     )
-    if playlist is None:
-        raise HTTPException(
-            status_code=404,
-            detail=f"Playlist '{playlist_id}' not found",
-        )
-    if playlist.blocked and not role.can_see_blocked():
-        raise HTTPException(status_code=403, detail="Playlist is blocked")
+    if len(playlists) == 0:
+        raise HTTPException(status_code=404, detail="Playlist not found")
 
-    return playlist
+    return playlists[0]
 
 
 def get_songs_list(pdb, role: roles.Role, songs_ids: List[int]):
@@ -118,3 +118,9 @@ def retrieve_playlist_update(
     return schemas.PlaylistUpdate(
         songs_ids=songs_ids, colabs_ids=colabs_ids, **resource_update.dict()
     )
+
+
+def get_playlist(
+    playlist_id: int, role: roles.Role = Depends(get_role), pdb=Depends(get_db)
+):
+    return get_playlist_by_id(pdb, role, playlist_id)

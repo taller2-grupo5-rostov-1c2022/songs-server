@@ -1,5 +1,8 @@
 from pydantic.main import BaseModel
-from typing import Optional, List
+from typing import Optional, List, Any
+
+from pydantic.utils import GetterDict
+from src.postgres import models
 
 
 class ResourceBase(BaseModel):

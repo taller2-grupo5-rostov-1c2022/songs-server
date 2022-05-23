@@ -197,10 +197,10 @@ def post_playlist(
     return response_post
 
 
-def block_song(client, id: int):
+def block_song(client, song_id: int):
     post_user(client, uid="__blocker__id__", user_name="__blocker__name__")
     response_put = client.put(
-        f"{API_VERSION_PREFIX}/songs/{id}",
+        f"{API_VERSION_PREFIX}/songs/{song_id}",
         data={"blocked": True},
         headers={"api_key": "key", "uid": "__blocker__id__", "role": "admin"},
     )
@@ -231,10 +231,10 @@ def add_song_to_favorites(client, uid, song_id):
     return response_post
 
 
-def get_favorite_songs(client, uid):
+def get_favorite_songs(client, uid, role="listener"):
     response = client.get(
         f"{API_VERSION_PREFIX}/users/{uid}/favorites/songs/",
-        headers={"api_key": "key", "uid": uid},
+        headers={"api_key": "key", "uid": uid, "role": role},
     )
     return response
 
@@ -246,9 +246,87 @@ def delete_song_from_favorites(client, uid, song_id):
     )
     return response_delete
 
+
 def get_favorite_albums(client, uid):
     response = client.get(
         f"{API_VERSION_PREFIX}/users/{uid}/favorites/albums/",
         headers={"api_key": "key", "uid": uid},
     )
     return response
+
+
+def add_album_to_favorites(client, uid, album_id):
+    response_post = client.post(
+        f"{API_VERSION_PREFIX}/users/{uid}/favorites/albums/?album_id={album_id}",
+        headers={"api_key": "key", "uid": uid},
+    )
+    return response_post
+
+
+def add_song_to_album(client, uid: str, song_id: int, album_id: int):
+    response_get = client.get(
+        f"{API_VERSION_PREFIX}/albums/{album_id}/songs/",
+        headers={"api_key": "key", "uid": uid},
+    )
+    songs_ids = [song["id"] for song in response_get.json()]
+    songs_ids.append(song_id)
+    response_put = client.put(
+        f"{API_VERSION_PREFIX}/albums/{album_id}/songs/",
+        data={"songs_ids": json.dumps(songs_ids)},
+        headers={"api_key": "key", "uid": uid},
+    )
+    return response_put
+
+
+def block_album(client, id: int):
+    post_user(client, uid="__blocker__id__", user_name="__blocker__name__")
+    response_put = client.put(
+        f"{API_VERSION_PREFIX}/albums/{id}",
+        data={"blocked": True},
+        headers={"api_key": "key", "uid": "__blocker__id__", "role": "admin"},
+    )
+    assert response_put.status_code == 200
+    return response_put
+
+
+def remove_album_from_favorites(client, uid, album_id):
+    response_delete = client.delete(
+        f"{API_VERSION_PREFIX}/users/{uid}/favorites/albums/?album_id={album_id}",
+        headers={"api_key": "key", "uid": uid},
+    )
+    return response_delete
+
+
+def get_favorite_playlists(client, uid, role="listener"):
+    response = client.get(
+        f"{API_VERSION_PREFIX}/users/{uid}/favorites/playlists/",
+        headers={"api_key": "key", "uid": uid, "role": role},
+    )
+    return response
+
+
+def get_song(client, song_id: int, role: str = "listener"):
+    response = client.get(
+        f"{API_VERSION_PREFIX}/songs/{song_id}",
+        headers={"api_key": "key", "role": role},
+    )
+    return response
+
+
+def add_playlist_to_favorites(client, uid, playlist_id, role="listener"):
+    response_post = client.post(
+        f"{API_VERSION_PREFIX}/users/{uid}/favorites/playlists/?playlist_id={playlist_id}",
+        headers={"api_key": "key", "uid": uid, "role": role},
+    )
+    return response_post
+
+
+def block_playlist(client, playlist_id: int):
+    post_user(client, uid="__blocker__id__", user_name="__blocker__name__")
+    response_put = client.put(
+        f"{API_VERSION_PREFIX}/playlists/{playlist_id}",
+        data={"blocked": True},
+        headers={"api_key": "key", "uid": "__blocker__id__", "role": "admin"},
+    )
+    assert response_put.status_code == 200
+    return response_put

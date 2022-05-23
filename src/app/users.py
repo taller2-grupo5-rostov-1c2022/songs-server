@@ -10,7 +10,13 @@ from src.firebase.access import get_bucket, get_auth
 from src.postgres import models
 import datetime
 
-from src.repositories import user_utils, comment_utils, song_utils
+from src.repositories import (
+    user_utils,
+    comment_utils,
+    song_utils,
+    album_utils,
+    playlist_utils,
+)
 
 router = APIRouter(tags=["users"])
 
@@ -211,14 +217,13 @@ def get_favorite_songs(
     return user_utils.get_favorite_songs(pdb, uid, role)
 
 
-@router.post("/users/{uid}/favorites/songs/", response_model=List[schemas.SongBase])
+@router.post("/users/{uid}/favorites/songs/", response_model=schemas.SongBase)
 def add_song_to_favorites(
     song: models.SongModel = Depends(song_utils.get_song),
     user: models.UserModel = Depends(user_utils.get_user),
-    role: roles.Role = Depends(roles.get_role),
     pdb: Session = Depends(get_db),
 ):
-    return user_utils.add_song_to_favorites(pdb, user, song, role)
+    return user_utils.add_song_to_favorites(pdb, user, song)
 
 
 @router.delete("/users/{uid}/favorites/songs/")
@@ -232,8 +237,46 @@ def remove_song_from_favorites(
 
 @router.get("/users/{uid}/favorites/albums/", response_model=List[schemas.AlbumBase])
 def get_favorite_albums(
-            uid: str = Depends(user_utils.retrieve_uid),
+    uid: str = Depends(user_utils.retrieve_uid),
     role: roles.Role = Depends(roles.get_role),
     pdb: Session = Depends(get_db),
 ):
     return user_utils.get_favorite_albums(pdb, uid, role)
+
+
+@router.post("/users/{uid}/favorites/albums/", response_model=schemas.AlbumBase)
+def add_album_to_favorites(
+    album: models.AlbumModel = Depends(album_utils.get_album),
+    user: models.UserModel = Depends(user_utils.get_user),
+    pdb: Session = Depends(get_db),
+):
+    return user_utils.add_album_to_favorites(pdb, user, album)
+
+
+@router.delete("/users/{uid}/favorites/albums/")
+def remove_album_from_favorites(
+    album: models.AlbumModel = Depends(album_utils.get_album),
+    user: models.UserModel = Depends(user_utils.get_user),
+    pdb: Session = Depends(get_db),
+):
+    return user_utils.remove_album_from_favorites(pdb, user, album)
+
+
+@router.get(
+    "/users/{uid}/favorites/playlists/", response_model=List[schemas.PlaylistBase]
+)
+def get_favorite_playlists(
+    uid: str = Depends(user_utils.retrieve_uid),
+    role: roles.Role = Depends(roles.get_role),
+    pdb: Session = Depends(get_db),
+):
+    return user_utils.get_favorite_playlists(pdb, uid, role)
+
+
+@router.post("/users/{uid}/favorites/playlists/", response_model=schemas.PlaylistBase)
+def add_playlist_to_favorites(
+    playlist: models.PlaylistModel = Depends(playlist_utils.get_playlist),
+    user: models.UserModel = Depends(user_utils.get_user),
+    pdb: Session = Depends(get_db),
+):
+    return user_utils.add_playlist_to_favorites(pdb, user, playlist)

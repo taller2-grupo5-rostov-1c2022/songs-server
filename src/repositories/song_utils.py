@@ -52,16 +52,18 @@ def get_songs(
 
 
 def get_song_by_id(pdb, role: roles.Role, song_id: int):
-    song = pdb.query(models.SongModel).filter(models.SongModel.id == song_id).first()
+    filters = [song_id == models.SongModel.id]
+    if not role.can_see_blocked():
+        filters.append(models.SongModel.blocked == False)
+
+    song = (
+        pdb.query(models.SongModel)
+        .join(models.ArtistModel.songs)
+        .filter(*filters)
+        .first()
+    )
     if song is None:
-        raise HTTPException(
-            status_code=404,
-            detail=f"Song '{str(song_id)}' not found",
-        )
-
-    if song.blocked and not role.can_see_blocked():
-        raise HTTPException(status_code=403, detail="Song is blocked")
-
+        raise HTTPException(status_code=404, detail="Song not found")
     return song
 
 

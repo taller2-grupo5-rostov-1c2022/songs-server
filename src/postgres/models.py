@@ -55,6 +55,30 @@ song_favorites_association_table = Table(
 )
 
 
+album_favorites_association_table = Table(
+    "album_favorites_association",
+    Base.metadata,
+    Column("user_id", ForeignKey("users.id", onupdate="CASCADE"), primary_key=True),
+    Column("album_id", ForeignKey("albums.id", onupdate="CASCADE"), primary_key=True),
+)
+
+
+playlist_favorite_association_table = Table(
+    "playlist_favorite_association",
+    Base.metadata,
+    Column(
+        "user_id",
+        ForeignKey("users.id", onupdate="CASCADE"),
+        primary_key=True,
+    ),
+    Column(
+        "playlist_id",
+        ForeignKey("playlists.id", onupdate="CASCADE"),
+        primary_key=True,
+    ),
+)
+
+
 class UserModel(Base):
     __tablename__ = "users"
 
@@ -80,7 +104,20 @@ class UserModel(Base):
 
     favorite_songs = relationship(
         "SongModel",
+        lazy="dynamic",
         secondary=song_favorites_association_table,
+        back_populates="favorited_by",
+    )
+    favorite_albums = relationship(
+        "AlbumModel",
+        lazy="dynamic",
+        secondary=album_favorites_association_table,
+        back_populates="favorited_by",
+    )
+    favorite_playlists = relationship(
+        "PlaylistModel",
+        lazy="dynamic",
+        secondary=playlist_favorite_association_table,
         back_populates="favorited_by",
     )
 
@@ -125,6 +162,12 @@ class AlbumModel(ResourceCreatorModel):
 
     comments = relationship("CommentModel", back_populates="album")
 
+    favorited_by = relationship(
+        "UserModel",
+        secondary=album_favorites_association_table,
+        back_populates="favorite_albums",
+    )
+
 
 class ArtistModel(Base):
     __tablename__ = "artists"
@@ -144,10 +187,7 @@ class SongModel(ResourceCreatorModel):
     file_last_update = Column(TIMESTAMP, nullable=False)
 
     artists = relationship(
-        "ArtistModel",
-        secondary=song_artist_association_table,
-        back_populates="songs",
-        lazy="joined",
+        "ArtistModel", secondary=song_artist_association_table, back_populates="songs"
     )
 
     album = relationship("AlbumModel", back_populates="songs", lazy="joined")
@@ -168,7 +208,11 @@ class SongModel(ResourceCreatorModel):
 class PlaylistModel(ResourceModel):
     __tablename__ = "playlists"
 
-    songs = relationship("SongModel", secondary=song_playlist_association_table)
+    songs = relationship(
+        "SongModel",
+        secondary=song_playlist_association_table,
+    )
+
     colabs = relationship(
         "UserModel",
         secondary=colab_playlist_association_table,
@@ -176,3 +220,9 @@ class PlaylistModel(ResourceModel):
     )
     creator = relationship("UserModel", back_populates="my_playlists")
     creator_id = Column(String, ForeignKey("users.id"))
+
+    favorited_by = relationship(
+        "UserModel",
+        secondary=playlist_favorite_association_table,
+        back_populates="favorite_playlists",
+    )
