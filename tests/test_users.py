@@ -237,3 +237,31 @@ def test_get_my_comments_should_not_return_comments_of_another_user(client):
     assert response.status_code == 200
 
     assert len(comments) == 0
+
+
+def listener_can_become_artist(client):
+    post_user(client, "listener_id", "listener_name")
+
+    response = client.post(
+        API_VERSION_PREFIX + "/users/make_artist/",
+        headers={
+            "uid": "listener_id",
+            "role": "listener",
+            "api_key": "key",
+        },
+    )
+    assert response.status_code == 200
+
+
+def non_listener_cant_become_artist(client):
+    post_user(client, "non_listener_id", "non_listener_name")
+
+    response = client.post(
+        API_VERSION_PREFIX + "/users/make_artist/",
+        headers={
+            "uid": "non_listener_id",
+            "role": "admin",
+            "api_key": "key",
+        },
+    )
+    assert response.status_code == 405
