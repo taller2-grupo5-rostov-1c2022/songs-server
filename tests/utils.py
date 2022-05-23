@@ -334,3 +334,11 @@ def block_playlist(client, playlist_id: int):
     )
     assert response_put.status_code == 200
     return response_put
+
+
+def remove_playlist_from_favorites(client, uid, playlist_id):
+    response_delete = client.delete(
+        f"{API_VERSION_PREFIX}/users/{uid}/favorites/playlists/?playlist_id={playlist_id}",
+        headers={"api_key": "key", "uid": uid},
+    )
+    return response_delete

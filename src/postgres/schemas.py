@@ -1,8 +1,5 @@
 from pydantic.main import BaseModel
-from typing import Optional, List, Any
-
-from pydantic.utils import GetterDict
-from src.postgres import models
+from typing import Optional, List
 
 
 class ResourceBase(BaseModel):
@@ -50,14 +47,6 @@ class ResourceCreatorUpdate(ResourceUpdate):
 
 class AlbumInfoBase(BaseModel):
     id: int
-    name: str
-
-    class Config:
-        orm_mode = True
-
-
-class UserInfo(BaseModel):
-    id: str
     name: str
 
     class Config:

@@ -95,7 +95,18 @@ def get_favorite_playlists(pdb, uid: str, role: roles.Role):
 def add_playlist_to_favorites(
     pdb, user: models.UserModel, playlist: models.PlaylistModel
 ):
-    print("F")
     user.favorite_playlists.append(playlist)
     pdb.commit()
     return playlist
+
+
+def remove_playlist_from_favorites(
+    pdb, user: models.UserModel, playlist: models.PlaylistModel
+):
+    if playlist in user.favorite_playlists:
+        user.favorite_playlists.remove(playlist)
+        pdb.commit()
+    else:
+        raise HTTPException(
+            status_code=404, detail=f"Playlist {playlist.id} not found in favorites"
+        )

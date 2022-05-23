@@ -227,7 +227,11 @@ def add_colab_to_playlist(
     pdb: Session = Depends(get_db),
 ):
     """Adds a song to a playlist"""
-    playlist = pdb.query(models.PlaylistModel).filter(models.PlaylistModel.id == playlist_id).first()
+    playlist = (
+        pdb.query(models.PlaylistModel)
+        .filter(models.PlaylistModel.id == playlist_id)
+        .first()
+    )
 
     if playlist is None:
         raise HTTPException(

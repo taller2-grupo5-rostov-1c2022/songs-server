@@ -98,3 +98,12 @@ def add_playlist_to_favorites(
     pdb: Session = Depends(get_db),
 ):
     return user_utils.add_playlist_to_favorites(pdb, user, playlist)
+
+
+@router.delete("/users/{uid}/favorites/playlists/")
+def remove_playlist_from_favorites(
+    playlist: models.PlaylistModel = Depends(playlist_utils.get_playlist),
+    user: models.UserModel = Depends(user_utils.get_user),
+    pdb: Session = Depends(get_db),
+):
+    return user_utils.remove_playlist_from_favorites(pdb, user, playlist)

@@ -498,6 +498,37 @@ def test_admin_can_add_playlist_to_favorites_even_if_blocked(client):
     assert playlists[0]["name"] == "playlist_name"
 
 
+def test_remove_playlist_from_favorites(client):
+    utils.post_user(client, "user_id", "user_name")
+    playlist_id = utils.post_playlist(
+        client, playlist_name="playlist_name", uid="user_id"
+    ).json()["id"]
+
+    utils.add_playlist_to_favorites(client, uid="user_id", playlist_id=playlist_id)
+
+    response_delete = utils.remove_playlist_from_favorites(
+        client, uid="user_id", playlist_id=playlist_id
+    )
+    assert response_delete.status_code == 200
+
+    response_get = utils.get_favorite_playlists(client, uid="user_id")
+    playlists = response_get.json()
+    assert response_get.status_code == 200
+    assert len(playlists) == 0
+
+
+def test_remove_playlist_from_favorites_playlist_not_found_in_favorites(client):
+    utils.post_user(client, "user_id", "user_name")
+    playlist_id = utils.post_playlist(
+        client, playlist_name="playlist_name", uid="user_id"
+    ).json()["id"]
+
+    response_delete = utils.remove_playlist_from_favorites(
+        client, uid="user_id", playlist_id=playlist_id
+    )
+    assert response_delete.status_code == 404
+
+
 """
 def test_get_favorite_playlists_return_playlist_without_blocked_songs(client):
     utils.post_user(client, "creator_id", "creator_name")
