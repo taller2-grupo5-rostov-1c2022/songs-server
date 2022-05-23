@@ -12,10 +12,6 @@ import datetime
 
 from src.repositories import (
     user_utils,
-    comment_utils,
-    song_utils,
-    album_utils,
-    playlist_utils,
 )
 
 router = APIRouter(tags=["users"])

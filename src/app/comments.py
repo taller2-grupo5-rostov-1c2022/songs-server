@@ -1,16 +1,11 @@
-import datetime
 from src.postgres import schemas
-from src.constants import SUPPRESS_BLOB_ERRORS
 from fastapi import APIRouter
-from fastapi import Depends, File, HTTPException, UploadFile
-from src.firebase.access import get_bucket
+from fastapi import Depends, HTTPException
 from typing import List
 from sqlalchemy.orm import Session
 from src.postgres.database import get_db
 from src.postgres import models
-from src import roles
 from src.repositories import album_utils, user_utils, comment_utils
-from src.roles import get_role
 from src.postgres.models import CommentModel
 
 router = APIRouter(tags=["comments"])

@@ -9,9 +9,8 @@ from sqlalchemy.orm import Session
 from src.postgres.database import get_db
 from src.postgres import models
 from src import roles
-from src.repositories import album_utils, user_utils, comment_utils
+from src.repositories import album_utils, user_utils
 from src.roles import get_role
-from src.postgres.models import CommentModel
 
 router = APIRouter(tags=["albums"])
 
