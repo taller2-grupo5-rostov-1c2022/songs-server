@@ -323,3 +323,11 @@ def test_add_song_to_album(client):
     album = response_get.json()
     assert response_get.status_code == 200
     assert len(album["songs"]) == 2
+
+
+def test_listener_cannot_post_album(client):
+    post_user(client, "listener_id", "listener_name")
+
+    response_post = post_album(client, role="listener", uid="listener_id")
+    assert response_post.status_code == 403
+

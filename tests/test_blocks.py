@@ -375,7 +375,6 @@ def test_listener_get_album_by_id_with_blocked_songs_should_retrieve_not_blocked
         f"{API_VERSION_PREFIX}/albums/{album_id}",
         headers={"role": "listener", "api_key": "key"},
     )
-    print(response.json())
 
     assert response.status_code == 200
     assert len(response.json()["songs"]) == 1

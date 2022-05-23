@@ -4,8 +4,11 @@ import json
 from src.main import API_VERSION_PREFIX
 
 
-def header(uid):
-    return {"api_key": "key", "uid": uid}
+def header(uid, role=None):
+    headers = {"uid": uid, "api_key": "key"}
+    if role is not None:
+        headers["role"] = role
+    return headers
 
 
 def post_user(
@@ -34,7 +37,6 @@ def post_user(
                 data=data,
                 files=files,
             )
-            print(response_post.json())
             assert response_post.status_code == 200
     else:
         response_post = client.post(
@@ -57,9 +59,10 @@ def post_song(
     file: Optional[str] = "./tests/test.song",
     blocked: Optional[bool] = False,
     headers: Optional[dict] = None,
+    role: Optional[str] = "artist",
 ):
     if headers is None:
-        headers = header(uid)
+        headers = header(uid, role=role)
     if artists is None:
         artists = ["song_artist_name"]
 
@@ -100,9 +103,10 @@ def post_album(
     cover: Optional[str] = "./tests/test.cover",
     blocked: bool = False,
     headers: Optional[dict] = None,
+    role: Optional[str] = "artist",
 ):
     if headers is None:
-        headers = {"api_key": "key", "uid": uid}
+        headers = header(uid, role=role)
     if songs_ids is None:
         songs_ids = []
 

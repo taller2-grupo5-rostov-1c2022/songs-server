@@ -208,7 +208,7 @@ def test_post_with_invalid_artists_format_should_fail(client):
                 "genre": "test_genre",
             },
             files={"file": ("song.txt", f, "plain/text")},
-            headers={"uid": "song_creator_id", "api_key": "key"},
+            headers={"uid": "song_creator_id", "api_key": "key", "role": "artist"},
         )
 
     assert response_post.status_code == 422
@@ -245,3 +245,10 @@ def test_update_song_updates_song_timestamp(client):
     timestamp_2 = parse_qs(urlparse(url_2).query)["t"][0]
 
     assert timestamp_1 != timestamp_2
+
+
+def test_listener_cannot_post_song(client):
+    post_user(client, "listener_id", "listener_name")
+    response_post = post_song(client, uid="listener_id", role="listener")
+
+    assert response_post.status_code == 403

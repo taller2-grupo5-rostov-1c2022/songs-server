@@ -1,4 +1,6 @@
 from fastapi import Form, Depends, HTTPException, Header
+
+from src import roles
 from src.postgres import models
 from typing import Optional
 from src.postgres import schemas
@@ -41,5 +43,9 @@ def retrieve_resource_creator(
     resource: schemas.ResourceBase = Depends(retrieve_resource),
     genre: str = Form(...),
     sub_level: Optional[int] = Form(0),
+    role: roles.Role = Depends(roles.get_role),
 ):
+    if not role.can_post_content():
+        raise HTTPException(status_code=403, detail="You are not allowed to post content")
+
     return schemas.ResourceCreator(genre=genre, sub_level=sub_level, **resource.dict())

@@ -15,8 +15,19 @@ class Role:
     def admin(cls):
         return cls("admin")
 
+    @classmethod
+    def listener(cls):
+        return cls(None)
+
+    @classmethod
+    def artist(cls):
+        return cls("artist")
+
     def __lt__(self, other):
         return self.role_value < other.role_value
+
+    def __le__(self, other):
+        return self.role_value <= other.role_value
 
     def __eq__(self, other):
         return self.role_value == other.role_value
@@ -29,6 +40,9 @@ class Role:
 
     def can_block(self):
         return self == Role.admin()
+
+    def can_post_content(self):
+        return Role.artist() <= self
 
 
 async def get_role(role: str = Header("listener")):
