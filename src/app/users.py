@@ -235,13 +235,19 @@ def remove_song_from_favorites(
     return user_utils.remove_song_from_favorites(pdb, user, song)
 
 
-@router.get("/users/{uid}/favorites/albums/", response_model=List[schemas.AlbumBase])
+@router.get("/users/{uid}/favorites/albums/", response_model=List[schemas.AlbumGet])
 def get_favorite_albums(
     uid: str = Depends(user_utils.retrieve_uid),
     role: roles.Role = Depends(roles.get_role),
     pdb: Session = Depends(get_db),
 ):
-    return user_utils.get_favorite_albums(pdb, uid, role)
+    favorite_albums = user_utils.get_favorite_albums(pdb, uid, role)
+    for album in favorite_albums:
+        album.cover = album_utils.cover_url(album)
+        album.score = album_utils.calculate_score(pdb, album)
+        album.scores_amount = album_utils.calculate_scores_amount(pdb, album)
+
+    return favorite_albums
 
 
 @router.post("/users/{uid}/favorites/albums/", response_model=schemas.AlbumBase)

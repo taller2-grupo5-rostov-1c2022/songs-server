@@ -225,6 +225,9 @@ def test_get_favorite_albums_with_one_favorite_album(client):
     assert response_get.status_code == 200
     assert len(albums) == 1
     assert albums[0]["name"] == "album_name"
+    assert albums[0]["cover"].startswith("http")
+    assert albums[0]["score"] == 0
+    assert albums[0]["scores_amount"] == 0
 
 
 def test_get_favorite_albums_with_one_favorite_album_with_one_song(client):
