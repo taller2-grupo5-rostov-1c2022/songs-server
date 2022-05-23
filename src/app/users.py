@@ -201,13 +201,6 @@ def delete_user(
     pdb.commit()
 
 
-@router.get("/users/{uid}/comments/", response_model=List[schemas.CommentMyComments])
-def get_comments_of_user(
-    uid: str = Depends(user_utils.retrieve_uid), pdb: Session = Depends(get_db)
-):
-    return comment_utils.get_comments_by_uid(pdb, uid)
-
-
 @router.post("/users/make_artist/", response_model=schemas.PlaylistBase)
 def make_artist(
     uid: str = Depends(user_utils.retrieve_uid),
