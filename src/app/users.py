@@ -286,3 +286,15 @@ def add_playlist_to_favorites(
     pdb: Session = Depends(get_db),
 ):
     return user_utils.add_playlist_to_favorites(pdb, user, playlist)
+
+
+@router.post("/users/make_artist/", response_model=schemas.PlaylistBase)
+def make_artist(
+    uid: str = Depends(user_utils.retrieve_uid),
+    role: roles.Role = Depends(roles.get_role),
+    auth=Depends(get_auth),
+):
+    if role != roles.Role.listener():
+        raise HTTPException(status_code=405, detail="Not a listener")
+
+    auth.set_custom_user_claims(uid, {"role": str(roles.Role.artist())})
