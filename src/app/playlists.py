@@ -217,3 +217,34 @@ def remove_song_from_playlist(
 
     playlist.songs.remove(song)
     pdb.commit()
+
+
+@router.post("/playlists/{playlist_id}/colabs/")
+def add_colab_to_playlist(
+    playlist_id: str,
+    colab_id: str = Form(...),
+    uid: str = Depends(user_utils.retrieve_uid),
+    pdb: Session = Depends(get_db),
+):
+    """Adds a song to a playlist"""
+    playlist = pdb.query(models.PlaylistModel).filter(models.PlaylistModel.id == playlist_id).first()
+
+    if playlist is None:
+        raise HTTPException(
+            status_code=404, detail=f"Playlist '{playlist_id}' not found"
+        )
+
+    if uid != playlist.creator_id:
+        raise HTTPException(
+            status_code=403,
+            detail=f"User {uid} attempted to add a song to playlist of user with ID {playlist.creator_id}",
+        )
+
+    colab = pdb.query(models.UserModel).filter(models.UserModel.id == colab_id).first()
+    if colab is None:
+        raise HTTPException(status_code=404, detail=f"Song '{colab_id}' not found")
+
+    playlist.colabs.append(colab)
+    pdb.commit()
+
+    return {"id": playlist_id}

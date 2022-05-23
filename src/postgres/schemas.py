@@ -56,6 +56,14 @@ class AlbumInfoBase(BaseModel):
         orm_mode = True
 
 
+class UserInfo(BaseModel):
+    id: str
+    name: str
+
+    class Config:
+        orm_mode = True
+
+
 class ArtistBase(BaseModel):
     name: str
 
