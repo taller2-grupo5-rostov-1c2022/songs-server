@@ -30,13 +30,14 @@ def get_user_by_id(
     if user is None:
         raise HTTPException(status_code=404, detail="User not found")
 
-    user.pfp = (
-        STORAGE_PATH
-        + "pfp/"
-        + str(uid)
-        + "?t="
-        + str(int(datetime.datetime.timestamp(user.pfp_last_update)))
-    )
+    if user.pfp_last_update is not None:
+        user.pfp = (
+            STORAGE_PATH
+            + "pfp/"
+            + str(uid)
+            + "?t="
+            + str(int(datetime.datetime.timestamp(user.pfp_last_update)))
+        )
 
     return user
 
@@ -52,13 +53,14 @@ def get_my_user(
     if user is None:
         raise HTTPException(status_code=404, detail="User not found")
 
-    user.pfp = (
-        STORAGE_PATH
-        + "pfp/"
-        + str(uid)
-        + "?t="
-        + str(int(datetime.datetime.timestamp(user.pfp_last_update)))
-    )
+    if user.pfp_last_update is not None:
+        user.pfp = (
+            STORAGE_PATH
+            + "pfp/"
+            + str(uid)
+            + "?t="
+            + str(int(datetime.datetime.timestamp(user.pfp_last_update)))
+        )
 
     return user
 
@@ -82,7 +84,6 @@ def post_user(
         wallet=wallet,
         location=location,
         interests=interests,
-        pfp_last_update=datetime.datetime.now(),
     )
 
     auth.update_user(uid=uid, display_name=name)
@@ -93,6 +94,7 @@ def post_user(
             blob.upload_from_file(img.file)
             blob.make_public()
             auth.update_user(uid=uid, photo_url=blob.public_url)
+            new_user.pfp_last_update = datetime.datetime.now()
         except Exception as e:
             if not SUPPRESS_BLOB_ERRORS:
                 raise HTTPException(
@@ -185,12 +187,14 @@ def delete_user(
         raise HTTPException(status_code=404, detail=f"User '{uid}' not found")
     pdb.delete(user)
 
-    try:
-        bucket.blob("pfp/" + str(uid)).delete()
-    except:  # noqa: W0707 # Want to catch all exceptions
-        if not SUPPRESS_BLOB_ERRORS:
-            raise HTTPException(
-                status_code=507, detail=f"Image for User '{uid}' could not be deleted"
-            )
+    if user.pfp_last_update is not None:
+        try:
+            bucket.blob("pfp/" + str(uid)).delete()
+        except:  # noqa: W0707 # Want to catch all exceptions
+            if not SUPPRESS_BLOB_ERRORS:
+                raise HTTPException(
+                    status_code=507,
+                    detail=f"Image for User '{uid}' could not be deleted",
+                )
 
     pdb.commit()
