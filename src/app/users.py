@@ -30,7 +30,13 @@ def get_user_by_id(
     if user is None:
         raise HTTPException(status_code=404, detail="User not found")
 
-    user.pfp = STORAGE_PATH + "pfp/" + str(uid) + "?t=" + str(user.pfp_last_update)
+    user.pfp = (
+        STORAGE_PATH
+        + "pfp/"
+        + str(uid)
+        + "?t="
+        + str(int(datetime.datetime.timestamp(user.pfp_last_update)))
+    )
 
     return user
 
