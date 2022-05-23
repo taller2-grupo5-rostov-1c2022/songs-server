@@ -22,6 +22,13 @@ class ResourceUpdate(BaseModel):
         orm_mode = True
 
 
+class UserInfo(BaseModel):
+    name: str
+
+    class Config:
+        orm_mode = True
+
+
 class ResourceCreator(ResourceBase):
     genre: str
     sub_level: int
@@ -40,14 +47,6 @@ class ResourceCreatorUpdate(ResourceUpdate):
 
 class AlbumInfoBase(BaseModel):
     id: int
-    name: str
-
-    class Config:
-        orm_mode = True
-
-
-class UserInfo(BaseModel):
-    id: str
     name: str
 
     class Config:
@@ -111,6 +110,8 @@ class AlbumUpdate(ResourceCreatorUpdate):
 
 class AlbumGet(AlbumBase):
     cover: str
+    score: float
+    scores_amount: int
 
     class Config:
         orm_mode = True
@@ -151,6 +152,38 @@ class UserBase(BaseModel):
     songs: List[SongBase]
     albums: List[AlbumBase]
     my_playlists: List[PlaylistBase]
+
+    class Config:
+        orm_mode = True
+
+
+class CommentBase(BaseModel):
+    text: Optional[str] = None
+    score: Optional[float] = None
+
+    class Config:
+        orm_mode = True
+
+
+class CommentMyComments(CommentBase):
+    album: AlbumInfoBase
+
+    class Config:
+        orm_mode = True
+
+
+class CommentGet(CommentBase):
+    commenter: UserInfo
+
+    class Config:
+        orm_mode = True
+
+
+# This is identical to CommentBase, but
+# they are conceptually different
+class CommentUpdate(BaseModel):
+    text: Optional[str] = None
+    score: Optional[float] = None
 
     class Config:
         orm_mode = True

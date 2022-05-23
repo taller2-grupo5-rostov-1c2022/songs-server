@@ -9,5 +9,10 @@ class Auth:
         self.user["photo_url"] = photo_url
         return self.user
 
+    def set_custom_user_claims(self, uid, custom_claims):
+        self.user["uid"] = uid
+        self.user["custom_claims"] = custom_claims
+        return self.user
+
 
 auth_mock = Auth()

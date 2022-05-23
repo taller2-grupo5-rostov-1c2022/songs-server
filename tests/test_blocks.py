@@ -67,7 +67,7 @@ def test_listener_get_blocked_song_by_id_should_fail(client):
         headers={"role": "listener", "api_key": "key"},
     )
 
-    assert response.status_code == 403
+    assert response.status_code == 404
 
 
 def test_artist_get_blocked_song_by_id_should_fail(client):
@@ -79,7 +79,7 @@ def test_artist_get_blocked_song_by_id_should_fail(client):
         headers={"role": "artist", "api_key": "key"},
     )
 
-    assert response.status_code == 403
+    assert response.status_code == 404
 
 
 def test_user_without_role_get_blocked_song_by_id_should_fail(client):
@@ -90,7 +90,7 @@ def test_user_without_role_get_blocked_song_by_id_should_fail(client):
         f"{API_VERSION_PREFIX}/songs/{song_id}", headers={"api_key": "key"}
     )
 
-    assert response.status_code == 403
+    assert response.status_code == 404
 
 
 def test_admin_get_blocked_song_by_id(client):
@@ -241,7 +241,7 @@ def test_listener_get_blocked_album_by_id_should_fail(client):
         headers={"role": "listener", "api_key": "key"},
     )
 
-    assert response.status_code == 403
+    assert response.status_code == 404
 
 
 def test_admin_get_blocked_album_by_id(client):
@@ -367,7 +367,7 @@ def test_listener_get_album_by_id_with_blocked_songs_should_retrieve_not_blocked
         songs_ids=[song_id_1, song_id_2],
         blocked=False,
     )
-    block_song(client, id=song_id_1)
+    block_song(client, song_id=song_id_1)
 
     album_id = album_id.json()["id"]
 
@@ -459,7 +459,7 @@ def test_listener_get_blocked_playlist_by_id_should_fail(client):
         headers={"role": "listener", "api_key": "key"},
     )
 
-    assert response.status_code == 403
+    assert response.status_code == 404
 
 
 def test_admin_get_blocked_playlist_by_id(client):
@@ -618,3 +618,4 @@ def test_listener_get_playlist_by_id_with_blocked_songs_should_not_remove_song(c
         headers={"role": "admin", "api_key": "key"},
     )
     assert response_get_song.status_code == 200
+    assert response_get_song.json()["blocked"] is True

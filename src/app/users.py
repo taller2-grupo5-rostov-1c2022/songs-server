@@ -1,3 +1,4 @@
+from src import roles
 from src.constants import STORAGE_PATH, SUPPRESS_BLOB_ERRORS
 from src.postgres import schemas
 from typing import List
@@ -6,8 +7,12 @@ from fastapi import Depends, HTTPException, Form, Header, UploadFile
 from sqlalchemy.orm import Session
 from src.postgres.database import get_db
 from src.firebase.access import get_bucket, get_auth
-from src.postgres.models import UserModel
+from src.postgres import models
 import datetime
+
+from src.repositories import (
+    user_utils,
+)
 
 router = APIRouter(tags=["users"])
 
@@ -15,7 +20,7 @@ router = APIRouter(tags=["users"])
 @router.get("/users/", response_model=List[schemas.UserBase])
 def get_all_users(pdb: Session = Depends(get_db)):
     """Returns all users"""
-    users = pdb.query(UserModel).all()
+    users = pdb.query(models.UserModel).all()
     return users
 
 
@@ -25,7 +30,7 @@ def get_user_by_id(
     pdb: Session = Depends(get_db),
 ):
     """Returns an user by its id or 404 if not found"""
-    user = pdb.get(UserModel, uid)
+    user = pdb.get(models.UserModel, uid)
 
     if user is None:
         raise HTTPException(status_code=404, detail="User not found")
@@ -48,7 +53,7 @@ def get_my_user(
     pdb: Session = Depends(get_db),
 ):
     """Returns own user"""
-    user = pdb.get(UserModel, uid)
+    user = pdb.get(models.UserModel, uid)
 
     if user is None:
         raise HTTPException(status_code=404, detail="User not found")
@@ -78,7 +83,7 @@ def post_user(
     auth=Depends(get_auth),
 ):
     """Creates a user and returns its id"""
-    new_user = UserModel(
+    new_user = models.UserModel(
         id=uid,
         name=name,
         wallet=wallet,
@@ -129,7 +134,9 @@ def put_user(
             detail=f"User with id {uid} attempted to modify user of id {uid_to_modify}",
         )
 
-    user = pdb.query(UserModel).filter(UserModel.id == uid_to_modify).first()
+    user = (
+        pdb.query(models.UserModel).filter(models.UserModel.id == uid_to_modify).first()
+    )
 
     if user is None:
         raise HTTPException(status_code=404, detail=f"User '{uid}' not found")
@@ -182,7 +189,7 @@ def delete_user(
             detail=f"User with id {uid} attempted to delete user of id {uid_to_delete}",
         )
 
-    user = pdb.query(UserModel).filter(UserModel.id == uid).first()
+    user = pdb.query(models.UserModel).filter(models.UserModel.id == uid).first()
     if user is None:
         raise HTTPException(status_code=404, detail=f"User '{uid}' not found")
     pdb.delete(user)
@@ -198,3 +205,15 @@ def delete_user(
                 )
 
     pdb.commit()
+
+
+@router.post("/users/make_artist/", response_model=schemas.PlaylistBase)
+def make_artist(
+    uid: str = Depends(user_utils.retrieve_uid),
+    role: roles.Role = Depends(roles.get_role),
+    auth=Depends(get_auth),
+):
+    if role != roles.Role.listener():
+        raise HTTPException(status_code=405, detail="Not a listener")
+
+    auth.set_custom_user_claims(uid, {"role": str(roles.Role.artist())})
