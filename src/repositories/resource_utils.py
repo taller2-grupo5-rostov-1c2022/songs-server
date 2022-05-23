@@ -46,6 +46,8 @@ def retrieve_resource_creator(
     role: roles.Role = Depends(roles.get_role),
 ):
     if not role.can_post_content():
-        raise HTTPException(status_code=403, detail="You are not allowed to post content")
+        raise HTTPException(
+            status_code=403, detail="You are not allowed to post content"
+        )
 
     return schemas.ResourceCreator(genre=genre, sub_level=sub_level, **resource.dict())

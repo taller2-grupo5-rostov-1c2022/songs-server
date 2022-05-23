@@ -330,4 +330,3 @@ def test_listener_cannot_post_album(client):
 
     response_post = post_album(client, role="listener", uid="listener_id")
     assert response_post.status_code == 403
-
