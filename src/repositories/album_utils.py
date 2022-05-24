@@ -120,7 +120,11 @@ def upload_cover(bucket, album: models.AlbumModel, file: IO):
 
 def cover_url(album: models.AlbumModel):
     return (
-        STORAGE_PATH + "covers/" + str(album.id) + "?t=" + str(album.cover_last_update)
+        STORAGE_PATH
+        + "covers/"
+        + str(album.id)
+        + "?t="
+        + str(int(datetime.datetime.timestamp(album.cover_last_update)))
     )
 
 
