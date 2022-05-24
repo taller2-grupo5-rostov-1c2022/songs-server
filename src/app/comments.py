@@ -39,6 +39,7 @@ def post_comment(
     )
     pdb.add(new_comment)
     pdb.commit()
+    pdb.refresh(new_comment)
     return new_comment
 
 
