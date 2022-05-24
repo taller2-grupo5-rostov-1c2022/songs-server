@@ -1,3 +1,5 @@
+import time
+
 from src.constants import STORAGE_PATH
 from tests.utils import post_user, post_song, post_album
 from tests.utils import API_VERSION_PREFIX
@@ -274,7 +276,7 @@ def test_update_cover_updates_cover_timestamp(client):
         f"{API_VERSION_PREFIX}/albums/{album_id}",
         headers={"api_key": "key"},
     )
-
+    time.sleep(1)
     with open("./new_cover.img", "wb") as f:
         f.write(b"cover info")
     with open("./new_cover.img", "rb") as f:

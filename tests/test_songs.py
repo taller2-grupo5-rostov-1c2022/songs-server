@@ -1,3 +1,5 @@
+import time
+
 from src.constants import STORAGE_PATH
 from tests.utils import post_song, post_user
 from tests.utils import API_VERSION_PREFIX
@@ -222,7 +224,7 @@ def test_update_song_updates_song_timestamp(client):
         f"{API_VERSION_PREFIX}/songs/{song_id}",
         headers={"api_key": "key"},
     )
-
+    time.sleep(1)
     with open("./new_song.img", "wb") as f:
         f.write(b"song info")
     with open("./new_song.img", "rb") as f:

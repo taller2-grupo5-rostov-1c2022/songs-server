@@ -107,9 +107,7 @@ def upload_cover(bucket, album: models.AlbumModel, file: IO):
         blob = bucket.blob("covers/" + str(album.id))
         blob.upload_from_file(file)
         blob.make_public()
-        album.cover_last_update = datetime.datetime.now() + datetime.timedelta(
-            seconds=1
-        )
+        album.cover_last_update = datetime.datetime.now()
     except Exception as entry_not_found:
         if not SUPPRESS_BLOB_ERRORS:
             raise HTTPException(
