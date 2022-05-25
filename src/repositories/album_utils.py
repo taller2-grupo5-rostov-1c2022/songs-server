@@ -158,7 +158,10 @@ def get_comment_by_uid(pdb, role: roles.Role, album: models.AlbumModel, uid: str
 
     comment = (
         pdb.query(models.CommentModel)
-        .filter(models.CommentModel.commenter_id == uid, models.CommentModel.album_id == album.id)
+        .filter(
+            models.CommentModel.commenter_id == uid,
+            models.CommentModel.album_id == album.id,
+        )
         .first()
     )
     print(comment)
