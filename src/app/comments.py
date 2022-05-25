@@ -39,6 +39,7 @@ def post_comment(
     )
     pdb.add(new_comment)
     pdb.commit()
+    pdb.refresh(new_comment)
     return new_comment
 
 
@@ -66,6 +67,7 @@ def edit_comment(
             setattr(comment, comment_attr_key, comment_attrs[comment_attr_key])
 
     pdb.commit()
+    pdb.refresh(comment)
 
 
 @router.delete("/albums/{album_id}/comments/")

@@ -23,6 +23,7 @@ class ResourceUpdate(BaseModel):
 
 
 class UserInfo(BaseModel):
+    id: str
     name: str
 
     class Config:
