@@ -265,3 +265,15 @@ def non_listener_cant_become_artist(client):
         },
     )
     assert response.status_code == 405
+
+
+def test_get_all_users_return_users_with_pfp_url(client):
+    post_user(client, "user_id", "user_name", include_pfp=True)
+    post_user(client, "another_user_id", "another_user_name", include_pfp=True)
+
+    response = client.get(f"{API_VERSION_PREFIX}/users/", headers={"api_key": "key"})
+
+    assert response.status_code == 200
+    assert len(response.json()) == 2
+    assert response.json()[0]["pfp"] is not None
+    assert response.json()[1]["pfp"] is not None
