@@ -39,23 +39,15 @@ def get_playlists(pdb, role: roles.Role, colab_id: Optional[str]):
 
 
 def get_playlist_by_id(pdb, role: roles.Role, playlist_id: int):
-    filters = [playlist_id == models.PlaylistModel.id]
-    join_conditions = []
-    if not role.can_see_blocked():
-        join_conditions.append(models.SongModel.blocked == False)
-        filters.append(models.PlaylistModel.blocked == False)
-
-    playlists = (
-        pdb.query(models.PlaylistModel)
-        .options(contains_eager("songs"))
-        .join(models.SongModel, and_(True, *join_conditions), full=True)
-        .filter(and_(True, *filters))
-        .all()
-    )
-    if len(playlists) == 0:
+    playlist = pdb.get(models.PlaylistModel, playlist_id)
+    if playlist is None:
         raise HTTPException(status_code=404, detail="Playlist not found")
-
-    return playlists[0]
+    if not role.can_see_blocked() and playlist.blocked:
+        raise HTTPException(status_code=404, detail="Playlist not found")
+    if not role.can_see_blocked():
+        # filter blocked songs and return playlist
+        playlist.songs = [song for song in playlist.songs if not song.blocked]
+    return playlist
 
 
 def get_songs_list(pdb, role: roles.Role, songs_ids: List[int]):
