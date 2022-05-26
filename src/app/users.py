@@ -1,5 +1,5 @@
 from src import roles
-from src.constants import STORAGE_PATH, SUPPRESS_BLOB_ERRORS
+from src.constants import SUPPRESS_BLOB_ERRORS
 from src.postgres import schemas
 from typing import List
 from fastapi import APIRouter
