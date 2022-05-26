@@ -7,7 +7,6 @@ from src.postgres import models, schemas
 from typing import Optional, List
 from fastapi import HTTPException, Depends, Form
 from sqlalchemy import or_, and_
-from sqlalchemy.orm import contains_eager
 
 from src.roles import get_role
 
