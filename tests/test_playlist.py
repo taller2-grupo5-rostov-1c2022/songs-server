@@ -1,3 +1,4 @@
+from tests import utils
 from tests.utils import API_VERSION_PREFIX, post_song, post_user, post_playlist
 
 
@@ -398,3 +399,33 @@ def test_cant_add_nonesxistent_colab_to_playlist(client):
     )
 
     assert response_post.status_code == 404
+
+
+def test_get_playlist_by_id_return_expected_songs(client):
+    post_user(client, uid="user_playlist_owner", user_name="Paquito")
+    song_id = utils.post_song(
+        client, uid="user_playlist_owner", name="new_song_for_playlist"
+    ).json()["id"]
+
+    utils.post_playlist(
+        client,
+        playlist_name="playlist_name",
+        uid="user_playlist_owner",
+        songs_ids=[song_id],
+    )
+    response_post_2 = utils.post_playlist(
+        client, playlist_name="playlist_name_2", uid="user_playlist_owner"
+    )
+    utils.post_playlist(
+        client, playlist_name="playlist_name_3", uid="user_playlist_owner"
+    )
+
+    response_get = client.get(
+        f"{API_VERSION_PREFIX}/playlists/{response_post_2.json()['id']}/",
+        headers={"api_key": "key", "uid": "user_playlist_owner"},
+    )
+
+    playlist = response_get.json()
+
+    assert response_get.status_code == 200
+    assert len(playlist["songs"]) == 0

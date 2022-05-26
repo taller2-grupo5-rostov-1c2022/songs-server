@@ -1,3 +1,5 @@
+import time
+
 from tests.utils import (
     API_VERSION_PREFIX,
     post_user,
@@ -163,6 +165,7 @@ def test_update_pfp_updates_pfp_timestamp(client):
     response_get_1 = client.get(
         f"{API_VERSION_PREFIX}/my_user/", headers={"uid": "user_id", "api_key": "key"}
     )
+    time.sleep(1)
 
     with open("./new_pfp.img", "wb") as f:
         f.write(b"pfp data")

@@ -374,3 +374,31 @@ def test_post_many_comments_affects_score(client):
     album = response_get.json()
     assert response_get.status_code == 200
     assert album["score"] == 3.5
+
+
+def test_user_with_two_comments_in_different_albums_edits_one_comment(client):
+    post_user(client, uid="creator_id", user_name="creator_name")
+    post_user(client, uid="commenter_id", user_name="commenter_name")
+
+    album_id_1 = post_album(client, uid="creator_id").json()["id"]
+    album_id_2 = post_album(client, uid="creator_id").json()["id"]
+
+    post_comment(client, "commenter_id", album_id_1, "bad song", 2)
+    post_comment(client, "commenter_id", album_id_2, "good song", 5)
+
+    response_put = client.put(
+        f"{API_VERSION_PREFIX}/albums/{album_id_2}/comments/",
+        json={"text": "I'm trying to change a comment", "score": 3},
+        headers={"api_key": "key", "uid": "commenter_id"},
+    )
+    assert response_put.status_code == 200
+
+    response_get = client.get(
+        f"{API_VERSION_PREFIX}/albums/{album_id_2}/comments/",
+        headers={"api_key": "key", "uid": "commenter_id"},
+    )
+    comments = response_get.json()
+    assert response_get.status_code == 200
+    assert len(comments) == 1
+    assert comments[0]["text"] == "I'm trying to change a comment"
+    assert comments[0]["score"] == 3

@@ -22,7 +22,6 @@ def post_comment(
         raise HTTPException(
             status_code=422, detail="Text and score cannot be None at the same time"
         )
-
     comment = (
         pdb.query(models.AlbumModel)
         .join(CommentModel.album)
@@ -39,6 +38,7 @@ def post_comment(
     )
     pdb.add(new_comment)
     pdb.commit()
+    pdb.refresh(new_comment)
     return new_comment
 
 
@@ -61,12 +61,12 @@ def edit_comment(
     pdb: Session = Depends(get_db),
 ):
     comment_attrs = comment_info_update.dict()
-    print(comment)
     for comment_attr_key in comment_attrs:
         if comment_attrs[comment_attr_key] is not None:
             setattr(comment, comment_attr_key, comment_attrs[comment_attr_key])
 
     pdb.commit()
+    pdb.refresh(comment)
 
 
 @router.delete("/albums/{album_id}/comments/")

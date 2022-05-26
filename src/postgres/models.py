@@ -88,7 +88,7 @@ class UserModel(Base):
     wallet = Column(String, nullable=True, index=True)
     location = Column(String, nullable=False, index=True)
     interests = Column(String, nullable=False, index=True)
-    pfp_last_update = Column(TIMESTAMP, nullable=False)
+    pfp_last_update = Column(TIMESTAMP, nullable=True)
 
     songs = relationship("SongModel", back_populates="creator")
     albums = relationship("AlbumModel", back_populates="creator")
@@ -141,7 +141,7 @@ class CommentModel(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     commenter = relationship("UserModel", back_populates="comments")
-    commenter_id = Column(String, ForeignKey("users.id"), unique=True)
+    commenter_id = Column(String, ForeignKey("users.id"))
 
     album = relationship("AlbumModel", back_populates="comments")
     album_id = Column(Integer, ForeignKey("albums.id"), nullable=False)

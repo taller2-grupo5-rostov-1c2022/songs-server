@@ -107,9 +107,7 @@ def upload_cover(bucket, album: models.AlbumModel, file: IO):
         blob = bucket.blob("covers/" + str(album.id))
         blob.upload_from_file(file)
         blob.make_public()
-        album.cover_last_update = datetime.datetime.now() + datetime.timedelta(
-            seconds=1
-        )
+        album.cover_last_update = datetime.datetime.now()
     except Exception as entry_not_found:
         if not SUPPRESS_BLOB_ERRORS:
             raise HTTPException(
@@ -120,7 +118,11 @@ def upload_cover(bucket, album: models.AlbumModel, file: IO):
 
 def cover_url(album: models.AlbumModel):
     return (
-        STORAGE_PATH + "covers/" + str(album.id) + "?t=" + str(album.cover_last_update)
+        STORAGE_PATH
+        + "covers/"
+        + str(album.id)
+        + "?t="
+        + str(int(datetime.datetime.timestamp(album.cover_last_update)))
     )
 
 
@@ -156,9 +158,13 @@ def get_comment_by_uid(pdb, role: roles.Role, album: models.AlbumModel, uid: str
 
     comment = (
         pdb.query(models.CommentModel)
-        .filter(models.CommentModel.commenter_id == uid)
+        .filter(
+            models.CommentModel.commenter_id == uid,
+            models.CommentModel.album_id == album.id,
+        )
         .first()
     )
+
     if comment is None:
         raise HTTPException(status_code=404, detail="Comment not found")
     return comment

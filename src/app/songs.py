@@ -94,9 +94,7 @@ def update_song(
             blob = bucket.blob(f"songs/{song.id}")
             blob.upload_from_file(file.file)
             blob.make_public()
-            song.file_last_update = datetime.datetime.now() + datetime.timedelta(
-                seconds=1
-            )
+            song.file_last_update = datetime.datetime.now()
         except:  # noqa: W0707 # Want to catch all exceptions
             if not SUPPRESS_BLOB_ERRORS:
                 raise HTTPException(
