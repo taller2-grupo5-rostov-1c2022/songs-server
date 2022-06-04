@@ -50,6 +50,9 @@ class Role:
     def can_post_content(self):
         return Role.artist() <= self
 
+    def can_delete_everything(self):
+        return self == Role.admin()
+
 
 async def get_role(role: str = Header("listener")):
     return Role(role)

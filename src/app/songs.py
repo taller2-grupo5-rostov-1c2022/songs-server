@@ -146,10 +146,11 @@ def delete_song(
     uid: str = Depends(user_utils.retrieve_uid),
     pdb: Session = Depends(get_db),
     bucket=Depends(get_bucket),
+    role: roles.Role = Depends(get_role),
 ):
     """Deletes a song by its id"""
 
-    if uid != song.creator_id:
+    if uid != song.creator_id and not role.can_delete_everything():
         raise HTTPException(
             status_code=403,
             detail=f"User with ID {uid} attempted to delete song of creator with ID {song.creator_id}",
