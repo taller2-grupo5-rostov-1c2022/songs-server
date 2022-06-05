@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from pydantic.main import BaseModel
 from typing import Optional, List
 
@@ -158,7 +160,7 @@ class UserBase(BaseModel):
         orm_mode = True
 
 
-class CommentBase(BaseModel):
+class ReviewBase(BaseModel):
     text: Optional[str] = None
     score: Optional[float] = None
 
@@ -166,25 +168,62 @@ class CommentBase(BaseModel):
         orm_mode = True
 
 
-class CommentMyComments(CommentBase):
+class ReviewMyReviews(ReviewBase):
     album: AlbumInfoBase
 
     class Config:
         orm_mode = True
 
 
-class CommentGet(CommentBase):
-    commenter: UserInfo
+class ReviewGet(ReviewBase):
+    reviewer: UserInfo
 
     class Config:
         orm_mode = True
 
 
-# This is identical to CommentBase, but
+# This is identical to ReviewBase, but
 # they are conceptually different
-class CommentUpdate(BaseModel):
+class ReviewUpdate(BaseModel):
     text: Optional[str] = None
     score: Optional[float] = None
+
+    class Config:
+        orm_mode = True
+
+
+class CommentGet(BaseModel):
+    id: int
+    text: Optional[str]
+    created_at: datetime
+    commenter: UserInfo
+    responses: List["CommentGet"]
+    album: AlbumInfoBase
+
+    class Config:
+        orm_mode = True
+
+
+class CommentInfo(BaseModel):
+    text: str
+    parent_id: Optional[int] = None
+
+    class Config:
+        orm_mode = True
+
+
+class CommentUpdate(BaseModel):
+    text: str
+
+    class Config:
+        orm_mode = True
+
+
+class CommentPost(BaseModel):
+    text: str
+    parent_id: Optional[int] = None
+    album_id: int
+    commenter_id: str
 
     class Config:
         orm_mode = True

@@ -92,6 +92,7 @@ class UserModel(Base):
 
     songs = relationship("SongModel", back_populates="creator")
     albums = relationship("AlbumModel", back_populates="creator")
+    comments = relationship("CommentModel", back_populates="commenter")
 
     my_playlists = relationship("PlaylistModel", back_populates="creator")
     other_playlists = relationship(
@@ -100,7 +101,7 @@ class UserModel(Base):
         back_populates="colabs",
     )
 
-    comments = relationship("CommentModel", back_populates="commenter")
+    reviews = relationship("ReviewModel", back_populates="reviewer")
 
     favorite_songs = relationship(
         "SongModel",
@@ -136,14 +137,14 @@ class ResourceCreatorModel(ResourceModel):
     sub_level = Column(Integer, nullable=False)
 
 
-class CommentModel(Base):
-    __tablename__ = "comments"
+class ReviewModel(Base):
+    __tablename__ = "reviews"
 
     id = Column(Integer, primary_key=True, index=True)
-    commenter = relationship("UserModel", back_populates="comments")
-    commenter_id = Column(String, ForeignKey("users.id"))
+    reviewer = relationship("UserModel", back_populates="reviews")
+    reviewer_id = Column(String, ForeignKey("users.id"))
 
-    album = relationship("AlbumModel", back_populates="comments")
+    album = relationship("AlbumModel", back_populates="reviews")
     album_id = Column(Integer, ForeignKey("albums.id"), nullable=False)
 
     score = Column(Integer, nullable=True)
@@ -160,6 +161,7 @@ class AlbumModel(ResourceCreatorModel):
 
     songs = relationship("SongModel", back_populates="album")
 
+    reviews = relationship("ReviewModel", back_populates="album")
     comments = relationship("CommentModel", back_populates="album")
 
     favorited_by = relationship(
@@ -226,3 +228,21 @@ class PlaylistModel(ResourceModel):
         secondary=playlist_favorite_association_table,
         back_populates="favorite_playlists",
     )
+
+
+class CommentModel(Base):
+    __tablename__ = "comments"
+
+    id = Column(Integer, primary_key=True, index=True)
+    text = Column(String, nullable=True, index=True)
+    created_at = Column(TIMESTAMP, nullable=False)
+
+    commenter = relationship("UserModel", back_populates="comments")
+    commenter_id = Column(String, ForeignKey("users.id"))
+
+    album = relationship("AlbumModel", back_populates="comments")
+    album_id = Column(Integer, ForeignKey("albums.id"), nullable=False)
+
+    responses = relationship("CommentModel", back_populates="parent")
+    parent = relationship("CommentModel", remote_side=[id], back_populates="responses")
+    parent_id = Column(Integer, ForeignKey("comments.id"), nullable=True)
