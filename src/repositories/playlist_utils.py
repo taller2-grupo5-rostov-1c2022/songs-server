@@ -36,6 +36,8 @@ def get_playlists(pdb, role: roles.Role, colab_id: Optional[str]):
         .all()
     )
 
+    playlists = [p for p in playlists if p is not None]
+
     return playlists
 
 
