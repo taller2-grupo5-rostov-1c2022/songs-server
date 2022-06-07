@@ -1,7 +1,9 @@
 from datetime import datetime
 
 from pydantic.main import BaseModel
-from typing import Optional, List
+from typing import Optional, List, Any
+
+from pydantic.utils import GetterDict
 
 
 class ResourceBase(BaseModel):
@@ -227,3 +229,25 @@ class CommentPost(BaseModel):
 
     class Config:
         orm_mode = True
+
+
+class UserGetter(GetterDict):
+    def get(self, key: Any, default: Any = None) -> Any:
+        # element attributes
+        if key == "token":
+            return self._obj.streaming_listener_token
+
+        # element children
+        else:
+            try:
+                return getattr(self._obj, key)
+            except (AttributeError, KeyError):
+                return default
+
+
+class StreamingBase(UserInfo):
+    token: str
+
+    class Config:
+        orm_mode = True
+        getter_dict = UserGetter

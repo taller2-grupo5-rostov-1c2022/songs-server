@@ -351,3 +351,11 @@ def post_comment(client, uid: str, album_id: int, text: str, parent_id: int = No
         headers={"api_key": "key", "uid": uid},
     )
     return response_post
+
+
+def post_streaming(client, uid: str):
+    response_post = client.post(
+        f"{API_VERSION_PREFIX}/streamings/",
+        headers={"api_key": "key", "uid": uid, "role": "artist"},
+    )
+    return response_post

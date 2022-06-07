@@ -122,6 +122,9 @@ class UserModel(Base):
         back_populates="favorited_by",
     )
 
+    # If None, the user is not streaming
+    streaming_listener_token = Column(String, nullable=True, index=True)
+
 
 class ResourceModel(Base):
     __abstract__ = True

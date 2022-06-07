@@ -31,6 +31,10 @@ def get_user(uid: str, pdb=Depends(get_db)):
     return user
 
 
+def retrieve_user(uid: str = Header(...), pdb=Depends(get_db)):
+    return get_user(uid, pdb)
+
+
 def add_song_to_favorites(pdb, user: models.UserModel, song: models.SongModel):
     user.favorite_songs.append(song)
 

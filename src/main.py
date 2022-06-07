@@ -2,7 +2,16 @@ from fastapi import (
     FastAPI,
     Depends,
 )
-from src.app import songs, albums, users, playlists, favorites, reviews, comments
+from src.app import (
+    songs,
+    albums,
+    users,
+    playlists,
+    favorites,
+    reviews,
+    comments,
+    streamings,
+)
 from src.middleware.utils import get_api_key
 
 API_VERSION_PREFIX = "/api/v3"
@@ -21,3 +30,4 @@ app.include_router(playlists.router, prefix=API_VERSION_PREFIX)
 app.include_router(favorites.router, prefix=API_VERSION_PREFIX)
 app.include_router(reviews.router, prefix=API_VERSION_PREFIX)
 app.include_router(comments.router, prefix=API_VERSION_PREFIX)
+app.include_router(streamings.router, prefix=API_VERSION_PREFIX)

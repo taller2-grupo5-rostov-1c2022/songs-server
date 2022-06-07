@@ -53,6 +53,9 @@ class Role:
     def can_delete_everything(self):
         return self == Role.admin()
 
+    def can_stream(self):
+        return self == Role.artist()
+
 
 async def get_role(role: str = Header("listener")):
     return Role(role)

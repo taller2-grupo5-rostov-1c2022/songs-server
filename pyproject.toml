@@ -18,6 +18,7 @@ SQLAlchemy = "^1.4.35"
 psycopg2-binary = "^2.9.3"
 python-decouple = "^3.6"
 python-multipart = "^0.0.5"
+agora-token-builder = "^1.0.0"
 
 [tool.poetry.dev-dependencies]
 pytest = "^5.2"
