@@ -54,7 +54,7 @@ class Role:
         return self == Role.admin()
 
     def can_stream(self):
-        return self == Role.artist()
+        return Role.artist() <= self
 
 
 async def get_role(role: str = Header("listener")):
