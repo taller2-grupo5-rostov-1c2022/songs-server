@@ -53,10 +53,10 @@ def post_streaming(
     timestamp = (now + TOKEN_VALIDITY_TIME).timestamp()
 
     streaming_artist_token = RtcTokenBuilder.buildTokenWithUid(
-        AGORA_APP_ID, AGORA_APP_CERT, user.id, user.id, ROLE_PUBLISHER, timestamp
+        AGORA_APP_ID, AGORA_APP_CERT, user.id, 0, ROLE_PUBLISHER, timestamp
     )
     user.streaming_listener_token = RtcTokenBuilder.buildTokenWithUid(
-        AGORA_APP_ID, AGORA_APP_CERT, user.id, user.id, ROLE_SUBSCRIBER, timestamp
+        AGORA_APP_ID, AGORA_APP_CERT, user.id, 0, ROLE_SUBSCRIBER, timestamp
     )
 
     pdb.commit()
