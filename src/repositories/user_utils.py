@@ -122,7 +122,7 @@ def pfp_url(user: models.UserModel):
     if user.pfp_last_update is not None:
         return (
             STORAGE_PATH
-            + "covers/"
+            + "pfp/"
             + str(user.id)
             + "?t="
             + str(int(datetime.datetime.timestamp(user.pfp_last_update)))
