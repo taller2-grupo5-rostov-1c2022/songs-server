@@ -1,6 +1,8 @@
+import datetime
 from fastapi import HTTPException, Header, Depends
 
 from src import roles
+from src.constants import STORAGE_PATH
 from src.postgres import models
 from src.postgres.database import get_db
 from sqlalchemy import and_
@@ -27,6 +29,10 @@ def get_user(uid: str, pdb=Depends(get_db)):
     if user is None:
         raise HTTPException(status_code=404, detail=f"User with ID {uid} not found")
     return user
+
+
+def retrieve_user(uid: str = Header(...), pdb=Depends(get_db)):
+    return get_user(uid, pdb)
 
 
 def add_song_to_favorites(pdb, user: models.UserModel, song: models.SongModel):
@@ -109,4 +115,15 @@ def remove_playlist_from_favorites(
     else:
         raise HTTPException(
             status_code=404, detail=f"Playlist {playlist.id} not found in favorites"
+        )
+
+
+def pfp_url(user: models.UserModel):
+    if user.pfp_last_update is not None:
+        return (
+            STORAGE_PATH
+            + "pfp/"
+            + str(user.id)
+            + "?t="
+            + str(int(datetime.datetime.timestamp(user.pfp_last_update)))
         )

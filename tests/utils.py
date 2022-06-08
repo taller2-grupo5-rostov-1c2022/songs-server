@@ -212,15 +212,15 @@ def block_song(client, song_id: int):
     return response_put
 
 
-def post_comment(
+def post_review(
     client,
     uid: str,
     album_id: int,
-    text: Optional[str] = "comment text",
+    text: Optional[str] = "review text",
     score: Optional[int] = 5,
 ):
     response_post = client.post(
-        f"{API_VERSION_PREFIX}/albums/{album_id}/comments/",
+        f"{API_VERSION_PREFIX}/albums/{album_id}/reviews/",
         json={"text": text, "score": score},
         headers={"api_key": "key", "uid": uid},
     )
@@ -342,3 +342,36 @@ def remove_playlist_from_favorites(client, uid, playlist_id):
         headers={"api_key": "key", "uid": uid},
     )
     return response_delete
+
+
+def post_comment(client, uid: str, album_id: int, text: str, parent_id: int = None):
+    response_post = client.post(
+        f"{API_VERSION_PREFIX}/albums/{album_id}/comments/",
+        json={"text": text, "parent_id": parent_id},
+        headers={"api_key": "key", "uid": uid},
+    )
+    return response_post
+
+
+def post_streaming(client, uid: str, name="streaming_name", include_img=False):
+    data = {"name": name}
+
+    if include_img:
+        with open("./streaming.img", "wb") as f:
+            f.write(b"test")
+        with open("./streaming.img", "rb") as f:
+            files = {"img": ("streaming.img", f, "plain/text")}
+            response_post = client.post(
+                API_VERSION_PREFIX + "/streamings/",
+                headers={"api_key": "key", "uid": uid, "role": "artist"},
+                data=data,
+                files=files,
+            )
+    else:
+        response_post = client.post(
+            API_VERSION_PREFIX + "/streamings/",
+            headers={"api_key": "key", "uid": uid, "role": "artist"},
+            data=data,
+        )
+
+    return response_post

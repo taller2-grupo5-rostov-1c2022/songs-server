@@ -1,12 +1,14 @@
 import json
 
 from src.postgres.database import get_db
+from src.postgres.models import song_playlist_association_table
 from src.repositories import resource_utils, song_utils
 from src import roles
 from src.postgres import models, schemas
 from typing import Optional, List
 from fastapi import HTTPException, Depends, Form
 from sqlalchemy import or_, and_
+from sqlalchemy.orm import contains_eager
 
 from src.roles import get_role
 
@@ -34,19 +36,34 @@ def get_playlists(pdb, role: roles.Role, colab_id: Optional[str]):
         .all()
     )
 
+    playlists = [p for p in playlists if p is not None]
+
     return playlists
 
 
 def get_playlist_by_id(pdb, role: roles.Role, playlist_id: int):
-    playlist = pdb.get(models.PlaylistModel, playlist_id)
-    if playlist is None:
-        raise HTTPException(status_code=404, detail="Playlist not found")
-    if not role.can_see_blocked() and playlist.blocked:
-        raise HTTPException(status_code=404, detail="Playlist not found")
+    join_conditions = [models.SongModel.id == song_playlist_association_table.c.song_id]
+    filters = [playlist_id == models.PlaylistModel.id]
+
     if not role.can_see_blocked():
-        # filter blocked songs and return playlist
-        playlist.songs = [song for song in playlist.songs if not song.blocked]
-    return playlist
+        join_conditions.append(models.SongModel.blocked == False)
+        filters.append(models.PlaylistModel.blocked == False)
+
+    playlists = (
+        pdb.query(models.PlaylistModel)
+        .join(
+            song_playlist_association_table,
+            song_playlist_association_table.c.playlist_id == models.PlaylistModel.id,
+            isouter=True,
+        )
+        .join(models.SongModel, and_(True, *join_conditions), isouter=True)
+        .options(contains_eager("songs"))
+        .filter(and_(True, *filters))
+    ).all()
+
+    if len(playlists) == 0:
+        raise HTTPException(status_code=404, detail="Playlist not found")
+    return playlists[0]
 
 
 def get_songs_list(pdb, role: roles.Role, songs_ids: List[int]):

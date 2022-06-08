@@ -79,14 +79,10 @@ def post_album(
     bucket=Depends(get_bucket),
 ):
     """Creates an album and returns its id. Songs_ids form is encoded like '["song_id_1", "song_id_2", ...]'"""
-    creator = pdb.get(models.UserModel, uid)
-    if creator is None:
-        raise HTTPException(status_code=404, detail=f"User with id {uid} not found")
 
     album = models.AlbumModel(
         cover_last_update=datetime.datetime.now(),
         songs=[],
-        creator=creator,
         **album_info.dict(exclude={"songs_ids"}),
     )
 
@@ -151,10 +147,11 @@ def delete_album(
     uid: str = Depends(user_utils.retrieve_uid),
     pdb: Session = Depends(get_db),
     bucket=Depends(get_bucket),
+    role: roles.Role = Depends(get_role),
 ):
     """Deletes an album by its id"""
 
-    if uid != album.creator_id:
+    if uid != album.creator_id and not role.can_delete_everything():
         raise HTTPException(
             status_code=403,
             detail=f"User '{uid} attempted to delete album of user with ID {album.creator_id}",

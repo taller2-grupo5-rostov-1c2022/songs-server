@@ -145,6 +145,12 @@ def test_get_playlist_from_uid(client):
 
 def test_owner_should_be_able_to_edit_its_own_playlist(client):
     response_post = wrap_post_playlist(client)
+    response_get = client.get(
+        f"{API_VERSION_PREFIX}/playlists/{response_post.json()['id']}",
+        headers={"api_key": "key"},
+    )
+    assert response_get.status_code == 200
+    print(response_get.json())
 
     response_put = client.put(
         f"{API_VERSION_PREFIX}/playlists/{response_post.json()['id']}",
@@ -162,7 +168,6 @@ def test_owner_should_be_able_to_edit_its_own_playlist(client):
     )
 
     playlist = response_get.json()
-
     assert response_get.status_code == 200
     assert playlist["id"] == 1
     assert playlist["name"] == "playlist_name_updated"
@@ -291,13 +296,14 @@ def test_owner_can_delete_song_from_playlist(client):
     )
 
     # add song to playlist
-    client.post(
+    response_post = client.post(
         f"{API_VERSION_PREFIX}/playlists/{res_post_playlist.json()['id']}/songs/",
         headers={"api_key": "key", "uid": "user_playlist_owner"},
         data={
             "song_id": res_post_song.json()["id"],
         },
     )
+    assert response_post.status_code == 200
 
     # delete song from playlist
     res_delete = client.delete(
@@ -426,6 +432,117 @@ def test_get_playlist_by_id_return_expected_songs(client):
     )
 
     playlist = response_get.json()
-
     assert response_get.status_code == 200
     assert len(playlist["songs"]) == 0
+
+
+def test_admin_can_add_song_to_playlist_of_another_user(client):
+    post_user(client, uid="user_playlist_owner", user_name="Paquito")
+    post_user(client, uid="admin_id", user_name="Admin")
+
+    song_id = utils.post_song(
+        client, uid="user_playlist_owner", name="new_song_for_playlist"
+    ).json()["id"]
+
+    playlist_id = utils.post_playlist(
+        client,
+        playlist_name="playlist_name",
+        uid="user_playlist_owner",
+    ).json()["id"]
+
+    response_post = client.post(
+        f"{API_VERSION_PREFIX}/playlists/{playlist_id}/songs/",
+        headers={"api_key": "key", "uid": "admin_id", "role": "admin"},
+        data={"song_id": song_id},
+    )
+    assert response_post.status_code == 200
+
+    response_get = client.get(
+        f"{API_VERSION_PREFIX}/playlists/{playlist_id}/",
+        headers={"api_key": "key", "uid": "user_playlist_owner"},
+    )
+
+    playlist = response_get.json()
+    assert response_get.status_code == 200
+    assert len(playlist["songs"]) == 1
+
+
+def test_admin_can_remove_song_from_playlist_of_another_user(client):
+    post_user(client, uid="user_playlist_owner", user_name="Paquito")
+    post_user(client, uid="admin_id", user_name="Admin")
+
+    song_id = utils.post_song(
+        client, uid="user_playlist_owner", name="new_song_for_playlist"
+    ).json()["id"]
+
+    playlist_id = utils.post_playlist(
+        client,
+        playlist_name="playlist_name",
+        uid="user_playlist_owner",
+        songs_ids=[song_id],
+    ).json()["id"]
+
+    response_delete = client.delete(
+        f"{API_VERSION_PREFIX}/playlists/{playlist_id}/songs/{song_id}/",
+        headers={"api_key": "key", "uid": "admin_id", "role": "admin"},
+    )
+    assert response_delete.status_code == 200
+
+    response_get = client.get(
+        f"{API_VERSION_PREFIX}/playlists/{playlist_id}/",
+        headers={"api_key": "key", "uid": "user_playlist_owner"},
+    )
+
+    playlist = response_get.json()
+    assert response_get.status_code == 200
+    assert len(playlist["songs"]) == 0
+
+
+def test_admin_can_delete_playlist_of_another_user(client):
+    post_user(client, uid="user_playlist_owner", user_name="Paquito")
+    post_user(client, uid="admin_id", user_name="Admin")
+
+    playlist_id = utils.post_playlist(
+        client,
+        playlist_name="playlist_name",
+        uid="user_playlist_owner",
+    ).json()["id"]
+    response_delete = client.delete(
+        f"{API_VERSION_PREFIX}/playlists/{playlist_id}",
+        headers={"api_key": "key", "uid": "admin_id", "role": "admin"},
+    )
+    assert response_delete.status_code == 200
+
+    response_get = client.get(
+        f"{API_VERSION_PREFIX}/playlists/{playlist_id}/",
+        headers={"api_key": "key", "uid": "user_playlist_owner"},
+    )
+
+    assert response_get.status_code == 404
+
+
+def test_admin_can_edit_playlist_of_another_user(client):
+
+    post_user(client, uid="user_playlist_owner", user_name="Paquito")
+    post_user(client, uid="admin_id", user_name="Admin")
+
+    playlist_id = utils.post_playlist(
+        client,
+        playlist_name="playlist_name",
+        uid="user_playlist_owner",
+    ).json()["id"]
+    response_put = client.put(
+        f"{API_VERSION_PREFIX}/playlists/{playlist_id}",
+        headers={"api_key": "key", "uid": "admin_id", "role": "admin"},
+        data={"name": "new_playlist_name"},
+    )
+    assert response_put.status_code == 200
+
+    response_get = client.get(
+        f"{API_VERSION_PREFIX}/playlists/{playlist_id}/",
+        headers={"api_key": "key", "uid": "user_playlist_owner"},
+    )
+
+    playlist = response_get.json()
+    assert response_get.status_code == 200
+    assert playlist["name"] == "new_playlist_name"
