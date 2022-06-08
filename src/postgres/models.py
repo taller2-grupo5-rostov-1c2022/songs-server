@@ -122,8 +122,18 @@ class UserModel(Base):
         back_populates="favorited_by",
     )
 
-    # If None, the user is not streaming
-    streaming_listener_token = Column(String, nullable=True, index=True)
+    streaming = relationship("StreamingModel", back_populates="artist", uselist=False)
+
+
+class StreamingModel(Base):
+    __tablename__ = "streamings"
+
+    listener_token = Column(String, primary_key=True)
+    artist_id = Column(String, ForeignKey("users.id", ondelete="CASCADE"), unique=True)
+    artist = relationship("UserModel", back_populates="streaming")
+
+    name = Column(String, nullable=False)
+    img_url = Column(String, nullable=True)
 
 
 class ResourceModel(Base):

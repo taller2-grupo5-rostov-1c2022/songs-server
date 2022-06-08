@@ -231,11 +231,11 @@ class CommentPost(BaseModel):
         orm_mode = True
 
 
-class UserGetter(GetterDict):
+class StreamingGetter(GetterDict):
     def get(self, key: Any, default: Any = None) -> Any:
         # element attributes
         if key == "token":
-            return self._obj.streaming_listener_token
+            return self._obj.listener_token
 
         # element children
         else:
@@ -245,9 +245,12 @@ class UserGetter(GetterDict):
                 return default
 
 
-class StreamingBase(UserInfo):
+class StreamingBase(BaseModel):
+    artist: UserInfo
     token: str
+    name: str
+    img_url: Optional[str]
 
     class Config:
         orm_mode = True
-        getter_dict = UserGetter
+        getter_dict = StreamingGetter

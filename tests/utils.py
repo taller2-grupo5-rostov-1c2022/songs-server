@@ -353,9 +353,25 @@ def post_comment(client, uid: str, album_id: int, text: str, parent_id: int = No
     return response_post
 
 
-def post_streaming(client, uid: str):
-    response_post = client.post(
-        f"{API_VERSION_PREFIX}/streamings/",
-        headers={"api_key": "key", "uid": uid, "role": "artist"},
-    )
+def post_streaming(client, uid: str, name="streaming_name", include_img=False):
+    data = {"name": name}
+
+    if include_img:
+        with open("./streaming.img", "wb") as f:
+            f.write(b"test")
+        with open("./streaming.img", "rb") as f:
+            files = {"img": ("streaming.img", f, "plain/text")}
+            response_post = client.post(
+                API_VERSION_PREFIX + "/streamings/",
+                headers={"api_key": "key", "uid": uid, "role": "artist"},
+                data=data,
+                files=files,
+            )
+    else:
+        response_post = client.post(
+            API_VERSION_PREFIX + "/streamings/",
+            headers={"api_key": "key", "uid": uid, "role": "artist"},
+            data=data,
+        )
+
     return response_post
