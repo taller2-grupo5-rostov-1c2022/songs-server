@@ -69,8 +69,12 @@ def delete_streaming(
     bucket=Depends(get_bucket),
 ):
     """Delete a streaming"""
+    streaming = user.streaming
 
-    if user.streaming is not None:
+    if streaming is None:
+        raise HTTPException(status_code=404, detail="You don't have a streaming")
+
+    if streaming.img_url is not None:
         streaming_utils.delete_img(user.id, bucket)
 
     pdb.delete(user.streaming)

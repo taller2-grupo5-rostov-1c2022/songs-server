@@ -164,3 +164,13 @@ def test_token_for_streamer_is_not_the_same_as_token_for_listener(client):
     assert response_get.status_code == 200
     assert len(streamings) == 1
     assert streamings[0]["token"] != token_streamer
+
+
+def test_delete_streaming_of_user_without_streaming_should_fail(client):
+    post_user(client, "streaming_user_id", "streaming_user_name")
+
+    response_delete = client.delete(
+        f"{API_VERSION_PREFIX}/streamings/",
+        headers={"api_key": "key", "uid": "streaming_user_id"},
+    )
+    assert response_delete.status_code == 404
