@@ -280,3 +280,66 @@ def test_get_all_users_return_users_with_pfp_url(client):
     assert len(response.json()) == 2
     assert response.json()[0]["pfp"] is not None
     assert response.json()[1]["pfp"] is not None
+
+
+def test_delete_user_does_not_delete_song(client):
+    post_user(client, "user_id", "user_name")
+    song_id = post_song(client, "user_id", "song_name").json()["id"]
+
+    response = client.delete(
+        f"{API_VERSION_PREFIX}/users/user_id",
+        headers={"api_key": "key", "uid": "user_id"},
+    )
+
+    assert response.status_code == 200
+
+    response = client.get(
+        f"{API_VERSION_PREFIX}/songs/{song_id}",
+        headers={"api_key": "key", "uid": "user_id"},
+    )
+
+    assert response.status_code == 200
+    assert response.json()["creator_id"] is None
+
+
+def test_delete_user_does_not_delete_album(client):
+
+    post_user(client, "user_id", "user_name")
+    album_id = post_album(client, "user_id", "album_name").json()["id"]
+
+    response = client.delete(
+        f"{API_VERSION_PREFIX}/users/user_id",
+        headers={"api_key": "key", "uid": "user_id"},
+    )
+
+    assert response.status_code == 200
+
+    response = client.get(
+        f"{API_VERSION_PREFIX}/albums/{album_id}",
+        headers={"api_key": "key", "uid": "user_id"},
+    )
+
+    assert response.status_code == 200
+    assert response.json()["creator_id"] is None
+
+
+def test_delete_user_does_not_delete_playlist(client):
+
+    post_user(client, "user_id", "user_name")
+    playlist_id = post_playlist(client, "user_id", "playlist_name").json()["id"]
+
+    response = client.delete(
+        f"{API_VERSION_PREFIX}/users/user_id",
+        headers={"api_key": "key", "uid": "user_id"},
+    )
+
+    assert response.status_code == 200
+
+    response = client.get(
+        f"{API_VERSION_PREFIX}/playlists/{playlist_id}",
+        headers={"api_key": "key", "uid": "user_id"},
+    )
+
+    assert response.status_code == 200
+
+    assert response.json()["creator_id"] is None

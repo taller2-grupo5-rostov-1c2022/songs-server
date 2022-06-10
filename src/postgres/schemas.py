@@ -11,7 +11,7 @@ class ResourceBase(BaseModel):
     name: str
     description: str
     blocked: bool
-    creator_id: str
+    creator_id: Optional[str]
 
     class Config:
         orm_mode = True

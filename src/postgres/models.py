@@ -170,7 +170,7 @@ class AlbumModel(ResourceCreatorModel):
     cover_last_update = Column(TIMESTAMP, nullable=False)
 
     creator = relationship("UserModel", back_populates="albums")
-    creator_id = Column(String, ForeignKey("users.id"))
+    creator_id = Column(String, ForeignKey("users.id"), nullable=True)
 
     songs = relationship("SongModel", back_populates="album")
 
@@ -211,7 +211,7 @@ class SongModel(ResourceCreatorModel):
     )
 
     creator = relationship("UserModel", back_populates="songs")
-    creator_id = Column(String, ForeignKey("users.id"))
+    creator_id = Column(String, ForeignKey("users.id"), nullable=True)
 
     favorited_by = relationship(
         "UserModel",
@@ -234,7 +234,7 @@ class PlaylistModel(ResourceModel):
         back_populates="other_playlists",
     )
     creator = relationship("UserModel", back_populates="my_playlists")
-    creator_id = Column(String, ForeignKey("users.id"))
+    creator_id = Column(String, ForeignKey("users.id"), nullable=True)
 
     favorited_by = relationship(
         "UserModel",
