@@ -62,11 +62,6 @@ def successful_wallet_creation_matcher(request):
             b'{"address": "0xA143", "id": "user_id", "private_key": "11111"}'
         )
         return resp
-    elif API_VERSION_PREFIX not in request.url:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Attepmted to call non-api endpoint",
-        )
     return None
 
 
@@ -79,10 +74,20 @@ def failed_wallet_creation_matcher(request):
     return None
 
 
+def api_matcher(request):
+    if API_VERSION_PREFIX not in request.url:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Attepmted to call non-api endpoint",
+        )
+    return None
+
+
 @pytest.fixture
 def custom_requests_mock():
     m = requests_mock.Mocker(real_http=True)
     m.start()
+    m.add_matcher(api_matcher)
     m.add_matcher(successful_wallet_creation_matcher)
     m.add_matcher(successful_payment_matcher)
 

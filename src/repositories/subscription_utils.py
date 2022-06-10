@@ -10,21 +10,22 @@ CREATE_WALLET_ENDPOINT = "https://rostov-payments-server.herokuapp.com/api/v1/wa
 
 
 SUB_LEVEL_FREE = 0
-
 SUB_LEVEL_PREMIUM = 1
-
 SUB_LEVEL_PRO = 2
+SUB_LEVEL_GOD = 3
 
 SUBSCRIPTIONS = [
     {"name": "Free", "price": "0", "level": SUB_LEVEL_FREE},
     {"name": "Premium", "price": "0.0000001", "level": SUB_LEVEL_PREMIUM},
     {"name": "Pro", "price": "0.0000005", "level": SUB_LEVEL_PRO},
+    {"name": "God", "price": "1000", "level": SUB_LEVEL_GOD},
 ]
 
 SUB_LEVELS_DAYS_TO_EXPIRE = {
     SUB_LEVEL_FREE: None,
     SUB_LEVEL_PREMIUM: 30,
     SUB_LEVEL_PRO: 30,
+    SUB_LEVEL_GOD: 365,
 }
 
 
@@ -52,7 +53,12 @@ def get_days_to_expire(sub_level: int):
 def get_valid_sub_level(sub_level: schemas.SubLevelBase):
     """Returns a valid subscription level"""
 
-    if sub_level.sub_level not in [0, 1, 2]:
+    if sub_level.sub_level not in [
+        SUB_LEVEL_FREE,
+        SUB_LEVEL_PREMIUM,
+        SUB_LEVEL_PRO,
+        SUB_LEVEL_GOD,
+    ]:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Invalid subscription level",

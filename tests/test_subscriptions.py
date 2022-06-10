@@ -3,6 +3,7 @@ from dateutil import parser
 
 import requests_mock
 
+from src.repositories.subscription_utils import SUBSCRIPTIONS
 from tests import utils
 from tests.conftest import (
     successful_payment_matcher,
@@ -19,11 +20,7 @@ def test_get_subscriptions(client, custom_requests_mock):
         f"{API_VERSION_PREFIX}/subscriptions/", headers={"api_key": "key"}
     )
     assert response.status_code == 200
-    assert response.json() == [
-        {"name": "Free", "price": "0", "level": 0},
-        {"name": "Premium", "price": "0.0000001", "level": 1},
-        {"name": "Pro", "price": "0.0000005", "level": 2},
-    ]
+    assert response.json() == SUBSCRIPTIONS
 
 
 def test_post_user_creates_user_with_level_free_and_wallet(
