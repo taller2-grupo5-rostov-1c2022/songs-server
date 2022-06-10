@@ -124,6 +124,4 @@ def get_song_from_form(
     pdb: Session = Depends(get_db),
     user: models.UserModel = Depends(user_utils.retrieve_user),
 ):
-    return get_song(
-        song_id=song_id, role=role, pdb=pdb, user=user
-    )
+    return get_song(song_id=song_id, role=role, pdb=pdb, user=user)

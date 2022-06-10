@@ -90,7 +90,9 @@ def post_song(
     return response_post
 
 
-def get_song_by_id(client, song_id: int, uid: Optional[str] = None, role: Optional[str] = "listener"):
+def get_song_by_id(
+    client, song_id: int, uid: Optional[str] = None, role: Optional[str] = "listener"
+):
     if uid is None:
         uid = post_user(client, "__user_id__", "__user_name__").json()["id"]
 
