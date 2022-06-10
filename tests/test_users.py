@@ -7,6 +7,7 @@ from tests.utils import (
     post_album,
     post_playlist,
     post_review,
+    wrap_post_playlist
 )
 from urllib.parse import urlparse
 from urllib.parse import parse_qs
@@ -343,3 +344,40 @@ def test_delete_user_does_not_delete_playlist(client):
     assert response.status_code == 200
 
     assert response.json()["creator_id"] is None
+
+
+def test_delete_user_that_is_collaborator_of_playlist_does_not_delete_playlist(client):
+    playlist_id = wrap_post_playlist(client).json()["id"]
+
+    response = client.delete(
+        f"{API_VERSION_PREFIX}/users/user_playlist_colab",
+        headers={"api_key": "key", "uid": "user_playlist_colab"},
+    )
+
+    assert response.status_code == 200
+
+    response = client.get(
+        f"{API_VERSION_PREFIX}/playlists/{playlist_id}",
+        headers={"api_key": "key", "uid": "user_playlist_colab"},
+    )
+
+    assert response.status_code == 200
+
+
+def test_delete_user_that_is_owner_of_playlist_gives_ownership_to_another_user(client):
+    playlist_id = wrap_post_playlist(client).json()["id"]
+
+    response = client.delete(
+        f"{API_VERSION_PREFIX}/users/user_playlist_owner",
+        headers={"api_key": "key", "uid": "user_playlist_owner"},
+    )
+
+    assert response.status_code == 200
+
+    response = client.get(
+        f"{API_VERSION_PREFIX}/playlists/{playlist_id}",
+        headers={"api_key": "key", "uid": "user_playlist_owner"},
+    )
+
+    assert response.status_code == 200
+    assert response.json()["creator_id"] == "user_playlist_colab"

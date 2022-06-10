@@ -1,23 +1,5 @@
 from tests import utils
-from tests.utils import API_VERSION_PREFIX, post_song, post_user, post_playlist
-
-
-def wrap_post_playlist(client):
-    post_user(client, uid="user_playlist_owner", user_name="Ricardito")
-    post_user(client, uid="user_playlist_colab", user_name="Fernandito")
-    res_1 = post_song(client, uid="user_playlist_owner", name="song_for_playlist1")
-    res_2 = post_song(client, uid="user_playlist_owner", name="song_for_playlist2")
-    colabs_id = ["user_playlist_colab"]
-    songs_id = [res_1.json()["id"], res_2.json()["id"]]
-    response_post = post_playlist(
-        client,
-        uid="user_playlist_owner",
-        playlist_name="playlist_name",
-        description="playlist_description",
-        colabs_ids=colabs_id,
-        songs_ids=songs_id,
-    )
-    return response_post
+from tests.utils import API_VERSION_PREFIX, post_song, post_user, post_playlist, wrap_post_playlist
 
 
 def test_get_playlist_by_id_should_return_404_if_playlist_not_found(client):

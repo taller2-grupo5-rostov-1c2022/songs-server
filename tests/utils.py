@@ -201,6 +201,24 @@ def post_playlist(
     return response_post
 
 
+def wrap_post_playlist(client):
+    post_user(client, uid="user_playlist_owner", user_name="Ricardito")
+    post_user(client, uid="user_playlist_colab", user_name="Fernandito")
+    res_1 = post_song(client, uid="user_playlist_owner", name="song_for_playlist1")
+    res_2 = post_song(client, uid="user_playlist_owner", name="song_for_playlist2")
+    colabs_id = ["user_playlist_colab"]
+    songs_id = [res_1.json()["id"], res_2.json()["id"]]
+    response_post = post_playlist(
+        client,
+        uid="user_playlist_owner",
+        playlist_name="playlist_name",
+        description="playlist_description",
+        colabs_ids=colabs_id,
+        songs_ids=songs_id,
+    )
+    return response_post
+
+
 def block_song(client, song_id: int):
     post_user(client, uid="__blocker__id__", user_name="__blocker__name__")
     response_put = client.put(
