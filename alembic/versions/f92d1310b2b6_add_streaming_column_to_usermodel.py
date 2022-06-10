@@ -10,15 +10,17 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = 'f92d1310b2b6'
-down_revision = '8103fd5c7893'
+revision = "f92d1310b2b6"
+down_revision = "8103fd5c7893"
 branch_labels = None
 depends_on = None
 
 
 def upgrade():
-    op.add_column('users', sa.Column('streaming_listener_token', sa.String(), nullable=True))
+    op.add_column(
+        "users", sa.Column("streaming_listener_token", sa.String(), nullable=True)
+    )
 
 
 def downgrade():
-    op.drop_column('users', 'streaming_listener_token')
+    op.drop_column("users", "streaming_listener_token")

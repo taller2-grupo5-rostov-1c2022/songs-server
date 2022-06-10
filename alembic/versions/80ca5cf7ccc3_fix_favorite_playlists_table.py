@@ -10,8 +10,8 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = '80ca5cf7ccc3'
-down_revision = '5c1bf26c4313'
+revision = "80ca5cf7ccc3"
+down_revision = "5c1bf26c4313"
 branch_labels = None
 depends_on = None
 
@@ -52,4 +52,3 @@ def downgrade():
             primary_key=True,
         ),
     )
-
