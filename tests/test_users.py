@@ -1,5 +1,6 @@
 import time
 
+from tests import utils
 from tests.utils import (
     API_VERSION_PREFIX,
     post_user,
@@ -296,10 +297,7 @@ def test_delete_user_does_not_delete_song(client, custom_requests_mock):
 
     assert response.status_code == 200
 
-    response = client.get(
-        f"{API_VERSION_PREFIX}/songs/{song_id}",
-        headers={"api_key": "key", "uid": "user_id"},
-    )
+    response = utils.get_song_by_id(client, song_id)
 
     assert response.status_code == 200
     assert response.json()["creator_id"] is None

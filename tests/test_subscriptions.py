@@ -3,6 +3,7 @@ from dateutil import parser
 
 import requests_mock
 
+from tests import utils
 from tests.conftest import (
     successful_payment_matcher,
     failed_payment_matcher,
@@ -91,8 +92,6 @@ def test_user_subscribes_to_pro(client, custom_requests_mock):
 
 
 def test_user_with_premium_returns_to_free(client, custom_requests_mock):
-    custom_requests_mock.add_matcher(successful_payment_matcher)
-
     post_user_with_sub_level(client, "user_id", "user_name", 1)
 
     response = client.post(
@@ -141,3 +140,102 @@ def test_post_user_but_wallet_creation_fails(client, custom_requests_mock):
 
     assert response.status_code == 400
     assert response.json()["detail"] == '{"error": "Wallet creation failed"}'
+
+
+def test_user_with_free_subscription_cannot_get_premium_song(
+    client, custom_requests_mock
+):
+    post_user(client, "creator_id", "creator_name")
+    post_user_with_sub_level(client, "user_id", "user_name", 0)
+
+    song_id = utils.post_song(
+        client, uid="creator_id", name="song_name", sub_level=1
+    ).json()["id"]
+
+    response = client.get(
+        f"{API_VERSION_PREFIX}/songs/{song_id}",
+        headers={"api_key": "key", "uid": "user_id"},
+    )
+
+    assert response.status_code == 403
+
+
+def test_user_with_free_subscription_cannot_get_pro_song(client, custom_requests_mock):
+    post_user(client, "creator_id", "creator_name")
+    post_user_with_sub_level(client, "user_id", "user_name", 0)
+
+    song_id = utils.post_song(
+        client, uid="creator_id", name="song_name", sub_level=2
+    ).json()["id"]
+
+    response = client.get(
+        f"{API_VERSION_PREFIX}/songs/{song_id}",
+        headers={"api_key": "key", "uid": "user_id"},
+    )
+
+    assert response.status_code == 403
+
+
+def test_user_with_premium_can_get_premium_song(client, custom_requests_mock):
+    post_user(client, "creator_id", "creator_name")
+    post_user_with_sub_level(client, "user_id", "user_name", 1)
+
+    song_id = utils.post_song(
+        client, uid="creator_id", name="song_name", sub_level=1
+    ).json()["id"]
+
+    response = client.get(
+        f"{API_VERSION_PREFIX}/songs/{song_id}",
+        headers={"api_key": "key", "uid": "user_id"},
+    )
+
+    assert response.status_code == 200
+
+
+def test_user_with_premium_can_get_free_song(client, custom_requests_mock):
+    post_user(client, "creator_id", "creator_name")
+    post_user_with_sub_level(client, "user_id", "user_name", 1)
+
+    song_id = utils.post_song(
+        client, uid="creator_id", name="song_name", sub_level=0
+    ).json()["id"]
+
+    response = client.get(
+        f"{API_VERSION_PREFIX}/songs/{song_id}",
+        headers={"api_key": "key", "uid": "user_id"},
+    )
+
+    assert response.status_code == 200
+
+
+def test_user_with_pro_can_get_premium_song(client, custom_requests_mock):
+    post_user(client, "creator_id", "creator_name")
+    response = post_user_with_sub_level(client, "user_id", "user_name", 2)
+    assert response.status_code == 200
+
+    song_id = utils.post_song(
+        client, uid="creator_id", name="song_name", sub_level=1
+    ).json()["id"]
+
+    response = client.get(
+        f"{API_VERSION_PREFIX}/songs/{song_id}",
+        headers={"api_key": "key", "uid": "user_id"},
+    )
+
+    assert response.status_code == 200
+
+
+def test_user_with_pro_can_get_free_song(client, custom_requests_mock):
+    post_user(client, "creator_id", "creator_name")
+    post_user_with_sub_level(client, "user_id", "user_name", 2)
+
+    song_id = utils.post_song(
+        client, uid="creator_id", name="song_name", sub_level=0
+    ).json()["id"]
+
+    response = client.get(
+        f"{API_VERSION_PREFIX}/songs/{song_id}",
+        headers={"api_key": "key", "uid": "user_id"},
+    )
+
+    assert response.status_code == 200

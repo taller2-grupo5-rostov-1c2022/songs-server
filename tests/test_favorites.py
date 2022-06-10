@@ -120,7 +120,7 @@ def test_remove_song_from_favorites_does_not_delete_song(client, custom_requests
 
     utils.delete_song_from_favorites(client, uid="user_id", song_id=song_id)
 
-    response_get = utils.get_song(client, song_id=song_id)
+    response_get = utils.get_song_by_id(client, song_id=song_id)
     song = response_get.json()
 
     assert response_get.status_code == 200

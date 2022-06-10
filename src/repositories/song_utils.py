@@ -1,8 +1,9 @@
 import json
 from src.postgres import models
 from fastapi import HTTPException, Depends, Form
-from src.repositories import artist_utils, resource_utils
+from src.repositories import artist_utils, resource_utils, user_utils
 from src.postgres import schemas
+from sqlalchemy.orm import Session
 from sqlalchemy import func
 from .. import roles
 from typing import List, Optional
@@ -99,5 +100,30 @@ def retrieve_song_update(
     )
 
 
-def get_song(song_id: int, role: roles.Role = Depends(get_role), pdb=Depends(get_db)):
-    return get_song_by_id(pdb, role, song_id)
+def get_song(
+    song_id: int,
+    role: roles.Role = Depends(get_role),
+    pdb: Session = Depends(get_db),
+    user: models.UserModel = Depends(user_utils.retrieve_user),
+):
+    song = get_song_by_id(pdb, role, song_id)
+    print(song)
+    print(user)
+
+    if song.sub_level > user.sub_level:
+        raise HTTPException(
+            status_code=403,
+            detail=f"You are not allowed to see this song, expected at least level {song.sub_level}, you have level {user.sub_level}",
+        )
+    return song
+
+
+def get_song_from_form(
+    song_id: int = Form(...),
+    role: roles.Role = Depends(get_role),
+    pdb: Session = Depends(get_db),
+    user: models.UserModel = Depends(user_utils.retrieve_user),
+):
+    return get_song(
+        song_id=song_id, role=role, pdb=pdb, user=user
+    )

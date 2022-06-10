@@ -154,7 +154,7 @@ def remove_song_from_playlist(
 
 @router.post("/playlists/{playlist_id}/songs/")
 def add_song_to_playlist(
-    song_id: int = Form(...),
+    song: models.SongModel = Depends(song_utils.get_song_from_form),
     playlist: models.PlaylistModel = Depends(playlist_utils.get_playlist),
     uid: str = Depends(user_utils.retrieve_uid),
     pdb: Session = Depends(get_db),
@@ -162,7 +162,6 @@ def add_song_to_playlist(
 ):
     """Adds a song to a playlist"""
 
-    song = song_utils.get_song(song_id, role, pdb)
     if (
         uid == playlist.creator_id
         or uid in [colab.id for colab in playlist.colabs]

@@ -84,6 +84,7 @@ def custom_requests_mock():
     m = requests_mock.Mocker(real_http=True)
     m.start()
     m.add_matcher(successful_wallet_creation_matcher)
+    m.add_matcher(successful_payment_matcher)
 
     try:
         yield m

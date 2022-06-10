@@ -267,65 +267,6 @@ def test_search_album_by_genre_substring_case_insensitive_many_results(
     assert len(response.json()) == 2
 
 
-def test_search_album_by_subscription_without_songs(client, custom_requests_mock):
-    response = client.get(
-        f"{API_VERSION_PREFIX}/albums/?sub_level=0", headers={"api_key": "key"}
-    )
-
-    assert response.status_code == 200
-    assert len(response.json()) == 0
-
-
-def test_search_album_by_subscription_without_results(client, custom_requests_mock):
-    post_user(client, "user_id", "user_name")
-    post_album_with_song(client, uid="user_id", album_sub_level=0)
-
-    response = client.get(
-        f"{API_VERSION_PREFIX}/albums/?sub_level=2", headers={"api_key": "key"}
-    )
-
-    assert response.status_code == 200
-    assert len(response.json()) == 0
-
-
-def test_search_album_by_subscription_one_result(client, custom_requests_mock):
-    post_user(client, "user_id", "user_name")
-    post_album_with_song(
-        client, uid="user_id", album_name="my_album_name", album_sub_level=1
-    )
-    post_album_with_song(
-        client, uid="user_id", album_name="another_album_name", album_sub_level=2
-    )
-
-    response = client.get(
-        f"{API_VERSION_PREFIX}/albums/?sub_level=2", headers={"api_key": "key"}
-    )
-
-    assert response.status_code == 200
-    assert len(response.json()) == 1
-    assert response.json()[0]["name"] == "another_album_name"
-
-
-def test_search_album_by_subscription_ignores_song_sub_level(
-    client, custom_requests_mock
-):
-    post_user(client, "user_id", "user_name")
-    post_album_with_song(
-        client,
-        uid="user_id",
-        album_name="my_album_name",
-        album_sub_level=1,
-        song_sub_level=0,
-    )
-
-    response = client.get(
-        f"{API_VERSION_PREFIX}/albums/?sub_level=0", headers={"api_key": "key"}
-    )
-
-    assert response.status_code == 200
-    assert len(response.json()) == 0
-
-
 def test_search_album_multiple_queries(client, custom_requests_mock):
     post_user(client, "user_id", "user_name")
     post_album_with_song(
@@ -333,29 +274,25 @@ def test_search_album_multiple_queries(client, custom_requests_mock):
         uid="user_id",
         album_genre="my_genre",
         album_name="expected_album",
-        album_sub_level=0,
     )
     post_album_with_song(
         client,
         uid="user_id",
         album_genre="my_genre",
-        album_sub_level=1,
     )
     post_album_with_song(
         client,
         uid="user_id",
         album_genre="bar",
-        album_sub_level=1,
     )
 
     response = client.get(
-        f"{API_VERSION_PREFIX}/albums/?creator=user_id&genre=my_genre&sub_level=0",
+        f"{API_VERSION_PREFIX}/albums/?creator=user_id&genre=my_genre",
         headers={"api_key": "key"},
     )
 
     assert response.status_code == 200
-    assert len(response.json()) == 1
-    assert response.json()[0]["name"] == "expected_album"
+    assert len(response.json()) == 2
 
 
 def test_search_album_by_name(client, custom_requests_mock):

@@ -1,6 +1,7 @@
 import time
 
 from src.constants import STORAGE_PATH
+from tests import utils
 from tests.utils import post_song, post_user
 from tests.utils import API_VERSION_PREFIX
 from urllib.parse import urlparse
@@ -21,19 +22,20 @@ def test_post_song(client, custom_requests_mock):
     post_user(client, "song_creator_id", "song_creator")
     response_post = post_song(client)
     assert response_post.status_code == 200
-    response_get = client.get(
-        API_VERSION_PREFIX + "/songs/" + str(response_post.json()["id"]),
-        headers={"api_key": "key"},
-    )
-    assert str(response_get.json()["id"]) == str(response_post.json()["id"])
-    assert response_get.json()["name"] == "song_name"
-    assert response_get.json()["description"] == "song_desc"
-    assert response_get.json()["artists"] == [{"name": "song_artist_name"}]
-    assert response_get.json()["genre"] == "song_genre"
-    assert response_get.json()["sub_level"] == 0
-    assert response_get.json()["file"].startswith(STORAGE_PATH)
-    assert str(response_get.json()["id"]) in response_get.json()["file"]
-    assert response_get.json()["album"] is None
+    song_id = response_post.json()["id"]
+
+    response_get = utils.get_song_by_id(client, song_id, uid="song_creator_id")
+    song = response_get.json()
+
+    assert song["id"] == song_id
+    assert song["name"] == "song_name"
+    assert song["description"] == "song_desc"
+    assert song["artists"] == [{"name": "song_artist_name"}]
+    assert song["genre"] == "song_genre"
+    assert song["sub_level"] == 0
+    assert song["file"].startswith(STORAGE_PATH)
+    assert str(song["id"]) in song["file"]
+    assert song["album"] is None
 
 
 def test_cannot_post_song_with_not_created_user(client, custom_requests_mock):
@@ -120,6 +122,7 @@ def test_delete_song(client, custom_requests_mock):
     post_user(client, "song_creator_id", "song_creator")
     response_post = post_song(client)
     assert response_post.status_code == 200
+    song_id = response_post.json()["id"]
 
     response_delete = client.delete(
         API_VERSION_PREFIX + f"/songs/{str(response_post.json()['id'])}",
@@ -131,10 +134,7 @@ def test_delete_song(client, custom_requests_mock):
 
     assert response_delete.status_code == 200
 
-    response_get = client.get(
-        API_VERSION_PREFIX + "/songs/" + str(response_post.json()["id"]),
-        headers={"api_key": "key"},
-    )
+    response_get = utils.get_song_by_id(client, song_id, uid="song_creator_id")
 
     assert response_get.status_code == 404
 
@@ -220,10 +220,8 @@ def test_update_song_updates_song_timestamp(client, custom_requests_mock):
     post_user(client, "song_creator_id", "album_creator_name")
     song_id = post_song(client, uid="song_creator_id").json()["id"]
 
-    response_get_1 = client.get(
-        f"{API_VERSION_PREFIX}/songs/{song_id}",
-        headers={"api_key": "key"},
-    )
+    response_get_1 = utils.get_song_by_id(client, song_id, uid="song_creator_id")
+
     time.sleep(1)
     with open("./new_song.img", "wb") as f:
         f.write(b"song info")
@@ -235,10 +233,7 @@ def test_update_song_updates_song_timestamp(client, custom_requests_mock):
         )
         assert response_put.status_code == 200
 
-    response_get_2 = client.get(
-        f"{API_VERSION_PREFIX}/songs/{song_id}",
-        headers={"api_key": "key"},
-    )
+    response_get_2 = utils.get_song_by_id(client, song_id, uid="song_creator_id")
 
     url_1 = response_get_1.json()["file"]
     url_2 = response_get_2.json()["file"]

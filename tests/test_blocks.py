@@ -1,3 +1,4 @@
+from tests import utils
 from tests.utils import (
     API_VERSION_PREFIX,
     post_user,
@@ -20,11 +21,8 @@ def test_user_cannot_modify_blocked_status_of_song(client, custom_requests_mock)
 
     assert response.status_code == 403
 
-    response_get = client.get(
-        f"{API_VERSION_PREFIX}/songs/{song_id}",
-        data={"blocked": True},
-        headers={"role": "admin", "api_key": "key"},
-    )
+    response_get = utils.get_song_by_id(client, song_id, role="admin")
+
     song = response_get.json()
 
     assert response_get.status_code == 200
@@ -49,10 +47,7 @@ def test_listener_get_not_blocked_song_by_id(client, custom_requests_mock):
 
     song_id = post_song(client, uid="artist_id").json()["id"]
 
-    response = client.get(
-        f"{API_VERSION_PREFIX}/songs/{song_id}",
-        headers={"role": "listener", "api_key": "key"},
-    )
+    response = utils.get_song_by_id(client, song_id, role="listener")
 
     assert response.status_code == 200
 
@@ -62,10 +57,7 @@ def test_listener_get_blocked_song_by_id_should_fail(client, custom_requests_moc
 
     song_id = post_song(client, uid="artist_id", blocked=True).json()["id"]
 
-    response = client.get(
-        f"{API_VERSION_PREFIX}/songs/{song_id}",
-        headers={"role": "listener", "api_key": "key"},
-    )
+    response = utils.get_song_by_id(client, song_id, role="listener")
 
     assert response.status_code == 404
 
@@ -74,10 +66,7 @@ def test_artist_get_blocked_song_by_id_should_fail(client, custom_requests_mock)
     post_user(client, uid="artist_id", user_name="artist_name")
     song_id = post_song(client, uid="artist_id", blocked=True).json()["id"]
 
-    response = client.get(
-        f"{API_VERSION_PREFIX}/songs/{song_id}",
-        headers={"role": "artist", "api_key": "key"},
-    )
+    response = utils.get_song_by_id(client, song_id, role="artist")
 
     assert response.status_code == 404
 
@@ -88,9 +77,7 @@ def test_user_without_role_get_blocked_song_by_id_should_fail(
     post_user(client, uid="artist_id", user_name="artist_name")
     song_id = post_song(client, uid="artist_id", blocked=True).json()["id"]
 
-    response = client.get(
-        f"{API_VERSION_PREFIX}/songs/{song_id}", headers={"api_key": "key"}
-    )
+    response = utils.get_song_by_id(client, song_id)
 
     assert response.status_code == 404
 
@@ -99,10 +86,7 @@ def test_admin_get_blocked_song_by_id(client, custom_requests_mock):
     post_user(client, uid="admin_id", user_name="admin_name")
     song_id = post_song(client, uid="admin_id", blocked=True).json()["id"]
 
-    response = client.get(
-        f"{API_VERSION_PREFIX}/songs/{song_id}",
-        headers={"role": "admin", "api_key": "key"},
-    )
+    response = utils.get_song_by_id(client, song_id, role="admin")
 
     assert response.status_code == 200
 
@@ -147,10 +131,7 @@ def test_admin_get_song_by_id_indicates_if_song_is_blocked(
 
     song_id = post_song(client, uid="admin_id", blocked=True).json()["id"]
 
-    response = client.get(
-        f"{API_VERSION_PREFIX}/songs/{song_id}",
-        headers={"role": "admin", "api_key": "key"},
-    )
+    response = utils.get_song_by_id(client, song_id, role="admin")
 
     assert response.status_code == 200
     assert response.json()["blocked"] is True
@@ -419,10 +400,7 @@ def test_listener_get_album_by_id_with_blocked_songs_should_not_remove_song(
         headers={"role": "listener", "api_key": "key"},
     )
 
-    response_get_song = client.get(
-        f"{API_VERSION_PREFIX}/songs/{song_id_1}",
-        headers={"role": "admin", "api_key": "key"},
-    )
+    response_get_song = utils.get_song_by_id(client, song_id_1, role="admin")
     assert response_get_song.status_code == 200
 
 
@@ -620,6 +598,7 @@ def test_listener_get_playlist_by_id_with_blocked_songs_should_not_remove_song(
 ):
     # This is a white box test
 
+    post_user(client, uid="admin_id", user_name="admin_name")
     post_user(client, uid="artist_id", user_name="artist_name")
     # The song is blocked after the playlist is created
     song_id_1 = post_song(
@@ -641,7 +620,7 @@ def test_listener_get_playlist_by_id_with_blocked_songs_should_not_remove_song(
 
     response_get_song = client.get(
         f"{API_VERSION_PREFIX}/songs/{song_id_1}",
-        headers={"role": "admin", "api_key": "key"},
+        headers={"role": "admin", "api_key": "key", "uid": "admin_id"},
     )
     assert response_get_song.status_code == 200
     assert response_get_song.json()["blocked"] is True

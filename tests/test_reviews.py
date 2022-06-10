@@ -1,3 +1,4 @@
+from tests import utils
 from tests.utils import (
     API_VERSION_PREFIX,
     post_user,
@@ -339,10 +340,7 @@ def test_post_review_in_album_with_blocked_songs_should_not_remove_songs(
     )
     assert response_post.status_code == 200
 
-    response_get = client.get(
-        f"{API_VERSION_PREFIX}/songs/{song_id}",
-        headers={"api_key": "key", "uid": "song_creator_id", "role": "admin"},
-    )
+    response_get = utils.get_song_by_id(client, song_id, role="admin")
     assert response_get.status_code == 200
 
 

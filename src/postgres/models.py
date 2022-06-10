@@ -149,7 +149,6 @@ class ResourceModel(Base):
 class ResourceCreatorModel(ResourceModel):
     __abstract__ = True
     genre = Column(String, nullable=False, index=True)
-    sub_level = Column(Integer, nullable=False)
 
 
 class ReviewModel(Base):
@@ -200,6 +199,8 @@ class ArtistModel(Base):
 
 class SongModel(ResourceCreatorModel):
     __tablename__ = "songs"
+
+    sub_level = Column(Integer, nullable=False)
 
     file_last_update = Column(TIMESTAMP, nullable=False)
 

@@ -105,7 +105,6 @@ def test_post_album_with_song(client, custom_requests_mock):
     assert len(response_get.json()["songs"]) == 1
     assert response_get.json()["cover"].startswith(STORAGE_PATH)
     assert str(response_post_album.json()["id"]) in response_get.json()["cover"]
-    assert response_get.json()["sub_level"] == 1
 
 
 def test_post_album_associates_song_to_such_album(client, custom_requests_mock):
@@ -114,8 +113,9 @@ def test_post_album_associates_song_to_such_album(client, custom_requests_mock):
     response_post_album = post_album(client, songs_ids=[song_id])
     response_get_song = client.get(
         f"{API_VERSION_PREFIX}/songs/{song_id}",
-        headers={"api_key": "key"},
+        headers={"api_key": "key", "uid": "album_creator_id"},
     )
+
     assert response_get_song.json()["album"]["id"] == response_post_album.json()["id"]
     assert response_get_song.json()["album"]["name"] == "album_name"
 
@@ -138,7 +138,7 @@ def test_put_album(client, custom_requests_mock):
 
     response_update = client.put(
         f"{API_VERSION_PREFIX}/albums/{response_post.json()['id']}",
-        data={"name": "updated_test_album", "sub_level": 5},
+        data={"name": "updated_test_album"},
         headers={"api_key": "key", "uid": "album_creator_id"},
     )
     assert response_update.status_code == 200
@@ -150,7 +150,6 @@ def test_put_album(client, custom_requests_mock):
 
     assert str(response_get.json()["id"]) == str(response_post.json()["id"])
     assert response_get.json()["name"] == "updated_test_album"
-    assert response_get.json()["sub_level"] == 5
     assert response_get.json()["description"] == "album_desc"
 
 
@@ -263,7 +262,7 @@ def test_delete_album_should_not_delete_songs(client, custom_requests_mock):
 
     response_get = client.get(
         f"{API_VERSION_PREFIX}/songs/{song_id}",
-        headers={"api_key": "key"},
+        headers={"api_key": "key", "uid": "album_creator_id"},
     )
 
     assert response_get.status_code == 200

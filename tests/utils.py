@@ -90,6 +90,17 @@ def post_song(
     return response_post
 
 
+def get_song_by_id(client, song_id: int, uid: Optional[str] = None, role: Optional[str] = "listener"):
+    if uid is None:
+        uid = post_user(client, "__user_id__", "__user_name__").json()["id"]
+
+    response = client.get(
+        f"{API_VERSION_PREFIX}/songs/{song_id}",
+        headers={"api_key": "key", "uid": uid, "role": role},
+    )
+    return response
+
+
 def post_album(
     client,
     uid: Optional[str] = "album_creator_id",
@@ -97,7 +108,6 @@ def post_album(
     description: Optional[str] = "album_desc",
     genre: Optional[str] = "album_genre",
     songs_ids: Optional[List[str]] = None,
-    sub_level: Optional[int] = 1,
     cover: Optional[str] = "./tests/test.cover",
     blocked: bool = False,
     headers: Optional[dict] = None,
@@ -116,7 +126,6 @@ def post_album(
             data={
                 "name": name,
                 "description": description,
-                "sub_level": sub_level,
                 "songs_ids": json.dumps(songs_ids),
                 "genre": genre,
             },
@@ -139,7 +148,6 @@ def post_album_with_song(
     uid="user_id",
     album_name="album_name",
     album_genre="album_genre",
-    album_sub_level=0,
     song_name="song_name",
     song_genre="song_genre",
     song_sub_level=0,
@@ -152,7 +160,6 @@ def post_album_with_song(
         uid=uid,
         name=album_name,
         genre=album_genre,
-        sub_level=album_sub_level,
         songs_ids=[song_id],
     )
 
@@ -325,14 +332,6 @@ def get_favorite_playlists(client, uid, role="listener"):
     return response
 
 
-def get_song(client, song_id: int, role: str = "listener"):
-    response = client.get(
-        f"{API_VERSION_PREFIX}/songs/{song_id}",
-        headers={"api_key": "key", "role": role},
-    )
-    return response
-
-
 def add_playlist_to_favorites(client, uid, playlist_id, role="listener"):
     response_post = client.post(
         f"{API_VERSION_PREFIX}/users/{uid}/favorites/playlists/?playlist_id={playlist_id}",
@@ -406,6 +405,6 @@ def post_user_with_sub_level(client, user_id: str, user_name: str, sub_level: in
     response = client.post(
         f"{API_VERSION_PREFIX}/subscriptions/",
         headers={"api_key": "key", "uid": "user_id"},
-        json={"sub_level": 0},
+        json={"sub_level": sub_level},
     )
     return response
