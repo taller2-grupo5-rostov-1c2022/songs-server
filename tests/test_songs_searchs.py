@@ -2,7 +2,7 @@ from tests.utils import API_VERSION_PREFIX
 from tests.utils import post_song, post_user
 
 
-def test_search_song_by_artist_without_created_songs(client):
+def test_search_song_by_artist_without_created_songs(client, custom_requests_mock):
     post_user(client, "user_id", "user_name")
 
     response = client.get(
@@ -12,7 +12,7 @@ def test_search_song_by_artist_without_created_songs(client):
     assert len(response.json()) == 0
 
 
-def test_search_song_by_artist_without_results(client):
+def test_search_song_by_artist_without_results(client, custom_requests_mock):
     post_user(client, "user_id", "user_name")
     post_song(client, uid="user_id", artists=["artist_name"])
     response = client.get(
@@ -23,7 +23,7 @@ def test_search_song_by_artist_without_results(client):
     assert len(response.json()) == 0
 
 
-def test_search_song_by_artist_exact_name_one_result(client):
+def test_search_song_by_artist_exact_name_one_result(client, custom_requests_mock):
     post_user(client, "user_id", "user_name")
     post_song(client, uid="user_id", name="my_song_name", artists=["artist_name"])
 
@@ -36,7 +36,7 @@ def test_search_song_by_artist_exact_name_one_result(client):
     assert response.json()[0]["name"] == "my_song_name"
 
 
-def test_search_song_by_artist_song_with_many_artists(client):
+def test_search_song_by_artist_song_with_many_artists(client, custom_requests_mock):
     post_user(client, "user_id", "user_name")
     post_song(
         client,
@@ -54,7 +54,7 @@ def test_search_song_by_artist_song_with_many_artists(client):
     assert len(response.json()) == 1
 
 
-def test_search_song_by_artist_substring_one_result(client):
+def test_search_song_by_artist_substring_one_result(client, custom_requests_mock):
     post_user(client, "user_id", "user_name")
     post_song(client, uid="user_id", artists=["artist_name"])
 
@@ -66,7 +66,9 @@ def test_search_song_by_artist_substring_one_result(client):
     assert len(response.json()) == 1
 
 
-def test_search_song_by_artist_case_insensitive_one_result(client):
+def test_search_song_by_artist_case_insensitive_one_result(
+    client, custom_requests_mock
+):
     post_user(client, "user_id", "user_name")
     post_song(client, uid="user_id", artists=["artist_name"])
 
@@ -77,7 +79,9 @@ def test_search_song_by_artist_case_insensitive_one_result(client):
     assert len(response.json()) == 1
 
 
-def test_search_song_by_artist_substring_case_insensitive_one_result(client):
+def test_search_song_by_artist_substring_case_insensitive_one_result(
+    client, custom_requests_mock
+):
     post_user(client, "user_id", "user_name")
     post_song(client, uid="user_id", artists=["artist_name"])
 
@@ -88,7 +92,9 @@ def test_search_song_by_artist_substring_case_insensitive_one_result(client):
     assert len(response.json()) == 1
 
 
-def test_search_song_by_artist_substring_case_insensitive_many_results(client):
+def test_search_song_by_artist_substring_case_insensitive_many_results(
+    client, custom_requests_mock
+):
     post_user(client, "user_id", "user_name")
     post_song(client, uid="user_id", name="first_song", artists=["artist_name"])
     post_song(
@@ -103,7 +109,7 @@ def test_search_song_by_artist_substring_case_insensitive_many_results(client):
     assert len(response.json()) == 2
 
 
-def test_search_song_by_genre_without_created_songs(client):
+def test_search_song_by_genre_without_created_songs(client, custom_requests_mock):
     post_user(client, "user_id", "user_name")
 
     response = client.get(
@@ -113,7 +119,7 @@ def test_search_song_by_genre_without_created_songs(client):
     assert len(response.json()) == 0
 
 
-def test_search_song_by_genre_without_results(client):
+def test_search_song_by_genre_without_results(client, custom_requests_mock):
     post_user(client, "user_id", "user_name")
     post_song(client, uid="user_id", genre="my_genre")
 
@@ -125,7 +131,7 @@ def test_search_song_by_genre_without_results(client):
     assert len(response.json()) == 0
 
 
-def test_search_song_by_genre_exact_name_one_result(client):
+def test_search_song_by_genre_exact_name_one_result(client, custom_requests_mock):
     post_user(client, "user_id", "user_name")
     post_song(client, uid="user_id", name="my_song_name", genre="my_genre")
     post_song(client, uid="user_id", name="another_song_name", genre="bar")
@@ -140,7 +146,7 @@ def test_search_song_by_genre_exact_name_one_result(client):
     assert response.json()[0]["genre"] == "my_genre"
 
 
-def test_search_song_by_genre_substring_one_result(client):
+def test_search_song_by_genre_substring_one_result(client, custom_requests_mock):
     post_user(client, "user_id", "user_name")
     post_song(client, uid="user_id", name="my_song_name", genre="my_genre")
     post_song(client, uid="user_id", name="another_song_name", genre="bar")
@@ -153,7 +159,7 @@ def test_search_song_by_genre_substring_one_result(client):
     assert len(response.json()) == 1
 
 
-def test_search_song_by_genre_case_insensitive_one_result(client):
+def test_search_song_by_genre_case_insensitive_one_result(client, custom_requests_mock):
     post_user(client, "user_id", "user_name")
     post_song(client, uid="user_id", name="my_song_name", genre="my_genre")
     post_song(client, uid="user_id", name="another_song_name", genre="bar")
@@ -166,7 +172,9 @@ def test_search_song_by_genre_case_insensitive_one_result(client):
     assert len(response.json()) == 1
 
 
-def test_search_song_by_genre_substring_case_insensitive_one_result(client):
+def test_search_song_by_genre_substring_case_insensitive_one_result(
+    client, custom_requests_mock
+):
     post_user(client, "user_id", "user_name")
     post_song(client, uid="user_id", name="my_song_name", genre="my_genre")
     post_song(client, uid="user_id", name="another_song_name", genre="bar")
@@ -179,7 +187,9 @@ def test_search_song_by_genre_substring_case_insensitive_one_result(client):
     assert len(response.json()) == 1
 
 
-def test_search_song_by_genre_substring_case_insensitive_many_results(client):
+def test_search_song_by_genre_substring_case_insensitive_many_results(
+    client, custom_requests_mock
+):
     post_user(client, "user_id", "user_name")
     post_song(client, uid="user_id", genre="my_genre")
     post_song(client, uid="user_id", genre="MY_GENRE")
@@ -193,7 +203,7 @@ def test_search_song_by_genre_substring_case_insensitive_many_results(client):
     assert len(response.json()) == 2
 
 
-def test_search_song_by_subscription_without_songs(client):
+def test_search_song_by_subscription_without_songs(client, custom_requests_mock):
     response = client.get(
         f"{API_VERSION_PREFIX}/songs/?sub_level=0", headers={"api_key": "key"}
     )
@@ -202,7 +212,7 @@ def test_search_song_by_subscription_without_songs(client):
     assert len(response.json()) == 0
 
 
-def test_search_song_by_subscription_without_results(client):
+def test_search_song_by_subscription_without_results(client, custom_requests_mock):
     post_user(client, "user_id", "user_name")
     post_song(client, uid="user_id", name="my_song_name", sub_level=1)
 
@@ -214,7 +224,7 @@ def test_search_song_by_subscription_without_results(client):
     assert len(response.json()) == 0
 
 
-def test_search_song_by_subscription_one_result(client):
+def test_search_song_by_subscription_one_result(client, custom_requests_mock):
     post_user(client, "user_id", "user_name")
     post_song(client, uid="user_id", name="my_song_name", sub_level=1)
     post_song(client, uid="user_id", name="another_song_name", sub_level=2)
@@ -228,7 +238,7 @@ def test_search_song_by_subscription_one_result(client):
     assert response.json()[0]["name"] == "another_song_name"
 
 
-def test_search_song_multiple_queries(client):
+def test_search_song_multiple_queries(client, custom_requests_mock):
     post_user(client, "user_id", "user_name")
     post_song(
         client,
@@ -261,7 +271,7 @@ def test_search_song_multiple_queries(client):
     assert len(response.json()) == 1
 
 
-def test_search_song_by_name(client):
+def test_search_song_by_name(client, custom_requests_mock):
     post_user(client, "user_id", "user_name")
     post_song(client, uid="user_id", name="my_song_name", sub_level=1)
     post_song(client, uid="user_id", name="another_song_name", sub_level=2)

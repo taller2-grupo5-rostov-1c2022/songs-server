@@ -1,7 +1,7 @@
 from tests.utils import API_VERSION_PREFIX, post_user, post_streaming
 
 
-def test_artist_post_streaming(client):
+def test_artist_post_streaming(client, custom_requests_mock):
     post_user(client, "streaming_user_id", "streaming_user_name")
 
     response_post = client.post(
@@ -12,7 +12,7 @@ def test_artist_post_streaming(client):
     assert response_post.status_code == 200
 
 
-def test_post_streaming_with_invalid_uid_should_fail(client):
+def test_post_streaming_with_invalid_uid_should_fail(client, custom_requests_mock):
 
     response_post = client.post(
         f"{API_VERSION_PREFIX}/streamings/",
@@ -21,7 +21,7 @@ def test_post_streaming_with_invalid_uid_should_fail(client):
     assert response_post.status_code == 404
 
 
-def test_post_streaming_with_img(client):
+def test_post_streaming_with_img(client, custom_requests_mock):
     post_user(client, "streaming_user_id", "streaming_user_name")
 
     response_post = post_streaming(client, "streaming_user_id", include_img=True)
@@ -42,7 +42,7 @@ def test_post_streaming_with_img(client):
     assert streamings[0]["artist"]["id"] == "streaming_user_id"
 
 
-def test_listener_post_streaming_should_fail(client):
+def test_listener_post_streaming_should_fail(client, custom_requests_mock):
     post_user(client, "listener_user_id", "listener_user_name")
 
     response_post = client.post(
@@ -53,7 +53,7 @@ def test_listener_post_streaming_should_fail(client):
     assert response_post.status_code == 403
 
 
-def test_user_post_streaming_twice_should_fail(client):
+def test_user_post_streaming_twice_should_fail(client, custom_requests_mock):
     post_user(client, "streaming_user_id", "streaming_user_name")
 
     response_post = post_streaming(client, "streaming_user_id")
@@ -63,7 +63,7 @@ def test_user_post_streaming_twice_should_fail(client):
     assert response_post.status_code == 403
 
 
-def test_get_streamings_without_streamings(client):
+def test_get_streamings_without_streamings(client, custom_requests_mock):
     post_user(client, "streaming_user_id", "streaming_user_name")
 
     response_get = client.get(
@@ -76,7 +76,7 @@ def test_get_streamings_without_streamings(client):
     assert len(streamings) == 0
 
 
-def test_get_streamings_with_one_streaming(client):
+def test_get_streamings_with_one_streaming(client, custom_requests_mock):
     post_user(client, "streaming_user_id", "streaming_user_name")
     post_user(client, "listener_user_id", "listener_user_name")
 
@@ -97,7 +97,7 @@ def test_get_streamings_with_one_streaming(client):
     assert streamings[0]["token"] is not None
 
 
-def test_get_streamings_with_two_streamings(client):
+def test_get_streamings_with_two_streamings(client, custom_requests_mock):
     post_user(client, "streaming_user_id", "streaming_user_name")
     post_user(client, "streaming_user_id_2", "streaming_user_name_2")
 
@@ -117,7 +117,7 @@ def test_get_streamings_with_two_streamings(client):
     assert len(streamings) == 2
 
 
-def test_delete_streaming_deletes_it(client):
+def test_delete_streaming_deletes_it(client, custom_requests_mock):
     post_user(client, "streaming_user_id", "streaming_user_name")
 
     response_post = post_streaming(client, "streaming_user_id")
@@ -140,7 +140,7 @@ def test_delete_streaming_deletes_it(client):
     assert len(streamings) == 0
 
 
-def test_delete_streaming_with_invalid_uid_should_fail(client):
+def test_delete_streaming_with_invalid_uid_should_fail(client, custom_requests_mock):
     response_delete = client.delete(
         f"{API_VERSION_PREFIX}/streamings/",
         headers={"api_key": "key", "uid": "invalid_uid"},
@@ -148,7 +148,9 @@ def test_delete_streaming_with_invalid_uid_should_fail(client):
     assert response_delete.status_code == 404
 
 
-def test_token_for_streamer_is_not_the_same_as_token_for_listener(client):
+def test_token_for_streamer_is_not_the_same_as_token_for_listener(
+    client, custom_requests_mock
+):
     post_user(client, "streaming_user_id", "streaming_user_name")
     post_user(client, "listener_user_id", "listener_user_name")
 
@@ -166,7 +168,9 @@ def test_token_for_streamer_is_not_the_same_as_token_for_listener(client):
     assert streamings[0]["token"] != token_streamer
 
 
-def test_delete_streaming_of_user_without_streaming_should_fail(client):
+def test_delete_streaming_of_user_without_streaming_should_fail(
+    client, custom_requests_mock
+):
     post_user(client, "streaming_user_id", "streaming_user_name")
 
     response_delete = client.delete(

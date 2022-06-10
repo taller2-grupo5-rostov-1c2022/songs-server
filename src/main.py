@@ -11,6 +11,7 @@ from src.app import (
     reviews,
     comments,
     streamings,
+    subscriptions,
 )
 from src.middleware.utils import get_api_key
 
@@ -31,3 +32,4 @@ app.include_router(favorites.router, prefix=API_VERSION_PREFIX)
 app.include_router(reviews.router, prefix=API_VERSION_PREFIX)
 app.include_router(comments.router, prefix=API_VERSION_PREFIX)
 app.include_router(streamings.router, prefix=API_VERSION_PREFIX)
+app.include_router(subscriptions.router, prefix=API_VERSION_PREFIX)

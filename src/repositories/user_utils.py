@@ -8,6 +8,11 @@ from src.postgres.database import get_db
 from sqlalchemy import and_
 from sqlalchemy.orm import contains_eager
 
+from src.postgres.models import (
+    song_playlist_association_table,
+    playlist_favorite_association_table,
+)
+
 
 def retrieve_uid(uid: str = Header(...), pdb=Depends(get_db)):
     # The user is not in the database
@@ -85,15 +90,34 @@ def remove_album_from_favorites(pdb, user: models.UserModel, album: models.Album
 
 
 def get_favorite_playlists(pdb, uid: str, role: roles.Role):
-    user = get_user(uid, pdb)
+    filters = [models.UserModel.id == uid]
     join_conditions = []
-    filters = []
-
     if not role.can_see_blocked():
-        join_conditions.append(models.SongModel.blocked == False)
         filters.append(models.PlaylistModel.blocked == False)
+        join_conditions.append(models.SongModel.blocked == False)
 
-    playlists = user.favorite_playlists.filter(and_(True, *filters)).all()
+    playlists = (
+        pdb.query(models.PlaylistModel)
+        .join(
+            song_playlist_association_table,
+            song_playlist_association_table.c.playlist_id == models.PlaylistModel.id,
+            isouter=True,
+        )
+        .join(models.SongModel, and_(True, *join_conditions), isouter=True)
+        .join(
+            playlist_favorite_association_table,
+            playlist_favorite_association_table.c.playlist_id
+            == models.PlaylistModel.id,
+        )
+        .join(
+            models.UserModel,
+            playlist_favorite_association_table.c.user_id == models.UserModel.id,
+        )
+        .options(contains_eager("songs"))
+        .filter(and_(True, *filters))
+    ).all()
+
+    playlists = [p for p in playlists if p is not None]
 
     return playlists
 
@@ -131,7 +155,6 @@ def pfp_url(user: models.UserModel):
 
 def give_ownership_of_playlists_to_colabs(user: models.UserModel):
     for playlist in user.my_playlists:
-        if playlist.colabs is not None:
+        if len(playlist.colabs) > 0:
             playlist.creator = playlist.colabs[0]
             playlist.colabs.remove(playlist.creator)
-

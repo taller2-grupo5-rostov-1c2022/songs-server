@@ -1,8 +1,16 @@
 from tests import utils
-from tests.utils import API_VERSION_PREFIX, post_song, post_user, post_playlist, wrap_post_playlist
+from tests.utils import (
+    API_VERSION_PREFIX,
+    post_song,
+    post_user,
+    post_playlist,
+    wrap_post_playlist,
+)
 
 
-def test_get_playlist_by_id_should_return_404_if_playlist_not_found(client):
+def test_get_playlist_by_id_should_return_404_if_playlist_not_found(
+    client, custom_requests_mock
+):
     response = client.get(
         f"{API_VERSION_PREFIX}/playlists/1", headers={"api_key": "key"}
     )
@@ -10,7 +18,9 @@ def test_get_playlist_by_id_should_return_404_if_playlist_not_found(client):
     assert response.status_code == 404
 
 
-def test_get_playlist_by_id_should_return_403_if_not_authorized(client):
+def test_get_playlist_by_id_should_return_403_if_not_authorized(
+    client, custom_requests_mock
+):
     response = client.get(
         f"{API_VERSION_PREFIX}/playlists/1", headers={"api_key": "wrong_key"}
     )
@@ -18,7 +28,7 @@ def test_get_playlist_by_id_should_return_403_if_not_authorized(client):
     assert response.status_code == 403
 
 
-def test_get_playlist_should_return_empty_response(client):
+def test_get_playlist_should_return_empty_response(client, custom_requests_mock):
     response = client.get(
         f"{API_VERSION_PREFIX}/playlists/", headers={"api_key": "key"}
     )
@@ -26,14 +36,14 @@ def test_get_playlist_should_return_empty_response(client):
     assert response.json() == []
 
 
-def test_post_playlist_should_return_its_id(client):
+def test_post_playlist_should_return_its_id(client, custom_requests_mock):
     response = wrap_post_playlist(client)
 
     assert response.status_code == 200
     assert response.json()["id"] == 1
 
 
-def test_get_playlist_by_id(client):
+def test_get_playlist_by_id(client, custom_requests_mock):
     response_post = wrap_post_playlist(client)
 
     response_get = client.get(
@@ -54,7 +64,7 @@ def test_get_playlist_by_id(client):
     assert playlist["songs"][1]["name"] == "song_for_playlist2"
 
 
-def test_get_all_playlists_with_no_specific_uid(client):
+def test_get_all_playlists_with_no_specific_uid(client, custom_requests_mock):
 
     # Create two playlists
     wrap_post_playlist(client)
@@ -81,7 +91,7 @@ def test_get_all_playlists_with_no_specific_uid(client):
     assert len(playlists) == 2
 
 
-def test_get_playlist_from_uid(client):
+def test_get_playlist_from_uid(client, custom_requests_mock):
 
     # Two users
     post_user(client, uid="user_playlist_owner", user_name="Ricardito")
@@ -125,7 +135,7 @@ def test_get_playlist_from_uid(client):
     assert playlists[0]["description"] == "playlist_description1"
 
 
-def test_owner_should_be_able_to_edit_its_own_playlist(client):
+def test_owner_should_be_able_to_edit_its_own_playlist(client, custom_requests_mock):
     response_post = wrap_post_playlist(client)
     response_get = client.get(
         f"{API_VERSION_PREFIX}/playlists/{response_post.json()['id']}",
@@ -156,7 +166,7 @@ def test_owner_should_be_able_to_edit_its_own_playlist(client):
     assert playlist["description"] == "playlist_description_updated"
 
 
-def test_colab_should_be_able_to_edit_playlist(client):
+def test_colab_should_be_able_to_edit_playlist(client, custom_requests_mock):
 
     response_post = wrap_post_playlist(client)
 
@@ -186,7 +196,7 @@ def test_colab_should_be_able_to_edit_playlist(client):
     assert playlist["description"] == "playlist_description_updated"
 
 
-def test_owner_should_be_able_to_delete_its_own_playlist(client):
+def test_owner_should_be_able_to_delete_its_own_playlist(client, custom_requests_mock):
     response_post = wrap_post_playlist(client)
 
     response_delete = client.delete(
@@ -197,7 +207,9 @@ def test_owner_should_be_able_to_delete_its_own_playlist(client):
     assert response_delete.status_code == 200
 
 
-def test_user_should_not_be_able_to_delete_other_users_playlist(client):
+def test_user_should_not_be_able_to_delete_other_users_playlist(
+    client, custom_requests_mock
+):
     response_post = wrap_post_playlist(client)
 
     response_delete = client.delete(
@@ -208,7 +220,9 @@ def test_user_should_not_be_able_to_delete_other_users_playlist(client):
     assert response_delete.status_code == 403
 
 
-def test_owner_should_be_able_to_add_songs_to_its_own_playlist(client):
+def test_owner_should_be_able_to_add_songs_to_its_own_playlist(
+    client, custom_requests_mock
+):
     res_post_playlist = wrap_post_playlist(client)
     res_post_song = post_song(
         client, uid="user_playlist_owner", name="new_song_for_playlist"
@@ -239,7 +253,7 @@ def test_owner_should_be_able_to_add_songs_to_its_own_playlist(client):
 
 
 def test_user_should_not_be_able_to_add_songs_to_other_users_playlist_if_not_collaborator(
-    client,
+    client, custom_requests_mock
 ):
 
     res_post_playlist = wrap_post_playlist(client)
@@ -257,7 +271,9 @@ def test_user_should_not_be_able_to_add_songs_to_other_users_playlist_if_not_col
     assert res_post.status_code == 403
 
 
-def test_user_can_not_add_songs_to_playlist_if_song_does_not_exist(client):
+def test_user_can_not_add_songs_to_playlist_if_song_does_not_exist(
+    client, custom_requests_mock
+):
     res_post_playlist = wrap_post_playlist(client)
 
     res_post = client.post(
@@ -271,7 +287,7 @@ def test_user_can_not_add_songs_to_playlist_if_song_does_not_exist(client):
     assert res_post.status_code == 404
 
 
-def test_owner_can_delete_song_from_playlist(client):
+def test_owner_can_delete_song_from_playlist(client, custom_requests_mock):
     res_post_playlist = wrap_post_playlist(client)
     res_post_song = post_song(
         client, uid="user_playlist_owner", name="new_song_for_playlist"
@@ -296,7 +312,9 @@ def test_owner_can_delete_song_from_playlist(client):
     assert res_delete.status_code == 200
 
 
-def test_get_my_playlists_returns_playlists_in_which_i_am_colab(client):
+def test_get_my_playlists_returns_playlists_in_which_i_am_colab(
+    client, custom_requests_mock
+):
     wrap_post_playlist(client)
 
     response_get = client.get(
@@ -308,7 +326,7 @@ def test_get_my_playlists_returns_playlists_in_which_i_am_colab(client):
     assert response_get.json()[0]["name"] == "playlist_name"
 
 
-def test_get_playlists_by_colab(client):
+def test_get_playlists_by_colab(client, custom_requests_mock):
     wrap_post_playlist(client)
 
     response_get = client.get(
@@ -322,7 +340,7 @@ def test_get_playlists_by_colab(client):
     assert playlists[0]["name"] == "playlist_name"
 
 
-def test_add_playlists_colab(client):
+def test_add_playlists_colab(client, custom_requests_mock):
     res_post_playlist = wrap_post_playlist(client)
     post_user(client, uid="user_playlist_new_colab", user_name="Paquito")
 
@@ -345,7 +363,7 @@ def test_add_playlists_colab(client):
     assert playlists[0]["name"] == "playlist_name"
 
 
-def test_colab_cant_add_colab(client):
+def test_colab_cant_add_colab(client, custom_requests_mock):
     res_post_playlist = wrap_post_playlist(client)
     post_user(client, uid="user_playlist_new_colab", user_name="Paquito")
 
@@ -360,7 +378,7 @@ def test_colab_cant_add_colab(client):
     assert response_post.status_code == 403
 
 
-def test_cant_add_colab_to_nonesxistent_playlist(client):
+def test_cant_add_colab_to_nonesxistent_playlist(client, custom_requests_mock):
     wrap_post_playlist(client)
     post_user(client, uid="user_playlist_new_colab", user_name="Paquito")
 
@@ -375,7 +393,7 @@ def test_cant_add_colab_to_nonesxistent_playlist(client):
     assert response_post.status_code == 404
 
 
-def test_cant_add_nonesxistent_colab_to_playlist(client):
+def test_cant_add_nonesxistent_colab_to_playlist(client, custom_requests_mock):
     res_post_playlist = wrap_post_playlist(client)
 
     response_post = client.post(
@@ -389,7 +407,7 @@ def test_cant_add_nonesxistent_colab_to_playlist(client):
     assert response_post.status_code == 404
 
 
-def test_get_playlist_by_id_return_expected_songs(client):
+def test_get_playlist_by_id_return_expected_songs(client, custom_requests_mock):
     post_user(client, uid="user_playlist_owner", user_name="Paquito")
     song_id = utils.post_song(
         client, uid="user_playlist_owner", name="new_song_for_playlist"
@@ -418,7 +436,7 @@ def test_get_playlist_by_id_return_expected_songs(client):
     assert len(playlist["songs"]) == 0
 
 
-def test_admin_can_add_song_to_playlist_of_another_user(client):
+def test_admin_can_add_song_to_playlist_of_another_user(client, custom_requests_mock):
     post_user(client, uid="user_playlist_owner", user_name="Paquito")
     post_user(client, uid="admin_id", user_name="Admin")
 
@@ -449,7 +467,9 @@ def test_admin_can_add_song_to_playlist_of_another_user(client):
     assert len(playlist["songs"]) == 1
 
 
-def test_admin_can_remove_song_from_playlist_of_another_user(client):
+def test_admin_can_remove_song_from_playlist_of_another_user(
+    client, custom_requests_mock
+):
     post_user(client, uid="user_playlist_owner", user_name="Paquito")
     post_user(client, uid="admin_id", user_name="Admin")
 
@@ -480,7 +500,7 @@ def test_admin_can_remove_song_from_playlist_of_another_user(client):
     assert len(playlist["songs"]) == 0
 
 
-def test_admin_can_delete_playlist_of_another_user(client):
+def test_admin_can_delete_playlist_of_another_user(client, custom_requests_mock):
     post_user(client, uid="user_playlist_owner", user_name="Paquito")
     post_user(client, uid="admin_id", user_name="Admin")
 
@@ -503,7 +523,7 @@ def test_admin_can_delete_playlist_of_another_user(client):
     assert response_get.status_code == 404
 
 
-def test_admin_can_edit_playlist_of_another_user(client):
+def test_admin_can_edit_playlist_of_another_user(client, custom_requests_mock):
 
     post_user(client, uid="user_playlist_owner", user_name="Paquito")
     post_user(client, uid="admin_id", user_name="Admin")

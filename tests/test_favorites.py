@@ -2,7 +2,7 @@ from tests import utils
 from tests.utils import API_VERSION_PREFIX
 
 
-def test_get_favorite_songs_with_zero_favorite_songs(client):
+def test_get_favorite_songs_with_zero_favorite_songs(client, custom_requests_mock):
     utils.post_user(client, "user_id", "user_name")
     response_get = client.get(
         f"{API_VERSION_PREFIX}/users/user_id/favorites/songs",
@@ -15,7 +15,7 @@ def test_get_favorite_songs_with_zero_favorite_songs(client):
     assert response_get.json() == []
 
 
-def test_get_favorite_songs_with_one_favorite_songs(client):
+def test_get_favorite_songs_with_one_favorite_songs(client, custom_requests_mock):
     utils.post_user(client, "user_id", "user_name")
     song_id = utils.post_song(client, uid="user_id").json()["id"]
     response_post = utils.add_song_to_favorites(client, uid="user_id", song_id=song_id)
@@ -30,7 +30,7 @@ def test_get_favorite_songs_with_one_favorite_songs(client):
     assert songs[0]["name"] == "song_name"
 
 
-def test_get_favorite_songs_with_two_favorite_songs(client):
+def test_get_favorite_songs_with_two_favorite_songs(client, custom_requests_mock):
     utils.post_user(client, "user_id", "user_name")
     song_id_1 = utils.post_song(client, name="first_song", uid="user_id").json()["id"]
     song_id_2 = utils.post_song(client, name="second_song", uid="user_id").json()["id"]
@@ -52,7 +52,7 @@ def test_get_favorite_songs_with_two_favorite_songs(client):
     assert songs[1]["name"] == "second_song"
 
 
-def test_get_favorite_songs_only_returns_favorite_songs(client):
+def test_get_favorite_songs_only_returns_favorite_songs(client, custom_requests_mock):
     utils.post_user(client, "user_id", "user_name")
     song_id_1 = utils.post_song(client, name="first_song", uid="user_id").json()["id"]
     utils.post_song(client, name="second_song", uid="user_id")
@@ -66,7 +66,7 @@ def test_get_favorite_songs_only_returns_favorite_songs(client):
     assert songs[0]["name"] == "first_song"
 
 
-def test_get_favorite_songs_with_blocked_song(client):
+def test_get_favorite_songs_with_blocked_song(client, custom_requests_mock):
     utils.post_user(client, "user_id", "user_name")
     song_id_1 = utils.post_song(client, name="first_song", uid="user_id").json()["id"]
     song_id_2 = utils.post_song(client, name="second_song", uid="user_id").json()["id"]
@@ -88,7 +88,7 @@ def test_get_favorite_songs_with_blocked_song(client):
     assert songs[0]["name"] == "second_song"
 
 
-def test_remove_song_from_favorites(client):
+def test_remove_song_from_favorites(client, custom_requests_mock):
     utils.post_user(client, "user_id", "user_name")
     song_id = utils.post_song(client, uid="user_id").json()["id"]
     response_post = utils.add_song_to_favorites(client, uid="user_id", song_id=song_id)
@@ -113,7 +113,7 @@ def test_remove_song_from_favorites(client):
     assert len(songs) == 0
 
 
-def test_remove_song_from_favorites_does_not_delete_song(client):
+def test_remove_song_from_favorites_does_not_delete_song(client, custom_requests_mock):
     utils.post_user(client, "user_id", "user_name")
     song_id = utils.post_song(client, uid="user_id").json()["id"]
     utils.add_song_to_favorites(client, uid="user_id", song_id=song_id)
@@ -127,7 +127,9 @@ def test_remove_song_from_favorites_does_not_delete_song(client):
     assert song["name"] == "song_name"
 
 
-def test_remove_song_from_favorites_removes_only_expected_song(client):
+def test_remove_song_from_favorites_removes_only_expected_song(
+    client, custom_requests_mock
+):
     utils.post_user(client, "user_id", "user_name")
     song_id_1 = utils.post_song(client, name="first_song", uid="user_id").json()["id"]
     song_id_2 = utils.post_song(client, name="second_song", uid="user_id").json()["id"]
@@ -148,7 +150,9 @@ def test_remove_song_from_favorites_removes_only_expected_song(client):
     assert songs[0]["name"] == "second_song"
 
 
-def test_remove_song_from_favorites_song_that_is_not_in_favorites(client):
+def test_remove_song_from_favorites_song_that_is_not_in_favorites(
+    client, custom_requests_mock
+):
     utils.post_user(client, "user_id", "user_name")
     song_id_1 = utils.post_song(client, name="first_song", uid="user_id").json()["id"]
     song_id_2 = utils.post_song(client, name="second_song", uid="user_id").json()["id"]
@@ -168,7 +172,7 @@ def test_remove_song_from_favorites_song_that_is_not_in_favorites(client):
     assert songs[0]["name"] == "first_song"
 
 
-def test_user_cann_add_to_favorites_songs_of_another_user(client):
+def test_user_cann_add_to_favorites_songs_of_another_user(client, custom_requests_mock):
     utils.post_user(client, "creator_id", "creator_name")
     utils.post_user(client, "listener_id", "listener_name")
     song_id = utils.post_song(client, name="song_by_creator", uid="creator_id").json()[
@@ -185,7 +189,7 @@ def test_user_cann_add_to_favorites_songs_of_another_user(client):
     assert songs[0]["name"] == "song_by_creator"
 
 
-def test_admin_can_add_song_to_favorites_even_if_blocked(client):
+def test_admin_can_add_song_to_favorites_even_if_blocked(client, custom_requests_mock):
     utils.post_user(client, "user_id", "user_name")
     song_id = utils.post_song(client, name="song_name", uid="user_id").json()["id"]
 
@@ -202,7 +206,7 @@ def test_admin_can_add_song_to_favorites_even_if_blocked(client):
     assert songs[0]["name"] == "song_name"
 
 
-def test_get_favorite_albums_with_zero_favorite_albums(client):
+def test_get_favorite_albums_with_zero_favorite_albums(client, custom_requests_mock):
     utils.post_user(client, "user_id", "user_name")
     response_get = utils.get_favorite_albums(client, uid="user_id")
     albums = response_get.json()
@@ -211,7 +215,7 @@ def test_get_favorite_albums_with_zero_favorite_albums(client):
     assert len(albums) == 0
 
 
-def test_get_favorite_albums_with_one_favorite_album(client):
+def test_get_favorite_albums_with_one_favorite_album(client, custom_requests_mock):
     utils.post_user(client, "user_id", "user_name")
     album_id = utils.post_album(client, name="album_name", uid="user_id").json()["id"]
     response_post = utils.add_album_to_favorites(
@@ -230,7 +234,9 @@ def test_get_favorite_albums_with_one_favorite_album(client):
     assert albums[0]["scores_amount"] == 0
 
 
-def test_get_favorite_albums_with_one_favorite_album_with_one_song(client):
+def test_get_favorite_albums_with_one_favorite_album_with_one_song(
+    client, custom_requests_mock
+):
     utils.post_user(client, "user_id", "user_name")
     song_id = utils.post_song(client, name="song_name", uid="user_id").json()["id"]
     album_id = utils.post_album(
@@ -252,7 +258,7 @@ def test_get_favorite_albums_with_one_favorite_album_with_one_song(client):
 
 
 def test_get_favorite_albums_with_one_favorite_album_with_blocked_song_returns_empty_album(
-    client,
+    client, custom_requests_mock
 ):
     utils.post_user(client, "user_id", "user_name")
     song_id = utils.post_song(client, name="song_name", uid="user_id").json()["id"]
@@ -276,7 +282,7 @@ def test_get_favorite_albums_with_one_favorite_album_with_blocked_song_returns_e
 
 
 def test_get_favorite_albums_with_blocked_and_non_blocked_song_returns_album_with_non_blocked_song(
-    client,
+    client, custom_requests_mock
 ):
     utils.post_user(client, "user_id", "user_name")
     song_id_1 = utils.post_song(client, name="song_1", uid="user_id").json()["id"]
@@ -300,7 +306,9 @@ def test_get_favorite_albums_with_blocked_and_non_blocked_song_returns_album_wit
     assert albums[0]["songs"][0]["name"] == "song_2"
 
 
-def test_get_favorite_albums_with_two_albums_returns_only_favorite_albums(client):
+def test_get_favorite_albums_with_two_albums_returns_only_favorite_albums(
+    client, custom_requests_mock
+):
     utils.post_user(client, "user_id", "user_name")
     album_id_1 = utils.post_album(
         client, name="album_1", uid="user_id", songs_ids=[]
@@ -320,7 +328,7 @@ def test_get_favorite_albums_with_two_albums_returns_only_favorite_albums(client
 
 
 def test_get_favorite_albums_with_two_albums_returns_only_favorite_albums_with_one_song(
-    client,
+    client, custom_requests_mock
 ):
     utils.post_user(client, "user_id", "user_name")
     song_id = utils.post_song(client, name="song_name", uid="user_id").json()["id"]
@@ -342,7 +350,9 @@ def test_get_favorite_albums_with_two_albums_returns_only_favorite_albums_with_o
     assert albums[0]["songs"][0]["name"] == "song_name"
 
 
-def test_get_favorite_albums_does_not_return_blocked_albums(client):
+def test_get_favorite_albums_does_not_return_blocked_albums(
+    client, custom_requests_mock
+):
     utils.post_user(client, "user_id", "user_name")
     song_id = utils.post_song(client, name="song_name", uid="user_id").json()["id"]
     album_id_1 = utils.post_album(
@@ -369,7 +379,7 @@ def test_get_favorite_albums_does_not_return_blocked_albums(client):
     assert albums[0]["name"] == "album_2"
 
 
-def test_remove_album_from_favorites(client):
+def test_remove_album_from_favorites(client, custom_requests_mock):
     utils.post_user(client, "user_id", "user_name")
     album_id = utils.post_album(
         client, name="album_name", uid="user_id", songs_ids=[]
@@ -388,7 +398,9 @@ def test_remove_album_from_favorites(client):
     assert len(albums) == 0
 
 
-def test_remove_album_from_favorites_album_not_in_favorites(client):
+def test_remove_album_from_favorites_album_not_in_favorites(
+    client, custom_requests_mock
+):
     utils.post_user(client, "user_id", "user_name")
     album_id = utils.post_album(
         client, name="album_name", uid="user_id", songs_ids=[]
@@ -400,14 +412,14 @@ def test_remove_album_from_favorites_album_not_in_favorites(client):
     assert response_delete.status_code == 404
 
 
-def test_get_favorite_playlists_with_zero_playlists(client):
+def test_get_favorite_playlists_with_zero_playlists(client, custom_requests_mock):
     utils.post_user(client, "user_id", "user_name")
     response_get = utils.get_favorite_playlists(client, uid="user_id")
     assert response_get.status_code == 200
     assert len(response_get.json()) == 0
 
 
-def test_get_favorite_playlists_with_one_playlist(client):
+def test_get_favorite_playlists_with_one_playlist(client, custom_requests_mock):
     utils.post_user(client, "user_id", "user_name")
     playlist_id = utils.post_playlist(
         client, playlist_name="playlist_name", uid="user_id"
@@ -425,7 +437,9 @@ def test_get_favorite_playlists_with_one_playlist(client):
     assert playlists[0]["name"] == "playlist_name"
 
 
-def test_get_favorite_playlists_returns_only_favorite_playlists(client):
+def test_get_favorite_playlists_returns_only_favorite_playlists(
+    client, custom_requests_mock
+):
     utils.post_user(client, "user_id", "user_name")
     playlist_id_1 = utils.post_playlist(
         client, playlist_name="playlist_name_1", uid="user_id"
@@ -441,7 +455,9 @@ def test_get_favorite_playlists_returns_only_favorite_playlists(client):
     assert playlists[0]["name"] == "playlist_name_1"
 
 
-def test_cannot_add_blocked_playlist_to_favorites_from_another_user(client):
+def test_cannot_add_blocked_playlist_to_favorites_from_another_user(
+    client, custom_requests_mock
+):
     utils.post_user(client, "user_id", "user_name")
     utils.post_user(client, "user_id_2", "user_name_2")
     playlist_id = utils.post_playlist(
@@ -456,7 +472,9 @@ def test_cannot_add_blocked_playlist_to_favorites_from_another_user(client):
     assert response_post.status_code == 404
 
 
-def test_get_favorite_playlists_does_not_return_blocked_playlists(client):
+def test_get_favorite_playlists_does_not_return_blocked_playlists(
+    client, custom_requests_mock
+):
     utils.post_user(client, "user_id", "user_name")
     playlist_id_1 = utils.post_playlist(
         client, playlist_name="playlist_name_1", uid="user_id"
@@ -477,7 +495,9 @@ def test_get_favorite_playlists_does_not_return_blocked_playlists(client):
     assert playlists[0]["name"] == "playlist_name_2"
 
 
-def test_admin_can_add_playlist_to_favorites_even_if_blocked(client):
+def test_admin_can_add_playlist_to_favorites_even_if_blocked(
+    client, custom_requests_mock
+):
     utils.post_user(client, "admin_id", "admin_name")
     utils.post_user(client, "creator_id", "creator_name")
     playlist_id = utils.post_playlist(
@@ -498,7 +518,7 @@ def test_admin_can_add_playlist_to_favorites_even_if_blocked(client):
     assert playlists[0]["name"] == "playlist_name"
 
 
-def test_remove_playlist_from_favorites(client):
+def test_remove_playlist_from_favorites(client, custom_requests_mock):
     utils.post_user(client, "user_id", "user_name")
     playlist_id = utils.post_playlist(
         client, playlist_name="playlist_name", uid="user_id"
@@ -517,7 +537,9 @@ def test_remove_playlist_from_favorites(client):
     assert len(playlists) == 0
 
 
-def test_remove_playlist_from_favorites_playlist_not_found_in_favorites(client):
+def test_remove_playlist_from_favorites_playlist_not_found_in_favorites(
+    client, custom_requests_mock
+):
     utils.post_user(client, "user_id", "user_name")
     playlist_id = utils.post_playlist(
         client, playlist_name="playlist_name", uid="user_id"
@@ -529,8 +551,9 @@ def test_remove_playlist_from_favorites_playlist_not_found_in_favorites(client):
     assert response_delete.status_code == 404
 
 
-"""
-def test_get_favorite_playlists_return_playlist_without_blocked_songs(client):
+def test_get_favorite_playlists_return_playlist_without_blocked_songs(
+    client, custom_requests_mock
+):
     utils.post_user(client, "creator_id", "creator_name")
     utils.post_user(client, "user_id", "user_name")
     song_id = utils.post_song(client, uid="creator_id", name="song_name").json()["id"]
@@ -550,4 +573,3 @@ def test_get_favorite_playlists_return_playlist_without_blocked_songs(client):
     assert len(playlists) == 1
     assert playlists[0]["name"] == "playlist_name"
     assert len(playlists[0]["songs"]) == 0
-"""

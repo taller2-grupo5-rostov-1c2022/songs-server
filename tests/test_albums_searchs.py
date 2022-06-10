@@ -2,7 +2,7 @@ from tests.utils import API_VERSION_PREFIX
 from tests.utils import post_album, post_user, post_song, post_album_with_song
 
 
-def test_search_album_by_artist_without_created_songs(client):
+def test_search_album_by_artist_without_created_songs(client, custom_requests_mock):
     post_user(client, "user_id", "user_name")
 
     response = client.get(
@@ -12,7 +12,7 @@ def test_search_album_by_artist_without_created_songs(client):
     assert len(response.json()) == 0
 
 
-def test_search_album_by_artist_without_results(client):
+def test_search_album_by_artist_without_results(client, custom_requests_mock):
     post_user(client, "user_id", "user_name")
     song_id = post_song(client, uid="user_id", artists=["artist_name"]).json()["id"]
 
@@ -26,7 +26,7 @@ def test_search_album_by_artist_without_results(client):
     assert len(response.json()) == 0
 
 
-def test_search_album_by_artist_exact_name_one_result(client):
+def test_search_album_by_artist_exact_name_one_result(client, custom_requests_mock):
     post_user(client, "user_id", "user_name")
     song_id = post_song(
         client, uid="user_id", name="my_song_name", artists=["artist_name"]
@@ -44,7 +44,7 @@ def test_search_album_by_artist_exact_name_one_result(client):
     assert response.json()[0]["songs"][0]["name"] == "my_song_name"
 
 
-def test_search_album_by_artist_song_with_many_artists(client):
+def test_search_album_by_artist_song_with_many_artists(client, custom_requests_mock):
     post_user(client, "user_id", "user_name")
     song_id_1 = post_song(
         client,
@@ -68,7 +68,7 @@ def test_search_album_by_artist_song_with_many_artists(client):
     assert len(response.json()) == 1
 
 
-def test_search_album_by_artist_substring_one_result(client):
+def test_search_album_by_artist_substring_one_result(client, custom_requests_mock):
     post_user(client, "user_id", "user_name")
     song_id = post_song(client, uid="user_id", artists=["artist_name"]).json()["id"]
     post_album(client, uid="user_id", songs_ids=[song_id])
@@ -81,7 +81,9 @@ def test_search_album_by_artist_substring_one_result(client):
     assert len(response.json()) == 1
 
 
-def test_search_album_by_artist_case_insensitive_one_result(client):
+def test_search_album_by_artist_case_insensitive_one_result(
+    client, custom_requests_mock
+):
     post_user(client, "user_id", "user_name")
     song_id = post_song(client, uid="user_id", artists=["artist_name"]).json()["id"]
     post_album(client, uid="user_id", songs_ids=[song_id])
@@ -93,7 +95,9 @@ def test_search_album_by_artist_case_insensitive_one_result(client):
     assert len(response.json()) == 1
 
 
-def test_search_album_by_artist_substring_case_insensitive_one_result(client):
+def test_search_album_by_artist_substring_case_insensitive_one_result(
+    client, custom_requests_mock
+):
     post_user(client, "user_id", "user_name")
     song_id = post_song(client, uid="user_id", artists=["artist_name"]).json()["id"]
     post_album(client, uid="user_id", songs_ids=[song_id])
@@ -105,7 +109,9 @@ def test_search_album_by_artist_substring_case_insensitive_one_result(client):
     assert len(response.json()) == 1
 
 
-def test_search_album_by_artist_substring_case_insensitive_many_results(client):
+def test_search_album_by_artist_substring_case_insensitive_many_results(
+    client, custom_requests_mock
+):
     post_user(client, "user_id", "user_name")
     song_id_1 = post_song(
         client, uid="user_id", name="first_song", artists=["artist_name", "bar"]
@@ -130,7 +136,7 @@ def test_search_album_by_artist_substring_case_insensitive_many_results(client):
     assert "third_album" != response.json()[1]["name"]
 
 
-def test_search_album_by_genre_without_created_songs(client):
+def test_search_album_by_genre_without_created_songs(client, custom_requests_mock):
     post_user(client, "user_id", "user_name")
 
     response = client.get(
@@ -140,7 +146,7 @@ def test_search_album_by_genre_without_created_songs(client):
     assert len(response.json()) == 0
 
 
-def test_search_album_by_genre_without_results(client):
+def test_search_album_by_genre_without_results(client, custom_requests_mock):
     post_user(client, "user_id", "user_name")
     song_id = post_song(client, uid="user_id", genre="my_genre").json()["id"]
     post_album(client, uid="user_id", genre="my_genre", songs_ids=[song_id])
@@ -153,7 +159,7 @@ def test_search_album_by_genre_without_results(client):
     assert len(response.json()) == 0
 
 
-def test_search_album_by_genre_exact_name_one_result(client):
+def test_search_album_by_genre_exact_name_one_result(client, custom_requests_mock):
     post_user(client, "user_id", "user_name")
     post_album_with_song(
         client, uid="user_id", album_genre="my_album_genre", album_name="my_album_name"
@@ -176,7 +182,7 @@ def test_search_album_by_genre_exact_name_one_result(client):
     assert response.json()[0]["genre"] == "my_album_genre"
 
 
-def test_search_album_by_genre_ignores_songs_genre(client):
+def test_search_album_by_genre_ignores_songs_genre(client, custom_requests_mock):
     post_user(client, "user_id", "user_name")
     post_album_with_song(
         client, uid="user_id", album_genre="my_album_genre", album_name="my_album_name"
@@ -189,7 +195,7 @@ def test_search_album_by_genre_ignores_songs_genre(client):
     assert len(response.json()) == 0
 
 
-def test_search_album_by_genre_substring_one_result(client):
+def test_search_album_by_genre_substring_one_result(client, custom_requests_mock):
     post_user(client, "user_id", "user_name")
     post_album_with_song(
         client, uid="user_id", album_name="my_album_name", album_genre="my_genre"
@@ -207,7 +213,9 @@ def test_search_album_by_genre_substring_one_result(client):
     assert response.json()[0]["name"] == "my_album_name"
 
 
-def test_search_album_by_genre_case_insensitive_one_result(client):
+def test_search_album_by_genre_case_insensitive_one_result(
+    client, custom_requests_mock
+):
     post_user(client, "user_id", "user_name")
     post_album_with_song(
         client, uid="user_id", album_name="my_album_name", album_genre="my_genre"
@@ -224,7 +232,9 @@ def test_search_album_by_genre_case_insensitive_one_result(client):
     assert len(response.json()) == 1
 
 
-def test_search_album_by_genre_substring_case_insensitive_one_result(client):
+def test_search_album_by_genre_substring_case_insensitive_one_result(
+    client, custom_requests_mock
+):
     post_user(client, "user_id", "user_name")
     post_album_with_song(
         client, uid="user_id", album_name="my_album_name", album_genre="my_genre"
@@ -241,7 +251,9 @@ def test_search_album_by_genre_substring_case_insensitive_one_result(client):
     assert len(response.json()) == 1
 
 
-def test_search_album_by_genre_substring_case_insensitive_many_results(client):
+def test_search_album_by_genre_substring_case_insensitive_many_results(
+    client, custom_requests_mock
+):
     post_user(client, "user_id", "user_name")
     post_album_with_song(client, uid="user_id", album_genre="my_genre")
     post_album_with_song(client, uid="user_id", album_genre="MY_GENRE")
@@ -255,7 +267,7 @@ def test_search_album_by_genre_substring_case_insensitive_many_results(client):
     assert len(response.json()) == 2
 
 
-def test_search_album_by_subscription_without_songs(client):
+def test_search_album_by_subscription_without_songs(client, custom_requests_mock):
     response = client.get(
         f"{API_VERSION_PREFIX}/albums/?sub_level=0", headers={"api_key": "key"}
     )
@@ -264,7 +276,7 @@ def test_search_album_by_subscription_without_songs(client):
     assert len(response.json()) == 0
 
 
-def test_search_album_by_subscription_without_results(client):
+def test_search_album_by_subscription_without_results(client, custom_requests_mock):
     post_user(client, "user_id", "user_name")
     post_album_with_song(client, uid="user_id", album_sub_level=0)
 
@@ -276,7 +288,7 @@ def test_search_album_by_subscription_without_results(client):
     assert len(response.json()) == 0
 
 
-def test_search_album_by_subscription_one_result(client):
+def test_search_album_by_subscription_one_result(client, custom_requests_mock):
     post_user(client, "user_id", "user_name")
     post_album_with_song(
         client, uid="user_id", album_name="my_album_name", album_sub_level=1
@@ -294,7 +306,9 @@ def test_search_album_by_subscription_one_result(client):
     assert response.json()[0]["name"] == "another_album_name"
 
 
-def test_search_album_by_subscription_ignores_song_sub_level(client):
+def test_search_album_by_subscription_ignores_song_sub_level(
+    client, custom_requests_mock
+):
     post_user(client, "user_id", "user_name")
     post_album_with_song(
         client,
@@ -312,7 +326,7 @@ def test_search_album_by_subscription_ignores_song_sub_level(client):
     assert len(response.json()) == 0
 
 
-def test_search_album_multiple_queries(client):
+def test_search_album_multiple_queries(client, custom_requests_mock):
     post_user(client, "user_id", "user_name")
     post_album_with_song(
         client,
@@ -344,7 +358,7 @@ def test_search_album_multiple_queries(client):
     assert response.json()[0]["name"] == "expected_album"
 
 
-def test_search_album_by_name(client):
+def test_search_album_by_name(client, custom_requests_mock):
     post_user(client, "album_creator_id", "album_creator_name")
     post_album(client, name="my_album", uid="album_creator_id")
 

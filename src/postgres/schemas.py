@@ -149,7 +149,9 @@ class PlaylistUpdate(ResourceUpdate):
 class UserBase(BaseModel):
     id: str
     name: str
-    wallet: Optional[str] = None
+    wallet: str
+    sub_level: int
+    sub_expires: Optional[datetime]
     location: str
     interests: str
     pfp: Optional[str] = None
@@ -254,3 +256,13 @@ class StreamingBase(BaseModel):
     class Config:
         orm_mode = True
         getter_dict = StreamingGetter
+
+
+class SubLevelBase(BaseModel):
+    sub_level: int
+
+
+class SubscriptionBase(BaseModel):
+    level: int
+    name: str
+    price: str

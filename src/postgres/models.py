@@ -1,4 +1,4 @@
-from sqlalchemy import Column, ForeignKey, Integer, String, TIMESTAMP, Boolean
+from sqlalchemy import Column, ForeignKey, Integer, String, TIMESTAMP, Boolean, DateTime
 from sqlalchemy.orm import relationship
 from sqlalchemy import Table
 
@@ -84,6 +84,8 @@ class UserModel(Base):
 
     id = Column(String, primary_key=True, index=True, autoincrement=False)
     name = Column(String, index=True)
+    sub_level = Column(Integer, nullable=False)
+    sub_expires = Column(DateTime, nullable=True)
 
     wallet = Column(String, nullable=True, index=True)
     location = Column(String, nullable=False, index=True)

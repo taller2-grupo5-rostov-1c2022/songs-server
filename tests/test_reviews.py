@@ -9,7 +9,7 @@ from tests.utils import (
 )
 
 
-def test_post_review(client):
+def test_post_review(client, custom_requests_mock):
     post_user(client, uid="creator_id", user_name="creator_name")
     post_user(client, uid="reviewer_id", user_name="reviewer_name")
     album_id = post_album(client, uid="creator_id").json()["id"]
@@ -27,7 +27,7 @@ def test_post_review(client):
     assert review["reviewer"]["name"] == "reviewer_name"
 
 
-def test_get_reviews_with_zero_reviews(client):
+def test_get_reviews_with_zero_reviews(client, custom_requests_mock):
     post_user(client, uid="creator_id", user_name="creator_name")
     post_user(client, uid="reviewer_id", user_name="reviewer_name")
     album_id = post_album(client, uid="creator_id").json()["id"]
@@ -42,7 +42,7 @@ def test_get_reviews_with_zero_reviews(client):
     assert len(reviews) == 0
 
 
-def test_get_reviews_with_one_review(client):
+def test_get_reviews_with_one_review(client, custom_requests_mock):
     post_user(client, uid="creator_id", user_name="creator_name")
     post_user(client, uid="reviewer_id", user_name="reviewer_name")
     album_id = post_album(client, uid="creator_id").json()["id"]
@@ -70,7 +70,7 @@ def test_get_reviews_with_one_review(client):
     assert reviews[0]["reviewer"]["name"] == "reviewer_name"
 
 
-def test_get_reviews_with_many_reviews(client):
+def test_get_reviews_with_many_reviews(client, custom_requests_mock):
     post_user(client, uid="creator_id", user_name="creator_name")
     post_user(client, uid="bad_user_id", user_name="bad_reviewer_name")
     post_user(client, uid="nice_user_id", user_name="nice_reviewer_name")
@@ -102,7 +102,7 @@ def test_get_reviews_with_many_reviews(client):
     assert reviews[1]["reviewer"]["name"] == "nice_reviewer_name"
 
 
-def test_user_cannot_post_more_than_one_review(client):
+def test_user_cannot_post_more_than_one_review(client, custom_requests_mock):
     post_user(client, uid="creator_id", user_name="creator_name")
     post_user(client, uid="reviewer_id", user_name="reviewer_name")
 
@@ -117,7 +117,7 @@ def test_user_cannot_post_more_than_one_review(client):
     assert response_post.status_code == 403
 
 
-def test_post_review_without_text(client):
+def test_post_review_without_text(client, custom_requests_mock):
     post_user(client, uid="creator_id", user_name="creator_name")
     post_user(client, uid="reviewer_id", user_name="reviewer_name")
 
@@ -132,7 +132,7 @@ def test_post_review_without_text(client):
     assert review["score"] == 5
 
 
-def test_post_review_without_score(client):
+def test_post_review_without_score(client, custom_requests_mock):
     post_user(client, uid="creator_id", user_name="creator_name")
     post_user(client, uid="reviewer_id", user_name="reviewer_name")
 
@@ -147,7 +147,7 @@ def test_post_review_without_score(client):
     assert review["text"] == "my text"
 
 
-def test_post_review_without_text_or_score_should_fail(client):
+def test_post_review_without_text_or_score_should_fail(client, custom_requests_mock):
     post_user(client, uid="creator_id", user_name="creator_name")
     post_user(client, uid="reviewer_id", user_name="reviewer_name")
 
@@ -159,7 +159,7 @@ def test_post_review_without_text_or_score_should_fail(client):
     assert response_post.status_code == 422
 
 
-def test_post_review_does_not_affect_another_album(client):
+def test_post_review_does_not_affect_another_album(client, custom_requests_mock):
     post_user(client, uid="creator_id", user_name="creator_name")
     post_user(client, uid="reviewer_id", user_name="reviewer_name")
 
@@ -178,7 +178,7 @@ def test_post_review_does_not_affect_another_album(client):
     assert len(reviews) == 0
 
 
-def test_edit_review_without_review_should_fail(client):
+def test_edit_review_without_review_should_fail(client, custom_requests_mock):
     post_user(client, uid="creator_id", user_name="creator_name")
     post_user(client, uid="reviewer_id", user_name="reviewer_name")
 
@@ -192,7 +192,7 @@ def test_edit_review_without_review_should_fail(client):
     assert response_put.status_code == 404
 
 
-def test_edit_review_in_album_with_one_review(client):
+def test_edit_review_in_album_with_one_review(client, custom_requests_mock):
     post_user(client, uid="creator_id", user_name="creator_name")
     post_user(client, uid="reviewer_id", user_name="reviewer_name")
 
@@ -219,7 +219,7 @@ def test_edit_review_in_album_with_one_review(client):
     assert reviews[0]["score"] == 5
 
 
-def test_edit_review_in_album_with_many_reviews(client):
+def test_edit_review_in_album_with_many_reviews(client, custom_requests_mock):
     post_user(client, uid="creator_id", user_name="creator_name")
     post_user(client, uid="first_reviewer_id", user_name="first_reviewer_name")
     post_user(client, uid="second_reviewer_id", user_name="second_reviewer_name")
@@ -251,7 +251,7 @@ def test_edit_review_in_album_with_many_reviews(client):
     assert review["score"] == 5
 
 
-def test_cannot_edit_review_of_another_user(client):
+def test_cannot_edit_review_of_another_user(client, custom_requests_mock):
     post_user(client, uid="creator_id", user_name="creator_name")
     post_user(client, uid="first_reviewer_id", user_name="first_reviewer_name")
     post_user(client, uid="second_reviewer_id", user_name="second_reviewer_name")
@@ -282,7 +282,9 @@ def test_cannot_edit_review_of_another_user(client):
     assert review["score"] == 2
 
 
-def test_delete_review_in_album_with_zero_reviews_should_fail(client):
+def test_delete_review_in_album_with_zero_reviews_should_fail(
+    client, custom_requests_mock
+):
     post_user(client, uid="creator_id", user_name="creator_name")
     post_user(client, uid="reviewer_id", user_name="reviewer_name")
 
@@ -295,7 +297,7 @@ def test_delete_review_in_album_with_zero_reviews_should_fail(client):
     assert response_delete.status_code == 404
 
 
-def test_delete_review_in_album_with_review(client):
+def test_delete_review_in_album_with_review(client, custom_requests_mock):
     post_user(client, uid="creator_id", user_name="creator_name")
     post_user(client, uid="reviewer_id", user_name="reviewer_name")
 
@@ -319,7 +321,9 @@ def test_delete_review_in_album_with_review(client):
     assert len(reviews) == 0
 
 
-def test_post_review_in_album_with_blocked_songs_should_not_remove_songs(client):
+def test_post_review_in_album_with_blocked_songs_should_not_remove_songs(
+    client, custom_requests_mock
+):
     # This is a white box test
 
     post_user(client, uid="creator_id", user_name="creator_name")
@@ -342,7 +346,7 @@ def test_post_review_in_album_with_blocked_songs_should_not_remove_songs(client)
     assert response_get.status_code == 200
 
 
-def test_post_one_review_affects_album_score(client):
+def test_post_one_review_affects_album_score(client, custom_requests_mock):
     post_user(client, uid="creator_id", user_name="creator_name")
     post_user(client, uid="reviewer_id", user_name="reviewer_name")
 
@@ -358,7 +362,7 @@ def test_post_one_review_affects_album_score(client):
     assert album["score"] == 2
 
 
-def test_post_many_reviews_affects_score(client):
+def test_post_many_reviews_affects_score(client, custom_requests_mock):
     post_user(client, uid="creator_id", user_name="creator_name")
     post_user(client, uid="first_reviewer_id", user_name="first_reviewer_name")
     post_user(client, uid="second_reviewer_id", user_name="second_reviewer_name")
@@ -376,7 +380,9 @@ def test_post_many_reviews_affects_score(client):
     assert album["score"] == 3.5
 
 
-def test_user_with_two_reviews_in_different_albums_edits_one_review(client):
+def test_user_with_two_reviews_in_different_albums_edits_one_review(
+    client, custom_requests_mock
+):
     post_user(client, uid="creator_id", user_name="creator_name")
     post_user(client, uid="reviewer_id", user_name="reviewer_name")
 

@@ -12,7 +12,9 @@ import datetime
 
 from src.repositories import (
     user_utils,
+    subscription_utils,
 )
+from src.repositories.subscription_utils import SUB_LEVEL_FREE
 
 router = APIRouter(tags=["users"])
 
@@ -33,7 +35,7 @@ def get_user_by_id(
     uid: str,
     pdb: Session = Depends(get_db),
 ):
-    """Returns an user by its id or 404 if not found"""
+    """Returns a user by its id or 404 if not found"""
     user = pdb.get(models.UserModel, uid)
 
     if user is None:
@@ -64,7 +66,6 @@ def get_my_user(
 def post_user(
     uid: str = Header(...),
     name: str = Form(...),
-    wallet: str = Form(None),
     location: str = Form(...),
     interests: str = Form(...),
     img: UploadFile = None,
@@ -73,10 +74,15 @@ def post_user(
     auth=Depends(get_auth),
 ):
     """Creates a user and returns its id"""
+
+    wallet = subscription_utils.create_wallet(uid)
+
     new_user = models.UserModel(
         id=uid,
         name=name,
+        sub_level=SUB_LEVEL_FREE,
         wallet=wallet,
+        sub_expires=subscription_utils.get_days_to_expire(SUB_LEVEL_FREE),
         location=location,
         interests=interests,
     )
@@ -109,7 +115,6 @@ def put_user(
     uid_to_modify: str,
     uid: str = Header(...),
     name: str = Form(None),
-    wallet: str = Form(None),
     location: str = Form(None),
     interests: str = Form(None),
     img: UploadFile = None,
@@ -134,9 +139,6 @@ def put_user(
     if name is not None:
         user.name = name
         auth.update_user(uid=uid, display_name=name)
-
-    if wallet is not None:
-        user.wallet = wallet
 
     if location is not None:
         user.location = location

@@ -7,23 +7,23 @@ from urllib.parse import urlparse
 from urllib.parse import parse_qs
 
 
-def test_unauthorized_get(client):
+def test_unauthorized_get(client, custom_requests_mock):
     response = client.get(API_VERSION_PREFIX + "/albums/")
     assert response.status_code == 403
 
 
-def test_get_albums(client):
+def test_get_albums(client, custom_requests_mock):
     response = client.get(API_VERSION_PREFIX + "/albums/", headers={"api_key": "key"})
     assert response.status_code == 200
 
 
-def test_get_album_by_invalid_id(client):
+def test_get_album_by_invalid_id(client, custom_requests_mock):
     response = client.get(API_VERSION_PREFIX + "/albums/5", headers={"api_key": "key"})
 
     assert response.status_code == 404
 
 
-def test_get_album_of_user_without_albums(client):
+def test_get_album_of_user_without_albums(client, custom_requests_mock):
     post_user(client, "album_creator_id", "album_creator_name")
     response = client.get(
         API_VERSION_PREFIX + "/my_albums/",
@@ -33,7 +33,7 @@ def test_get_album_of_user_without_albums(client):
     assert len(response.json()) == 0
 
 
-def test_get_my_albums(client):
+def test_get_my_albums(client, custom_requests_mock):
     post_user(client, "album_creator_id", "album_creator_name")
 
     post_album(client)
@@ -52,7 +52,9 @@ def test_get_my_albums(client):
     assert len(response.json()) == 1
 
 
-def test_get_my_albums_does_not_return_albums_of_other_users(client):
+def test_get_my_albums_does_not_return_albums_of_other_users(
+    client, custom_requests_mock
+):
     post_user(client, "album_creator_id", "album_creator_name")
     post_user(client, "another_creator_id", "another_creator_name")
     post_album(client)
@@ -65,7 +67,7 @@ def test_get_my_albums_does_not_return_albums_of_other_users(client):
     assert len(response.json()) == 0
 
 
-def test_post_empty_album(client):
+def test_post_empty_album(client, custom_requests_mock):
     post_user(client, "album_creator_id", "album_creator_name")
     response_post = post_album(client)
     assert response_post.status_code == 200
@@ -82,12 +84,12 @@ def test_post_empty_album(client):
     assert response_get.json()["songs"] == []
 
 
-def test_post_album_of_invalid_user_should_fail(client):
+def test_post_album_of_invalid_user_should_fail(client, custom_requests_mock):
     response = post_album(client, "invalid_creator_id")
     assert response.status_code == 404
 
 
-def test_post_album_with_song(client):
+def test_post_album_with_song(client, custom_requests_mock):
     post_user(client, "album_creator_id", "album_creator_name")
     song_id = post_song(client, "album_creator_id").json()["id"]
 
@@ -106,7 +108,7 @@ def test_post_album_with_song(client):
     assert response_get.json()["sub_level"] == 1
 
 
-def test_post_album_associates_song_to_such_album(client):
+def test_post_album_associates_song_to_such_album(client, custom_requests_mock):
     post_user(client, "album_creator_id", "album_creator_name")
     song_id = post_song(client, "album_creator_id").json()["id"]
     response_post_album = post_album(client, songs_ids=[song_id])
@@ -118,7 +120,9 @@ def test_post_album_associates_song_to_such_album(client):
     assert response_get_song.json()["album"]["name"] == "album_name"
 
 
-def test_post_album_with_songs_of_other_creator_should_fail(client):
+def test_post_album_with_songs_of_other_creator_should_fail(
+    client, custom_requests_mock
+):
     post_user(client, "album_creator_id", "album_creator_name")
     post_user(client, "song_creator_id", "song_creator_name")
     song_id = post_song(client).json()["id"]
@@ -126,7 +130,7 @@ def test_post_album_with_songs_of_other_creator_should_fail(client):
     assert response_post_album.status_code == 403
 
 
-def test_put_album(client):
+def test_put_album(client, custom_requests_mock):
     post_user(client, "album_creator_id", "album_creator_name")
     response_post = post_album(client)
     album_id = response_post.json()["id"]
@@ -150,7 +154,9 @@ def test_put_album(client):
     assert response_get.json()["description"] == "album_desc"
 
 
-def test_update_songs_in_album_with_songs_of_another_user_should_fail(client):
+def test_update_songs_in_album_with_songs_of_another_user_should_fail(
+    client, custom_requests_mock
+):
     post_user(client, "foo_id", "foo_name")
     post_user(client, "bar_id", "bar_name")
 
@@ -168,7 +174,7 @@ def test_update_songs_in_album_with_songs_of_another_user_should_fail(client):
     assert response_update_album.status_code == 403
 
 
-def test_update_songs_in_album(client):
+def test_update_songs_in_album(client, custom_requests_mock):
     post_user(client, "album_creator_id", "album_creator_name")
     song_id = post_song(client, uid="album_creator_id").json()["id"]
     album_id = post_album(client, songs_ids=[song_id]).json()["id"]
@@ -188,7 +194,7 @@ def test_update_songs_in_album(client):
     assert len(response_get.json()["songs"]) == 0
 
 
-def test_cannot_put_album_of_another_user(client):
+def test_cannot_put_album_of_another_user(client, custom_requests_mock):
     post_user(client, "album_creator_id", "album_creator_name")
     post_user(client, "another_creator_id", "another_creator_name")
 
@@ -203,7 +209,7 @@ def test_cannot_put_album_of_another_user(client):
     assert response_update.status_code == 403
 
 
-def test_delete_album(client):
+def test_delete_album(client, custom_requests_mock):
     post_user(client, "album_creator_id", "album_creator_name")
     response_post = post_album(client)
 
@@ -220,7 +226,7 @@ def test_delete_album(client):
     assert response_get.status_code == 404
 
 
-def test_cannot_delete_album_of_another_user(client):
+def test_cannot_delete_album_of_another_user(client, custom_requests_mock):
     post_user(client, "album_creator_id", "album_creator_name")
     post_user(client, "another_creator_id", "another_creator_name")
 
@@ -233,7 +239,7 @@ def test_cannot_delete_album_of_another_user(client):
     assert response_delete.status_code == 403
 
 
-def test_cannot_delete_album_that_does_not_exist(client):
+def test_cannot_delete_album_that_does_not_exist(client, custom_requests_mock):
     post_user(client, "album_creator_id", "album_creator_name")
 
     response_delete = client.delete(
@@ -244,7 +250,7 @@ def test_cannot_delete_album_that_does_not_exist(client):
     assert response_delete.status_code == 404
 
 
-def test_delete_album_should_not_delete_songs(client):
+def test_delete_album_should_not_delete_songs(client, custom_requests_mock):
     post_user(client, "album_creator_id", "album_creator_name")
     song_id = post_song(client, uid="album_creator_id").json()["id"]
     album_id = post_album(client, songs_ids=[song_id]).json()["id"]
@@ -264,7 +270,7 @@ def test_delete_album_should_not_delete_songs(client):
     assert response_get.json()["album"] is None
 
 
-def test_update_cover_updates_cover_timestamp(client):
+def test_update_cover_updates_cover_timestamp(client, custom_requests_mock):
     post_user(client, "album_creator_id", "album_creator_name")
     album_id = post_album(client).json()["id"]
 
@@ -297,7 +303,7 @@ def test_update_cover_updates_cover_timestamp(client):
     assert timestamp_1 != timestamp_2
 
 
-def test_add_song_to_album(client):
+def test_add_song_to_album(client, custom_requests_mock):
     post_user(client, "album_creator_id", "album_creator_name")
     song_id_1 = post_song(client, uid="album_creator_id", name="song1").json()["id"]
     song_id_2 = post_song(client, uid="album_creator_id", name="song2").json()["id"]
@@ -323,14 +329,14 @@ def test_add_song_to_album(client):
     assert len(album["songs"]) == 2
 
 
-def test_listener_cannot_post_album(client):
+def test_listener_cannot_post_album(client, custom_requests_mock):
     post_user(client, "listener_id", "listener_name")
 
     response_post = post_album(client, role="listener", uid="listener_id")
     assert response_post.status_code == 403
 
 
-def test_admin_can_delete_album_of_another_user(client):
+def test_admin_can_delete_album_of_another_user(client, custom_requests_mock):
     post_user(client, "album_creator_id", "album_creator_name")
     post_user(client, "admin_id", "admin_name")
 
@@ -344,7 +350,7 @@ def test_admin_can_delete_album_of_another_user(client):
     assert response_delete.status_code == 200
 
 
-def test_admin_can_edit_album_of_another_user(client):
+def test_admin_can_edit_album_of_another_user(client, custom_requests_mock):
     post_user(client, "album_creator_id", "album_creator_name")
     post_user(client, "admin_id", "admin_name")
 
