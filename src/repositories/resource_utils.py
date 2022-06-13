@@ -46,4 +46,4 @@ def retrieve_resource_creator(
             status_code=403, detail="You are not allowed to post content"
         )
 
-    return schemas.ResourceCreator(genre=genre, **resource.dict())
+    return schemas.ResourceCreatorBase(genre=genre, **resource.dict())

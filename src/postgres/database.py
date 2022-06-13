@@ -5,7 +5,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 import time
 
-from src.constants import TESTING
+from src.constants import TESTING, FAST
 from dotenv import load_dotenv
 
 load_dotenv()

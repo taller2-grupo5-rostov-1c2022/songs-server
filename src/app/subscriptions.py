@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Body
 from typing import List
 from src.repositories.subscription_utils import SUBSCRIPTIONS
 from src.repositories import subscription_utils

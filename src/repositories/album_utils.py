@@ -183,7 +183,7 @@ def retrieve_album_update(
 
 
 def retrieve_album(
-    resource_creator: schemas.ResourceCreator = Depends(
+    resource_creator: schemas.ResourceCreatorBase = Depends(
         resource_utils.retrieve_resource_creator
     ),
     songs_ids: List[int] = Depends(song_utils.retrieve_songs_ids),
@@ -201,11 +201,11 @@ def retrieve_album_info(album: Optional[int] = Form(None), pdb=Depends(get_db)):
 
 
 def retrieve_song(
-    resource_creator: schemas.ResourceCreator = Depends(
+    resource_creator: schemas.ResourceCreatorBase = Depends(
         resource_utils.retrieve_resource_creator
     ),
     artists_names: List[str] = Depends(artist_utils.retrieve_artists_names),
-    album_info: Optional[schemas.AlbumInfoBase] = Depends(retrieve_album_info),
+    album_info: Optional[schemas.AlbumBase] = Depends(retrieve_album_info),
     sub_level: Optional[int] = Form(None),
 ):
     if sub_level is None:

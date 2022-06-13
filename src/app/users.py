@@ -19,7 +19,7 @@ from src.repositories.subscription_utils import SUB_LEVEL_FREE
 router = APIRouter(tags=["users"])
 
 
-@router.get("/users/", response_model=List[schemas.UserBase])
+@router.get("/users/", response_model=List[schemas.User])
 def get_all_users(pdb: Session = Depends(get_db)):
     """Returns all users"""
     users = pdb.query(models.UserModel).all()
@@ -30,7 +30,7 @@ def get_all_users(pdb: Session = Depends(get_db)):
     return users
 
 
-@router.get("/users/{uid}", response_model=schemas.UserBase)
+@router.get("/users/{uid}", response_model=schemas.User)
 def get_user_by_id(
     uid: str,
     pdb: Session = Depends(get_db),
@@ -46,7 +46,7 @@ def get_user_by_id(
     return user
 
 
-@router.get("/my_user/", response_model=schemas.UserBase)
+@router.get("/my_user/", response_model=schemas.User)
 def get_my_user(
     uid: str = Header(...),
     pdb: Session = Depends(get_db),
@@ -62,7 +62,7 @@ def get_my_user(
     return user
 
 
-@router.post("/users/", response_model=schemas.UserBase)
+@router.post("/users/", response_model=schemas.User)
 def post_user(
     uid: str = Header(...),
     name: str = Form(...),
@@ -110,7 +110,7 @@ def post_user(
     return new_user
 
 
-@router.put("/users/{uid_to_modify}", response_model=schemas.UserBase)
+@router.put("/users/{uid_to_modify}", response_model=schemas.User)
 def put_user(
     uid_to_modify: str,
     uid: str = Header(...),

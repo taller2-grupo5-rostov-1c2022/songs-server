@@ -34,7 +34,6 @@ def test_post_user_creates_user_with_level_free_and_wallet(
     user = response.json()
 
     assert response.status_code == 200
-
     assert user["sub_level"] == 0
     assert user["sub_expires"] is None
     assert user["wallet"] == "0xA143"
@@ -49,7 +48,6 @@ def test_user_subscribes_to_premium(client, custom_requests_mock):
         headers={"api_key": "key", "uid": "user_id"},
         json={"sub_level": 1},
     )
-
     assert response.status_code == 200
 
     response = client.get(
