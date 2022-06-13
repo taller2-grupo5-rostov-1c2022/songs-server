@@ -101,3 +101,11 @@ def retrieve_song_update(
 
 def get_song(song_id: int, role: roles.Role = Depends(get_role), pdb=Depends(get_db)):
     return get_song_by_id(pdb, role, song_id)
+
+
+def get_song_from_form(
+    song_id: int = Form(...),
+    role: roles.Role = Depends(get_role),
+    pdb=Depends(get_db),
+):
+    return get_song(song_id=song_id, role=role, pdb=pdb)

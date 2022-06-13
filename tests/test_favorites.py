@@ -529,7 +529,6 @@ def test_remove_playlist_from_favorites_playlist_not_found_in_favorites(client):
     assert response_delete.status_code == 404
 
 
-"""
 def test_get_favorite_playlists_return_playlist_without_blocked_songs(client):
     utils.post_user(client, "creator_id", "creator_name")
     utils.post_user(client, "user_id", "user_name")
@@ -550,4 +549,3 @@ def test_get_favorite_playlists_return_playlist_without_blocked_songs(client):
     assert len(playlists) == 1
     assert playlists[0]["name"] == "playlist_name"
     assert len(playlists[0]["songs"]) == 0
-"""

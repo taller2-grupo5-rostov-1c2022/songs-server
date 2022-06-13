@@ -6,7 +6,7 @@ from typing import List
 from sqlalchemy.orm import Session
 from src.postgres.database import get_db
 from src.postgres import models
-from src.repositories import playlist_utils, user_utils
+from src.repositories import playlist_utils, user_utils, song_utils
 from src.roles import get_role
 
 router = APIRouter(tags=["playlists"])
@@ -32,13 +32,9 @@ def get_my_playlists(
 
 @router.get("/playlists/{playlist_id}", response_model=schemas.PlaylistBase)
 def get_playlist_by_id(
-    playlist_id: int,
-    role: roles.Role = Depends(get_role),
-    pdb: Session = Depends(get_db),
+    playlist: models.PlaylistModel = Depends(playlist_utils.get_playlist),
 ):
     """Returns a playlist by its id or 404 if not found"""
-
-    playlist = playlist_utils.get_playlist_by_id(pdb, role, playlist_id)
 
     return playlist
 
@@ -68,7 +64,7 @@ def post_playlist(
 
 @router.put("/playlists/{playlist_id}")
 def update_playlist(
-    playlist_id: int,
+    playlist: models.PlaylistModel = Depends(playlist_utils.get_playlist),
     uid: str = Depends(user_utils.retrieve_uid),
     role: roles.Role = Depends(get_role),
     playlist_update: schemas.PlaylistUpdate = Depends(
@@ -77,12 +73,6 @@ def update_playlist(
     pdb: Session = Depends(get_db),
 ):
     """Updates playlist by its id"""
-    # even though id is an integer, we can compare with a string
-    playlist = pdb.get(models.PlaylistModel, playlist_id)
-    if playlist is None:
-        raise HTTPException(
-            status_code=404, detail=f"Playlist '{playlist_id}' not found"
-        )
 
     if (
         uid not in [colab.id for colab in playlist.colabs]
@@ -121,134 +111,92 @@ def update_playlist(
 
 @router.delete("/playlists/{playlist_id}")
 def delete_playlist(
-    playlist_id: str,
+    playlist: models.PlaylistModel = Depends(playlist_utils.get_playlist),
     uid: str = Depends(user_utils.retrieve_uid),
     pdb: Session = Depends(get_db),
 ):
     """Deletes a playlist by its id"""
-    playlist = (
-        pdb.query(models.PlaylistModel)
-        .filter(models.PlaylistModel.id == playlist_id)
-        .first()
-    )
-    if playlist is None:
-        raise HTTPException(
-            status_code=404, detail=f"Playlist '{playlist_id}' not found"
-        )
 
-    if uid != playlist.creator_id:
+    if uid == playlist.creator_id:
+        pdb.delete(playlist)
+        pdb.commit()
+    else:
         raise HTTPException(
             status_code=403,
-            detail=f"User '{uid} attempted to delete playlist of user with ID {playlist.creator_id}",
+            detail=f"User '{uid} attempted to delete playlist {playlist.id}",
         )
-    pdb.query(models.PlaylistModel).filter(
-        models.PlaylistModel.id == playlist_id
-    ).delete()
-    pdb.commit()
-
-
-@router.post("/playlists/{playlist_id}/songs/")
-def add_song_to_playlist(
-    playlist_id: str,
-    song_id: str = Form(...),
-    uid: str = Depends(user_utils.retrieve_uid),
-    pdb: Session = Depends(get_db),
-):
-    """Adds a song to a playlist"""
-    playlist = (
-        pdb.query(models.PlaylistModel)
-        .filter(models.PlaylistModel.id == playlist_id)
-        .first()
-    )
-
-    if playlist is None:
-        raise HTTPException(
-            status_code=404, detail=f"Playlist '{playlist_id}' not found"
-        )
-
-    if uid != playlist.creator_id and uid not in [
-        colab.id for colab in playlist.colabs
-    ]:
-        raise HTTPException(
-            status_code=403,
-            detail=f"User {uid} attempted to add a song to playlist of user with ID {playlist.creator_id}",
-        )
-
-    song = pdb.query(models.SongModel).filter(models.SongModel.id == song_id).first()
-    if song is None:
-        raise HTTPException(status_code=404, detail=f"Song '{song_id}' not found")
-
-    playlist.songs.append(song)
-    pdb.commit()
-
-    return {"id": playlist_id}
 
 
 @router.delete("/playlists/{playlist_id}/songs/{song_id}/")
 def remove_song_from_playlist(
-    playlist_id: str,
-    song_id: str,
+    song: models.SongModel = Depends(song_utils.get_song),
+    playlist: models.PlaylistModel = Depends(playlist_utils.get_playlist),
     uid: str = Depends(user_utils.retrieve_uid),
     pdb: Session = Depends(get_db),
+    role: roles.Role = Depends(get_role),
 ):
     """Removes a song from a playlist"""
-    playlist = (
-        pdb.query(models.PlaylistModel)
-        .filter(models.PlaylistModel.id == playlist_id)
-        .first()
-    )
 
-    if playlist is None:
-        raise HTTPException(
-            status_code=404, detail=f"Playlist '{playlist_id}' not found"
-        )
-
-    if uid != playlist.creator_id and uid not in [
-        colab.id for colab in playlist.colabs
-    ]:
+    if (
+        uid == playlist.creator_id
+        or uid in [colab.id for colab in playlist.colabs]
+        or role.can_edit_everything()
+    ):
+        playlist.songs.remove(song)
+        pdb.commit()
+    else:
         raise HTTPException(
             status_code=403,
-            detail=f"User {uid} attempted to remove a song from playlist of user with ID {playlist.creator_id}",
+            detail=f"User '{uid} attempted to remove song from playlist of user with ID {playlist.creator_id}",
         )
 
-    song = pdb.query(models.SongModel).filter(models.SongModel.id == song_id).first()
-    if song is None:
-        raise HTTPException(status_code=404, detail=f"Song '{song_id}' not found")
 
-    playlist.songs.remove(song)
-    pdb.commit()
+@router.post("/playlists/{playlist_id}/songs/")
+def add_song_to_playlist(
+    song: models.SongModel = Depends(song_utils.get_song_from_form),
+    playlist: models.PlaylistModel = Depends(playlist_utils.get_playlist),
+    uid: str = Depends(user_utils.retrieve_uid),
+    pdb: Session = Depends(get_db),
+    role: roles.Role = Depends(get_role),
+):
+    """Adds a song to a playlist"""
+
+    if (
+        uid == playlist.creator_id
+        or uid in [colab.id for colab in playlist.colabs]
+        or role.can_edit_everything()
+    ):
+        playlist.songs.append(song)
+        pdb.commit()
+    else:
+        raise HTTPException(
+            status_code=403,
+            detail=f"User '{uid} attempted to add song to playlist of user with ID {playlist.creator_id}",
+        )
+
+    return {"id": playlist.id}
 
 
 @router.post("/playlists/{playlist_id}/colabs/")
 def add_colab_to_playlist(
-    playlist_id: str,
+    playlist: models.PlaylistModel = Depends(playlist_utils.get_playlist),
     colab_id: str = Form(...),
     uid: str = Depends(user_utils.retrieve_uid),
     pdb: Session = Depends(get_db),
 ):
     """Adds a song to a playlist"""
-    playlist = (
-        pdb.query(models.PlaylistModel)
-        .filter(models.PlaylistModel.id == playlist_id)
-        .first()
-    )
-
-    if playlist is None:
-        raise HTTPException(
-            status_code=404, detail=f"Playlist '{playlist_id}' not found"
-        )
 
     if uid != playlist.creator_id:
         raise HTTPException(
             status_code=403,
-            detail=f"User {uid} attempted to add a song to playlist of user with ID {playlist.creator_id}",
+            detail=f"User {uid} attempted to add a colab to playlist of user with ID {playlist.creator_id}",
         )
 
     colab = pdb.query(models.UserModel).filter(models.UserModel.id == colab_id).first()
     if colab is None:
-        raise HTTPException(status_code=404, detail=f"Song '{colab_id}' not found")
+        raise HTTPException(status_code=404, detail=f"Colab '{colab_id}' not found")
 
     playlist.colabs.append(colab)
     pdb.commit()
 
-    return {"id": playlist_id}
+    return {"id": playlist.id}
