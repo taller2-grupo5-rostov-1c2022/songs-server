@@ -254,3 +254,28 @@ def test_listener_cannot_post_song(client):
     response_post = post_song(client, uid="listener_id", role="listener")
 
     assert response_post.status_code == 403
+
+
+def test_admin_can_delete_song_of_another_user(client):
+    post_user(client, "song_creator_id", "song_creator")
+    post_user(client, "admin_id", "admin_name")
+    response_post = post_song(client)
+    response_delete = client.delete(
+        API_VERSION_PREFIX + f"/songs/{str(response_post.json()['id'])}",
+        headers={"api_key": "key", "uid": "admin_id", "role": "admin"},
+    )
+
+    assert response_delete.status_code == 200
+
+
+def test_admin_can_edit_song_of_another_user(client):
+    post_user(client, "song_creator_id", "song_creator")
+    post_user(client, "admin_id", "admin_name")
+    response_post = post_song(client)
+    response_put = client.put(
+        API_VERSION_PREFIX + f"/songs/{str(response_post.json()['id'])}",
+        data={"name": "new_name"},
+        headers={"api_key": "key", "uid": "admin_id", "role": "admin"},
+    )
+
+    assert response_put.status_code == 200

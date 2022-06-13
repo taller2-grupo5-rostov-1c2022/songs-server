@@ -1,5 +1,5 @@
 from src import roles
-from src.constants import STORAGE_PATH, SUPPRESS_BLOB_ERRORS
+from src.constants import SUPPRESS_BLOB_ERRORS
 from src.postgres import schemas
 from typing import List
 from fastapi import APIRouter
@@ -21,6 +21,10 @@ router = APIRouter(tags=["users"])
 def get_all_users(pdb: Session = Depends(get_db)):
     """Returns all users"""
     users = pdb.query(models.UserModel).all()
+
+    for user in users:
+        user.pfp = user_utils.pfp_url(user)
+
     return users
 
 
@@ -35,14 +39,7 @@ def get_user_by_id(
     if user is None:
         raise HTTPException(status_code=404, detail="User not found")
 
-    if user.pfp_last_update is not None:
-        user.pfp = (
-            STORAGE_PATH
-            + "pfp/"
-            + str(uid)
-            + "?t="
-            + str(int(datetime.datetime.timestamp(user.pfp_last_update)))
-        )
+    user.pfp = user_utils.pfp_url(user)
 
     return user
 
@@ -58,14 +55,7 @@ def get_my_user(
     if user is None:
         raise HTTPException(status_code=404, detail="User not found")
 
-    if user.pfp_last_update is not None:
-        user.pfp = (
-            STORAGE_PATH
-            + "pfp/"
-            + str(uid)
-            + "?t="
-            + str(int(datetime.datetime.timestamp(user.pfp_last_update)))
-        )
+    user.pfp = user_utils.pfp_url(user)
 
     return user
 

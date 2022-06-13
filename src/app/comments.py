@@ -1,3 +1,4 @@
+import datetime
 from src.postgres import schemas
 from fastapi import APIRouter
 from fastapi import Depends, HTTPException
@@ -6,81 +7,90 @@ from sqlalchemy.orm import Session
 from src.postgres.database import get_db
 from src.postgres import models
 from src.repositories import album_utils, user_utils, comment_utils
-from src.postgres.models import CommentModel
 
 router = APIRouter(tags=["comments"])
 
 
-@router.post("/albums/{album_id}/comments/", response_model=schemas.CommentGet)
-def post_comment(
-    comment_info: schemas.CommentBase,
+@router.get("/albums/{album_id}/comments/", response_model=List[schemas.CommentGet])
+def get_album_comments(
     album: models.AlbumModel = Depends(album_utils.get_album),
-    uid: str = Depends(user_utils.retrieve_uid),
     pdb: Session = Depends(get_db),
 ):
-    if comment_info.text is None and comment_info.score is None:
-        raise HTTPException(
-            status_code=422, detail="Text and score cannot be None at the same time"
+    return (
+        pdb.query(models.CommentModel)
+        .filter(
+            models.CommentModel.album_id == album.id,
+            models.CommentModel.parent_id == None,
         )
-    print("posting", comment_info)
-    comment = (
-        pdb.query(models.AlbumModel)
-        .join(CommentModel.album)
-        .filter(models.AlbumModel.id == album.id, CommentModel.commenter_id == uid)
-        .first()
+        .all()
     )
-    if comment is not None:
-        raise HTTPException(
-            status_code=403, detail=f"User {uid} already commented in album {album.id}"
-        )
-
-    new_comment = CommentModel(
-        **comment_info.dict(), commenter=pdb.get(models.UserModel, uid), album=album
-    )
-    pdb.add(new_comment)
-    pdb.commit()
-    pdb.refresh(new_comment)
-    return new_comment
 
 
-@router.get("/albums/{album_id}/comments/", response_model=List[schemas.CommentGet])
-def get_comments(
+@router.post("/albums/{album_id}/comments/", response_model=schemas.CommentGet)
+def post_album_comment(
     album: models.AlbumModel = Depends(album_utils.get_album),
+    comment: schemas.CommentPost = Depends(comment_utils.retrieve_comment_post),
+    pdb: Session = Depends(get_db),
 ):
-    return album.comments
+
+    comment_model = models.CommentModel(
+        **comment.dict(),
+        created_at=datetime.datetime.now(),
+    )
+    if comment.parent_id is not None:
+        parent = pdb.get(models.CommentModel, comment.parent_id)
+        parent.responses.append(comment_model)
+    else:
+        album.comments.append(comment_model)
+
+    pdb.commit()
+    return comment_model
 
 
-@router.get("/albums/{album_id}/my_comment/", response_model=schemas.CommentBase)
-def get_my_comment(comment: CommentModel = Depends(comment_utils.get_comment)):
+@router.put("/albums/comments/{comment_id}/", response_model=schemas.CommentGet)
+def edit_album_comment(
+    comment_update: schemas.CommentUpdate,
+    comment: models.CommentModel = Depends(comment_utils.get_comment),
+    pdb: Session = Depends(get_db),
+    uid: str = Depends(user_utils.retrieve_uid),
+):
+
+    if comment.commenter_id != uid:
+        raise HTTPException(
+            status_code=403, detail="You are not allowed to edit this comment"
+        )
+
+    comment_update = comment_update.dict()
+
+    for comment_attr in comment_update:
+        if comment_update[comment_attr] is not None:
+            setattr(comment, comment_attr, comment_update[comment_attr])
+
+    pdb.commit()
     return comment
 
 
-@router.put("/albums/{album_id}/comments/")
-def edit_comment(
-    comment_info_update: schemas.CommentUpdate,
-    comment: CommentModel = Depends(comment_utils.get_comment),
+@router.delete("/albums/comments/{comment_id}/")
+def delete_album_comment(
+    comment: models.CommentModel = Depends(comment_utils.get_comment),
+    uid: str = Depends(user_utils.retrieve_uid),
     pdb: Session = Depends(get_db),
 ):
-    comment_attrs = comment_info_update.dict()
-    for comment_attr_key in comment_attrs:
-        if comment_attrs[comment_attr_key] is not None:
-            setattr(comment, comment_attr_key, comment_attrs[comment_attr_key])
-
-    pdb.commit()
-    pdb.refresh(comment)
-
-
-@router.delete("/albums/{album_id}/comments/")
-def delete_comment(
-    comment: CommentModel = Depends(comment_utils.get_comment),
-    pdb: Session = Depends(get_db),
-):
-    pdb.delete(comment)
+    if comment.commenter_id != uid:
+        raise HTTPException(
+            status_code=403, detail="You are not allowed to delete this comment"
+        )
+    comment.text = None
     pdb.commit()
 
 
-@router.get("/users/{uid}/comments/", response_model=List[schemas.CommentMyComments])
-def get_comments_of_user(
-    uid: str = Depends(user_utils.retrieve_uid), pdb: Session = Depends(get_db)
+@router.get("/users/comments/", response_model=List[schemas.CommentGet])
+def get_user_comments(
+    uid: models.UserModel = Depends(user_utils.retrieve_uid),
+    pdb: Session = Depends(get_db),
 ):
-    return comment_utils.get_comments_by_uid(pdb, uid)
+    return (
+        pdb.query(models.CommentModel)
+        .filter(models.CommentModel.commenter_id == uid)
+        .all()
+    )

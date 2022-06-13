@@ -6,7 +6,7 @@ from tests.utils import (
     post_song,
     post_album,
     post_playlist,
-    post_comment,
+    post_review,
 )
 from urllib.parse import urlparse
 from urllib.parse import parse_qs
@@ -203,43 +203,43 @@ def test_user_should_return_his_own_playlists(client):
     assert response.json()["my_playlists"][0]["name"] == "playlist_name"
 
 
-def test_get_my_comments(client):
+def test_get_my_reviews(client):
     post_user(client, "creator_id", "creator_name")
-    post_user(client, "commenter_id", "commenter_name")
+    post_user(client, "reviewer_id", "reviewer_name")
 
     album_id = post_album(client, "creator_id").json()["id"]
-    post_comment(client, "commenter_id", album_id)
+    post_review(client, "reviewer_id", album_id)
 
     response = client.get(
-        f"{API_VERSION_PREFIX}/users/commenter_id/comments",
-        headers={"api_key": "key", "uid": "commenter_id"},
+        f"{API_VERSION_PREFIX}/users/reviewer_id/reviews",
+        headers={"api_key": "key", "uid": "reviewer_id"},
     )
-    comments = response.json()
+    reviews = response.json()
     assert response.status_code == 200
 
-    assert len(comments) == 1
-    assert comments[0]["text"] == "comment text"
-    assert comments[0]["score"] == 5
-    assert comments[0]["album"]["name"] == "album_name"
-    assert comments[0]["album"]["id"] == album_id
+    assert len(reviews) == 1
+    assert reviews[0]["text"] == "review text"
+    assert reviews[0]["score"] == 5
+    assert reviews[0]["album"]["name"] == "album_name"
+    assert reviews[0]["album"]["id"] == album_id
 
 
-def test_get_my_comments_should_not_return_comments_of_another_user(client):
+def test_get_my_reviews_should_not_return_reviews_of_another_user(client):
     post_user(client, "creator_id", "creator_name")
-    post_user(client, "first_commenter_id", "first_commenter_name")
-    post_user(client, "second_commenter_id", "second_commenter_name")
+    post_user(client, "first_reviewer_id", "first_reviewer_name")
+    post_user(client, "second_reviewer_id", "second_reviewer_name")
 
     album_id = post_album(client, "creator_id").json()["id"]
-    post_comment(client, "first_commenter_id", album_id)
+    post_review(client, "first_reviewer_id", album_id)
 
     response = client.get(
-        f"{API_VERSION_PREFIX}/users/second_commenter_id/comments",
-        headers={"api_key": "key", "uid": "second_commenter_id"},
+        f"{API_VERSION_PREFIX}/users/second_reviewer_id/reviews",
+        headers={"api_key": "key", "uid": "second_reviewer_id"},
     )
-    comments = response.json()
+    reviews = response.json()
     assert response.status_code == 200
 
-    assert len(comments) == 0
+    assert len(reviews) == 0
 
 
 def listener_can_become_artist(client):
@@ -268,3 +268,15 @@ def non_listener_cant_become_artist(client):
         },
     )
     assert response.status_code == 405
+
+
+def test_get_all_users_return_users_with_pfp_url(client):
+    post_user(client, "user_id", "user_name", include_pfp=True)
+    post_user(client, "another_user_id", "another_user_name", include_pfp=True)
+
+    response = client.get(f"{API_VERSION_PREFIX}/users/", headers={"api_key": "key"})
+
+    assert response.status_code == 200
+    assert len(response.json()) == 2
+    assert response.json()[0]["pfp"] is not None
+    assert response.json()[1]["pfp"] is not None

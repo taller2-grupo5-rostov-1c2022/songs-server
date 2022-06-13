@@ -3,6 +3,7 @@
 exclude =
     .venv
     .env
+    alembic
 
 per-file-ignores =
     tests/*.py:D103, D100

@@ -619,3 +619,131 @@ def test_listener_get_playlist_by_id_with_blocked_songs_should_not_remove_song(c
     )
     assert response_get_song.status_code == 200
     assert response_get_song.json()["blocked"] is True
+
+
+def test_listener_edit_album_with_blocked_song_does_not_modify_blocked_song(client):
+    post_user(client, uid="artist_id", user_name="artist_name")
+    post_user(client, uid="admin_id", user_name="admin_name")
+
+    song_id = post_song(
+        client, uid="artist_id", name="blocked_song", blocked=False
+    ).json()["id"]
+    album_id = post_album(client, "artist_id", songs_ids=[song_id]).json()["id"]
+    block_song(client, song_id)
+
+    response_update = client.put(
+        f"{API_VERSION_PREFIX}/albums/{album_id}",
+        data={"name": "updated_test_album", "songs_ids": "[]"},
+        headers={"api_key": "key", "uid": "artist_id"},
+    )
+    assert response_update.status_code == 200
+
+    response_get = client.get(
+        f"{API_VERSION_PREFIX}/albums/{album_id}",
+        headers={"api_key": "key", "uid": "admin_id", "role": "admin"},
+    )
+    album = response_get.json()
+
+    assert response_get.status_code == 200
+    assert len(album["songs"]) == 1
+    assert album["name"] == "updated_test_album"
+    assert album["songs"][0]["blocked"] is True
+
+
+def test_admin_edit_album_can_modify_blocked_song(client):
+    post_user(client, uid="admin_id", user_name="admin_name")
+    post_user(client, uid="another_admin_id", user_name="another_admin_name")
+
+    song_id = post_song(
+        client, uid="admin_id", name="blocked_song", blocked=False
+    ).json()["id"]
+    album_id = post_album(client, "admin_id", songs_ids=[song_id]).json()["id"]
+    block_song(client, song_id)
+
+    response_update = client.put(
+        f"{API_VERSION_PREFIX}/albums/{album_id}",
+        data={"name": "updated_test_album", "songs_ids": "[]"},
+        headers={"api_key": "key", "uid": "admin_id", "role": "admin"},
+    )
+    assert response_update.status_code == 200
+
+    response_get = client.get(
+        f"{API_VERSION_PREFIX}/albums/{album_id}",
+        headers={"api_key": "key", "uid": "another_admin_id", "role": "admin"},
+    )
+    album = response_get.json()
+
+    assert response_get.status_code == 200
+    assert len(album["songs"]) == 0
+
+
+def test_listener_edit_playlist_with_blocked_song_does_not_modify_blocked_song(client):
+    post_user(client, uid="artist_id", user_name="artist_name")
+
+    song_id = post_song(
+        client, uid="artist_id", name="blocked_song", blocked=False
+    ).json()["id"]
+
+    playlist_id = post_playlist(client, "artist_id", songs_ids=[song_id]).json()["id"]
+    block_song(client, song_id)
+
+    response_update = client.put(
+        f"{API_VERSION_PREFIX}/playlists/{playlist_id}",
+        data={"name": "updated_test_playlist", "songs_ids": "[]"},
+        headers={"api_key": "key", "uid": "artist_id"},
+    )
+    assert response_update.status_code == 200
+
+    response_get = client.get(
+        f"{API_VERSION_PREFIX}/playlists/{playlist_id}",
+        headers={"api_key": "key", "uid": "admin_id", "role": "admin"},
+    )
+    playlist = response_get.json()
+
+    assert response_get.status_code == 200
+    assert playlist["name"] == "updated_test_playlist"
+    assert len(playlist["songs"]) == 1
+    assert playlist["songs"][0]["blocked"] is True
+
+
+def test_listener_remove_blocked_song_from_playlist_does_not_remove_it(client):
+    post_user(client, uid="artist_id", user_name="artist_name")
+    post_user(client, uid="listener_id", user_name="listener_name")
+
+    song_id = post_song(
+        client, uid="artist_id", name="blocked_song", blocked=False
+    ).json()["id"]
+    playlist_id = post_playlist(client, "listener_id", songs_ids=[song_id]).json()["id"]
+    block_song(client, song_id)
+
+    response_delete = client.delete(
+        f"{API_VERSION_PREFIX}/playlists/{playlist_id}/songs/{song_id}/",
+        headers={"api_key": "key", "uid": "listener_id"},
+    )
+
+    assert response_delete.status_code == 404
+
+
+def test_admin_remove_blocked_song_from_playlist_removes_it(client):
+    post_user(client, uid="admin_id", user_name="admin_name")
+    post_user(client, uid="creator_id", user_name="creator_name")
+
+    song_id = post_song(
+        client, uid="creator_id", name="blocked_song", blocked=False
+    ).json()["id"]
+    playlist_id = post_playlist(client, "creator_id", songs_ids=[song_id]).json()["id"]
+    block_song(client, song_id)
+
+    response_delete = client.delete(
+        f"{API_VERSION_PREFIX}/playlists/{playlist_id}/songs/{song_id}/",
+        headers={"api_key": "key", "uid": "admin_id", "role": "admin"},
+    )
+    assert response_delete.status_code == 200
+
+    response_get = client.get(
+        f"{API_VERSION_PREFIX}/playlists/{playlist_id}",
+        headers={"api_key": "key", "uid": "admin_id", "role": "admin"},
+    )
+    playlist = response_get.json()
+
+    assert len(playlist["songs"]) == 0
