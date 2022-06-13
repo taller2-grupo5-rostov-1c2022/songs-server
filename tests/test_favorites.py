@@ -554,9 +554,9 @@ def test_get_favorite_playlists_return_playlist_without_blocked_songs(client):
 def test_admin_get_favorite_albums_return_blocked_albums(client):
     utils.post_user(client, "admin_id", "admin_name")
     utils.post_user(client, "creator_id", "creator_name")
-    album_id = utils.post_album(
-        client, name="album_name", uid="creator_id"
-    ).json()["id"]
+    album_id = utils.post_album(client, name="album_name", uid="creator_id").json()[
+        "id"
+    ]
 
     utils.add_album_to_favorites(client, uid="admin_id", album_id=album_id)
     utils.block_album(client, id=album_id)
