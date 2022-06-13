@@ -114,7 +114,6 @@ def delete_playlist(
     playlist: models.PlaylistModel = Depends(playlist_utils.get_playlist),
     uid: str = Depends(user_utils.retrieve_uid),
     pdb: Session = Depends(get_db),
-    role: roles.Role = Depends(get_role),
 ):
     """Deletes a playlist by its id"""
 
