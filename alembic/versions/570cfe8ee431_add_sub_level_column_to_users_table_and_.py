@@ -26,6 +26,8 @@ def upgrade():
 
 
 def downgrade():
-    op.add_column("albums", sa.Column("sub_level", sa.Integer(), nullable=False))
+    op.add_column("albums", sa.Column("sub_level", sa.Integer(), nullable=True))
+    op.execute("UPDATE albums SET sub_level = 0")
+    op.alter_column("albums", "sub_level", nullable=False)
     op.drop_column("users", "sub_level")
     op.drop_column("users", "sub_expires")
