@@ -85,7 +85,7 @@ def subscribe(user: schemas.UserBase, sub_level: int, pdb: Session):
         user.sub_expires = None
     else:
         payment_response = requests.post(
-            f"{DEPOSIT_ENDPOINT}/:{user.id}",
+            f"{DEPOSIT_ENDPOINT}/{user.id}",
             json={"amountInEthers": get_sub_price(sub_level)},
         )
 
