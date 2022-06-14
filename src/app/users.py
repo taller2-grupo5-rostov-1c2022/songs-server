@@ -94,7 +94,6 @@ def post_user(
             blob = bucket.blob("pfp/" + uid)
             blob.upload_from_file(img.file)
             blob.make_public()
-            auth.update_user(uid=uid, photo_url=blob.public_url)
             new_user.pfp_last_update = datetime.datetime.now()
         except Exception as e:
             if not SUPPRESS_BLOB_ERRORS:
@@ -106,6 +105,8 @@ def post_user(
     pdb.add(new_user)
     pdb.commit()
     pdb.refresh(new_user)
+
+    auth.update_user(uid=uid, photo_url=user_utils.pfp_url(new_user))
 
     return new_user
 
@@ -160,6 +161,8 @@ def put_user(
                 )
 
     pdb.commit()
+
+    auth.update_user(uid=uid, photo_url=user_utils.pfp_url(user))
 
     return user
 
