@@ -1,13 +1,13 @@
 import json
 from src.database import models
 from fastapi import HTTPException, Depends, Form
-from src.postgres import schemas
+from src import schemas
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 from .. import roles, utils
 from typing import List, Optional
 
-from ..postgres.database import get_db
+from src.database.access import get_db
 from ..roles import get_role
 
 

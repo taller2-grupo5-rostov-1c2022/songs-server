@@ -1,11 +1,10 @@
-from src import roles, utils
+from src import roles, utils, schemas
 from src.constants import SUPPRESS_BLOB_ERRORS
-from src.postgres import schemas
+from src.database.access import get_db
 from typing import List
 from fastapi import APIRouter
 from fastapi import Depends, HTTPException, Form, Header, UploadFile
 from sqlalchemy.orm import Session
-from src.postgres.database import get_db
 from src.firebase.access import get_bucket, get_auth
 from src.database import models
 import datetime

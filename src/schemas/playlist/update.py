@@ -5,6 +5,3 @@ from ..resource.update import ResourceUpdate
 class PlaylistUpdate(ResourceUpdate):
     songs_ids: Optional[List[int]]
     colabs_ids: Optional[List[str]]
-
-    class Config:
-        orm_mode = True

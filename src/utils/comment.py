@@ -1,20 +1,21 @@
 from sqlalchemy.orm import Session
 
-from fastapi import Depends, HTTPException
+from fastapi import Depends, HTTPException, Body
 
 from src import roles, utils
 from src.database import models
-from src.postgres import schemas
-from src.postgres.database import get_db
+from src import schemas
+from src.database.access import get_db
 
 
 def retrieve_comment_post(
-    comment_info: schemas.CommentInfo,
+    text: str = Body(..., embed=True),
+    parent_id: int = Body(None, embed=True),
     uid: str = Depends(utils.user.retrieve_uid),
     album: models.AlbumModel = Depends(utils.album.get_album),
 ):
     return schemas.CommentPost(
-        **comment_info.dict(), commenter_id=uid, album_id=album.id, uid=uid
+        text=text, parent_id=parent_id, commenter_id=uid, album_id=album.id, uid=uid
     )
 
 

@@ -3,8 +3,8 @@ from fastapi import Form, Depends, HTTPException, Header
 from src import roles
 from src.database import models
 from typing import Optional
-from src.postgres import schemas
-from src.postgres.database import get_db
+from src import schemas
+from src.database.access import get_db
 
 
 def retrieve_resource_update(

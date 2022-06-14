@@ -1,5 +1,5 @@
 from sqlalchemy import Column, Table, ForeignKey
-from src.postgres.database import Base
+from src.database.access import Base
 
 
 song_artist_association_table = Table(

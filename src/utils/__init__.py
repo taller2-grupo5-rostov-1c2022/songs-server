@@ -1,10 +1,12 @@
-from .resource import *
-from .user import *
-from .artist import *
-from .song import *
-from .album import *
-from .comment import *
-from .playlist import *
-from .review import *
-from .streaming import *
-from .subscription import *
+from . import (
+    user,
+    resource,
+    artist,
+    song,
+    album,
+    comment,
+    playlist,
+    review,
+    streaming,
+    subscription,
+)

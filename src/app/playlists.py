@@ -1,10 +1,9 @@
-from src import roles, utils
-from src.postgres import schemas
+from src import roles, utils, schemas
 from fastapi import APIRouter
 from fastapi import Depends, Form, HTTPException
 from typing import List
 from sqlalchemy.orm import Session
-from src.postgres.database import get_db
+from src.database.access import get_db
 from src.database import models
 from src.roles import get_role
 
@@ -29,7 +28,7 @@ def get_my_playlists(
     return utils.playlist.get_playlists(pdb, roles.Role.admin(), uid)
 
 
-@router.get("/playlists/{playlist_id}", response_model=schemas.PlaylistBase)
+@router.get("/playlists/{playlist_id}", response_model=schemas.Playlist)
 def get_playlist_by_id(
     playlist: models.PlaylistModel = Depends(utils.playlist.get_playlist),
 ):

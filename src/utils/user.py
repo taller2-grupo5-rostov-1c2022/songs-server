@@ -4,7 +4,7 @@ from fastapi import HTTPException, Header, Depends
 from src import roles
 from src.constants import STORAGE_PATH
 from src.database import models
-from src.postgres.database import get_db
+from src.database.access import get_db
 from sqlalchemy import and_
 from sqlalchemy.orm import contains_eager
 

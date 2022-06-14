@@ -1,9 +1,9 @@
 import json
 
-from src.postgres.database import get_db
+from src.database.access import get_db
 from src.database import models
 from src import roles, utils
-from src.postgres import schemas
+from src import schemas
 from typing import Optional, List
 from fastapi import HTTPException, Depends, Form
 from sqlalchemy import or_, and_

@@ -1,6 +1,6 @@
 from sqlalchemy import Column, ForeignKey, Integer, String, TIMESTAMP
 from sqlalchemy.orm import relationship
-from src.postgres.database import Base
+from src.database.access import Base
 
 
 class CommentModel(Base):

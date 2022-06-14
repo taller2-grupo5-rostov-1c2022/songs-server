@@ -7,8 +7,8 @@ from typing import IO
 import datetime
 from src.constants import SUPPRESS_BLOB_ERRORS, STORAGE_PATH
 from sqlalchemy import and_
-from ..postgres import schemas
-from ..postgres.database import get_db
+from src import schemas
+from src.database.access import get_db
 from typing import List, Optional
 from sqlalchemy.orm import Session
 from ..roles import get_role

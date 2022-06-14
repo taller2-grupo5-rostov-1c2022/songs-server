@@ -1,7 +1,8 @@
 from pydantic import BaseModel
 from pydantic.utils import GetterDict
 from typing import Any, Optional
-from .user.base import UserBase
+
+from .. import UserBase
 
 
 class StreamingGetter(GetterDict):

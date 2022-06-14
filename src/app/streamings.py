@@ -1,12 +1,11 @@
 from src.firebase.access import get_bucket
-from src.postgres import schemas
+from src.database.access import get_db
 from fastapi import APIRouter, UploadFile, File, Form
 from fastapi import Depends, HTTPException
 from typing import List, Optional
 from sqlalchemy.orm import Session
-from src.postgres.database import get_db
 from src.database import models
-from src import roles, utils
+from src import roles, utils, schemas
 from src.roles import get_role
 
 router = APIRouter(tags=["streamings"])

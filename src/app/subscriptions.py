@@ -1,12 +1,11 @@
 from fastapi import APIRouter, Depends
 from typing import List
 
-from src import utils
+from src import utils, schemas
 from src.utils.subscription import SUBSCRIPTIONS
 from sqlalchemy.orm import Session
-from src.postgres.database import get_db
 from src.database import models
-from src.postgres import schemas
+from src.database.access import get_db
 
 router = APIRouter(tags=["subscriptions"])
 

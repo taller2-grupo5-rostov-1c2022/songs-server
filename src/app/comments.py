@@ -1,12 +1,12 @@
 import datetime
 
 from src import utils
-from src.postgres import schemas
+from src import schemas
 from fastapi import APIRouter
 from fastapi import Depends, HTTPException
 from typing import List
 from sqlalchemy.orm import Session
-from src.postgres.database import get_db
+from src.database.access import get_db
 from src.database import models
 
 router = APIRouter(tags=["comments"])

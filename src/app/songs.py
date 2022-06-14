@@ -1,14 +1,13 @@
 import datetime
 
-from src import roles, utils
+from src import roles, utils, schemas
 from src.constants import STORAGE_PATH, SUPPRESS_BLOB_ERRORS
-from src.postgres import schemas
 from typing import List
 from fastapi import APIRouter
 from fastapi import Depends, File, HTTPException, UploadFile
 from src.firebase.access import get_bucket
 from sqlalchemy.orm import Session
-from src.postgres.database import get_db
+from src.database.access import get_db
 from src.database import models
 from src.roles import get_role
 

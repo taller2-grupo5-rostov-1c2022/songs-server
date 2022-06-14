@@ -1,5 +1,5 @@
 from sqlalchemy import Column, Integer, String, Boolean
-from src.postgres.database import Base
+from src.database.access import Base
 
 
 class ResourceModel(Base):

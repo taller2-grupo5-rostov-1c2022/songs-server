@@ -1,7 +1,7 @@
 from fastapi import Depends
 from sqlalchemy.orm import Session
 
-from src.postgres.database import get_db
+from src.database.access import get_db
 from src import roles, utils
 from src.database import models
 

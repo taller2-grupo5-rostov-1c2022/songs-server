@@ -1,20 +1,22 @@
 import datetime
-from src.postgres import schemas
 from src.constants import SUPPRESS_BLOB_ERRORS
 from fastapi import APIRouter
 from fastapi import Depends, File, HTTPException, UploadFile
 from src.firebase.access import get_bucket
 from typing import List
 from sqlalchemy.orm import Session
-from src.postgres.database import get_db
+from src.database.access import get_db
 from src.database import models
 from src import roles, utils
 from src.roles import get_role
+from src.schemas.album.get import AlbumGet
+from src.schemas.album.post import AlbumPost
+from src.schemas.album.update import AlbumUpdate
 
 router = APIRouter(tags=["albums"])
 
 
-@router.get("/albums/", response_model=List[schemas.AlbumGet])
+@router.get("/albums/", response_model=List[AlbumGet])
 def get_albums(
     creator: str = None,
     role: roles.Role = Depends(get_role),
@@ -37,7 +39,7 @@ def get_albums(
     return albums
 
 
-@router.get("/my_albums/", response_model=List[schemas.AlbumGet])
+@router.get("/my_albums/", response_model=List[AlbumGet])
 def get_my_albums(
     uid: str = Depends(utils.user.retrieve_uid),
     pdb: Session = Depends(get_db),
@@ -53,7 +55,7 @@ def get_my_albums(
     return albums
 
 
-@router.get("/albums/{album_id}", response_model=schemas.AlbumGet)
+@router.get("/albums/{album_id}", response_model=AlbumGet)
 def get_album_by_id(
     album: models.AlbumModel = Depends(utils.album.get_album),
     pdb: Session = Depends(get_db),
@@ -67,11 +69,11 @@ def get_album_by_id(
     return album
 
 
-@router.post("/albums/", response_model=schemas.AlbumGet)
+@router.post("/albums/", response_model=AlbumGet)
 def post_album(
     uid: str = Depends(utils.user.retrieve_uid),
     role: roles.Role = Depends(get_role),
-    album_info: schemas.AlbumPost = Depends(utils.album.retrieve_album),
+    album_info: AlbumPost = Depends(utils.album.retrieve_album),
     cover: UploadFile = File(...),
     pdb: Session = Depends(get_db),
     bucket=Depends(get_bucket),
@@ -104,7 +106,7 @@ def update_album(
     album: models.AlbumModel = Depends(utils.album.get_album),
     uid: str = Depends(utils.user.retrieve_uid),
     role: roles.Role = Depends(get_role),
-    album_update: schemas.AlbumUpdate = Depends(utils.album.retrieve_album_update),
+    album_update: AlbumUpdate = Depends(utils.album.retrieve_album_update),
     cover: UploadFile = File(None),
     pdb: Session = Depends(get_db),
     bucket=Depends(get_bucket),

@@ -3,7 +3,8 @@ from sqlalchemy.orm import Session
 from fastapi import status, HTTPException, Body
 import requests
 
-from src.postgres import schemas
+from src import schemas
+
 
 DEPOSIT_ENDPOINT = "https://rostov-payments-server.herokuapp.com/api/v1/deposit"
 CREATE_WALLET_ENDPOINT = "https://rostov-payments-server.herokuapp.com/api/v1/wallets"
