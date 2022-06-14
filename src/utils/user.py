@@ -3,12 +3,12 @@ from fastapi import HTTPException, Header, Depends
 
 from src import roles
 from src.constants import STORAGE_PATH
-from src.postgres import models
+from src.database import models
 from src.postgres.database import get_db
 from sqlalchemy import and_
 from sqlalchemy.orm import contains_eager
 
-from src.postgres.models import (
+from src.database.models import (
     song_playlist_association_table,
     playlist_favorite_association_table,
 )

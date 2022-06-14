@@ -1,6 +1,6 @@
 import datetime
 
-from src import roles
+from src import roles, utils
 from src.constants import STORAGE_PATH, SUPPRESS_BLOB_ERRORS
 from src.postgres import schemas
 from typing import List
@@ -9,8 +9,7 @@ from fastapi import Depends, File, HTTPException, UploadFile
 from src.firebase.access import get_bucket
 from sqlalchemy.orm import Session
 from src.postgres.database import get_db
-from src.postgres import models
-from src.repositories import user_utils, song_utils, album_utils
+from src.database import models
 from src.roles import get_role
 
 router = APIRouter(tags=["songs"])
@@ -35,12 +34,12 @@ def get_songs(
 ):
     """Returns all songs"""
 
-    return song_utils.get_songs(pdb, role, creator, artist, genre, sub_level, name)
+    return utils.song.get_songs(pdb, role, creator, artist, genre, sub_level, name)
 
 
 @router.get("/songs/{song_id}", response_model=schemas.SongGet)
 def get_song_by_id(
-    song: models.SongModel = Depends(song_utils.get_song),
+    song: models.SongModel = Depends(utils.song.get_song),
 ):
     """Returns a song by its id or 404 if not found"""
 
@@ -57,10 +56,10 @@ def get_song_by_id(
 
 @router.put("/songs/{song_id}")
 def update_song(
-    song: models.SongModel = Depends(song_utils.get_song),
-    uid: str = Depends(user_utils.retrieve_uid),
+    song: models.SongModel = Depends(utils.song.get_song),
+    uid: str = Depends(utils.user.retrieve_uid),
     role: roles.Role = Depends(get_role),
-    song_update: schemas.SongUpdate = Depends(song_utils.retrieve_song_update),
+    song_update: schemas.SongUpdate = Depends(utils.song.retrieve_song_update),
     file: UploadFile = None,
     pdb: Session = Depends(get_db),
     bucket=Depends(get_bucket),
@@ -106,7 +105,7 @@ def update_song(
 
 @router.post("/songs/", response_model=schemas.SongBase)
 def post_song(
-    song_info: schemas.SongPost = Depends(album_utils.retrieve_song),
+    song_info: schemas.SongPost = Depends(utils.album.retrieve_song),
     file: UploadFile = File(...),
     pdb: Session = Depends(get_db),
     bucket=Depends(get_bucket),
@@ -142,8 +141,8 @@ def post_song(
 
 @router.delete("/songs/{song_id}")
 def delete_song(
-    song: models.SongModel = Depends(song_utils.get_song),
-    uid: str = Depends(user_utils.retrieve_uid),
+    song: models.SongModel = Depends(utils.song.get_song),
+    uid: str = Depends(utils.user.retrieve_uid),
     pdb: Session = Depends(get_db),
     bucket=Depends(get_bucket),
     role: roles.Role = Depends(get_role),
@@ -171,6 +170,6 @@ def delete_song(
 
 @router.get("/my_songs/", response_model=List[schemas.SongBase])
 def get_my_songs(
-    uid: str = Depends(user_utils.retrieve_uid), pdb: Session = Depends(get_db)
+    uid: str = Depends(utils.user.retrieve_uid), pdb: Session = Depends(get_db)
 ):
-    return song_utils.get_songs(pdb, roles.Role.admin(), uid)
+    return utils.song.get_songs(pdb, roles.Role.admin(), uid)

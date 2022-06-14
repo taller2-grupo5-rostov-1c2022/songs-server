@@ -1,4 +1,4 @@
-from src import roles
+from src import roles, utils
 from src.constants import SUPPRESS_BLOB_ERRORS
 from src.postgres import schemas
 from typing import List
@@ -7,14 +7,9 @@ from fastapi import Depends, HTTPException, Form, Header, UploadFile
 from sqlalchemy.orm import Session
 from src.postgres.database import get_db
 from src.firebase.access import get_bucket, get_auth
-from src.postgres import models
+from src.database import models
 import datetime
-
-from src.repositories import (
-    user_utils,
-    subscription_utils,
-)
-from src.repositories.subscription_utils import SUB_LEVEL_FREE
+from src.utils.subscription import SUB_LEVEL_FREE
 
 router = APIRouter(tags=["users"])
 
@@ -25,7 +20,7 @@ def get_all_users(pdb: Session = Depends(get_db)):
     users = pdb.query(models.UserModel).all()
 
     for user in users:
-        user.pfp = user_utils.pfp_url(user)
+        user.pfp = utils.user.pfp_url(user)
 
     return users
 
@@ -41,7 +36,7 @@ def get_user_by_id(
     if user is None:
         raise HTTPException(status_code=404, detail="User not found")
 
-    user.pfp = user_utils.pfp_url(user)
+    user.pfp = utils.user.pfp_url(user)
 
     return user
 
@@ -57,7 +52,7 @@ def get_my_user(
     if user is None:
         raise HTTPException(status_code=404, detail="User not found")
 
-    user.pfp = user_utils.pfp_url(user)
+    user.pfp = utils.user.pfp_url(user)
 
     return user
 
@@ -75,14 +70,14 @@ def post_user(
 ):
     """Creates a user and returns its id"""
 
-    wallet = subscription_utils.create_wallet(uid)
+    wallet = utils.subscription.create_wallet(uid)
 
     new_user = models.UserModel(
         id=uid,
         name=name,
         sub_level=SUB_LEVEL_FREE,
         wallet=wallet,
-        sub_expires=subscription_utils.get_days_to_expire(SUB_LEVEL_FREE),
+        sub_expires=utils.subscription.get_days_to_expire(SUB_LEVEL_FREE),
         location=location,
         interests=interests,
     )
@@ -167,7 +162,7 @@ def put_user(
 @router.delete("/users/{uid_to_delete}")
 def delete_user(
     uid_to_delete: str,
-    user: models.UserModel = Depends(user_utils.retrieve_user),
+    user: models.UserModel = Depends(utils.user.retrieve_user),
     pdb: Session = Depends(get_db),
     bucket=Depends(get_bucket),
 ):
@@ -179,7 +174,7 @@ def delete_user(
             detail=f"User with id {user.id} attempted to delete user of id {uid_to_delete}",
         )
 
-    user_utils.give_ownership_of_playlists_to_colabs(user)
+    utils.user.give_ownership_of_playlists_to_colabs(user)
 
     pdb.delete(user)
 
@@ -198,7 +193,7 @@ def delete_user(
 
 @router.post("/users/make_artist/", response_model=schemas.PlaylistBase)
 def make_artist(
-    uid: str = Depends(user_utils.retrieve_uid),
+    uid: str = Depends(utils.user.retrieve_uid),
     role: roles.Role = Depends(roles.get_role),
     auth=Depends(get_auth),
 ):

@@ -8,4 +8,3 @@ class ResourceCreatorUpdate(ResourceUpdate):
 
     class Config:
         orm_mode = True
-

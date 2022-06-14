@@ -5,5 +5,3 @@ class AlbumBase(ResourceCreatorBase):
     id: int
     name: str
     description: str
-
-

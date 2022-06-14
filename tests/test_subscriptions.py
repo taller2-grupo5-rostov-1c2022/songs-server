@@ -3,7 +3,7 @@ from dateutil import parser
 
 import requests_mock
 
-from src.repositories.subscription_utils import SUBSCRIPTIONS
+from src.utils.subscription import SUBSCRIPTIONS
 from tests import utils
 from tests.conftest import (
     successful_payment_matcher,

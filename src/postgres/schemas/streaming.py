@@ -25,4 +25,3 @@ class StreamingBase(BaseModel):
     class Config:
         orm_mode = True
         getter_dict = StreamingGetter
-

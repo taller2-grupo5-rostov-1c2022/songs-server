@@ -2,9 +2,8 @@ from fastapi import Depends
 from sqlalchemy.orm import Session
 
 from src.postgres.database import get_db
-from src.repositories import album_utils, user_utils
-from src import roles
-from src.postgres import models
+from src import roles, utils
+from src.database import models
 
 
 def get_reviews_by_uid(pdb, uid: str):
@@ -17,9 +16,9 @@ def get_reviews_by_uid(pdb, uid: str):
 
 
 def get_review(
-    album: models.AlbumModel = Depends(album_utils.get_album),
+    album: models.AlbumModel = Depends(utils.album.get_album),
     role: roles.Role = Depends(roles.get_role),
     pdb: Session = Depends(get_db),
-    uid: str = Depends(user_utils.retrieve_uid),
+    uid: str = Depends(utils.user.retrieve_uid),
 ):
-    return album_utils.get_review_by_uid(pdb, role, album, uid)
+    return utils.album.get_review_by_uid(pdb, role, album, uid)

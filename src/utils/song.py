@@ -1,11 +1,10 @@
 import json
-from src.postgres import models
+from src.database import models
 from fastapi import HTTPException, Depends, Form
-from src.repositories import artist_utils, resource_utils, user_utils
 from src.postgres import schemas
 from sqlalchemy.orm import Session
 from sqlalchemy import func
-from .. import roles
+from .. import roles, utils
 from typing import List, Optional
 
 from ..postgres.database import get_db
@@ -89,10 +88,10 @@ def retrieve_songs_ids_update(songs_ids: Optional[str] = Form(None)):
 
 def retrieve_song_update(
     resource_creator_update: schemas.ResourceCreatorUpdate = Depends(
-        resource_utils.retrieve_resource_creator_update
+        utils.resource.retrieve_resource_creator_update
     ),
     artists_names: Optional[List[str]] = Depends(
-        artist_utils.retrieve_artists_names_update
+        utils.artist.retrieve_artists_names_update
     ),
 ):
     return schemas.SongUpdate(
@@ -104,7 +103,7 @@ def get_song(
     song_id: int,
     role: roles.Role = Depends(get_role),
     pdb: Session = Depends(get_db),
-    user: models.UserModel = Depends(user_utils.retrieve_user),
+    user: models.UserModel = Depends(utils.user.retrieve_user),
 ):
     song = get_song_by_id(pdb, role, song_id)
     print(song)
@@ -122,6 +121,6 @@ def get_song_from_form(
     song_id: int = Form(...),
     role: roles.Role = Depends(get_role),
     pdb: Session = Depends(get_db),
-    user: models.UserModel = Depends(user_utils.retrieve_user),
+    user: models.UserModel = Depends(utils.user.retrieve_user),
 ):
     return get_song(song_id=song_id, role=role, pdb=pdb, user=user)

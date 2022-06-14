@@ -8,4 +8,3 @@ class PlaylistPost(ResourceBase):
 
     class Config:
         orm_mode = True
-

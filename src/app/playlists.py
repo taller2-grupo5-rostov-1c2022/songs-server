@@ -1,12 +1,11 @@
-from src import roles
+from src import roles, utils
 from src.postgres import schemas
 from fastapi import APIRouter
 from fastapi import Depends, Form, HTTPException
 from typing import List
 from sqlalchemy.orm import Session
 from src.postgres.database import get_db
-from src.postgres import models
-from src.repositories import playlist_utils, user_utils, song_utils
+from src.database import models
 from src.roles import get_role
 
 router = APIRouter(tags=["playlists"])
@@ -20,19 +19,19 @@ def get_playlists(
 ):
     """Returns playlists either filtered by colab or all playlists"""
 
-    return playlist_utils.get_playlists(pdb, role, colab)
+    return utils.playlist.get_playlists(pdb, role, colab)
 
 
 @router.get("/my_playlists/", response_model=List[schemas.PlaylistBase])
 def get_my_playlists(
-    uid: str = Depends(user_utils.retrieve_uid), pdb: Session = Depends(get_db)
+    uid: str = Depends(utils.user.retrieve_uid), pdb: Session = Depends(get_db)
 ):
-    return playlist_utils.get_playlists(pdb, roles.Role.admin(), uid)
+    return utils.playlist.get_playlists(pdb, roles.Role.admin(), uid)
 
 
 @router.get("/playlists/{playlist_id}", response_model=schemas.PlaylistBase)
 def get_playlist_by_id(
-    playlist: models.PlaylistModel = Depends(playlist_utils.get_playlist),
+    playlist: models.PlaylistModel = Depends(utils.playlist.get_playlist),
 ):
     """Returns a playlist by its id or 404 if not found"""
 
@@ -41,15 +40,15 @@ def get_playlist_by_id(
 
 @router.post("/playlists/", response_model=schemas.PlaylistBase)
 def post_playlist(
-    playlist_info: schemas.PlaylistPost = Depends(playlist_utils.retrieve_playlist),
+    playlist_info: schemas.PlaylistPost = Depends(utils.playlist.retrieve_playlist),
     role: roles.Role = Depends(get_role),
     pdb: Session = Depends(get_db),
 ):
     """Creates a playlist and returns its id. Songs_ids form is encoded like '["song_id_1", "song_id_2", ...]'.
     Colabs_ids form is encoded like '["colab_id_1", "colab_id_2", ...]'"""
 
-    songs = playlist_utils.get_songs_list(pdb, role, playlist_info.songs_ids)
-    colabs = playlist_utils.get_colabs_list(pdb, playlist_info.colabs_ids)
+    songs = utils.playlist.get_songs_list(pdb, role, playlist_info.songs_ids)
+    colabs = utils.playlist.get_colabs_list(pdb, playlist_info.colabs_ids)
 
     playlist = models.PlaylistModel(
         **playlist_info.dict(exclude={"songs_ids", "colabs_ids"}),
@@ -64,11 +63,11 @@ def post_playlist(
 
 @router.put("/playlists/{playlist_id}")
 def update_playlist(
-    playlist: models.PlaylistModel = Depends(playlist_utils.get_playlist),
-    uid: str = Depends(user_utils.retrieve_uid),
+    playlist: models.PlaylistModel = Depends(utils.playlist.get_playlist),
+    uid: str = Depends(utils.user.retrieve_uid),
     role: roles.Role = Depends(get_role),
     playlist_update: schemas.PlaylistUpdate = Depends(
-        playlist_utils.retrieve_playlist_update
+        utils.playlist.retrieve_playlist_update
     ),
     pdb: Session = Depends(get_db),
 ):
@@ -91,11 +90,11 @@ def update_playlist(
             setattr(playlist, playlist_attr, playlist_update[playlist_attr])
 
     if playlist_update["colabs_ids"] is not None:
-        colabs = playlist_utils.get_colabs_list(pdb, playlist_update["colabs_ids"])
+        colabs = utils.playlist.get_colabs_list(pdb, playlist_update["colabs_ids"])
         playlist.colabs = colabs
 
     if playlist_update["songs_ids"] is not None:
-        songs = playlist_utils.get_songs_list(pdb, role, playlist_update["songs_ids"])
+        songs = utils.playlist.get_songs_list(pdb, role, playlist_update["songs_ids"])
         playlist.songs = songs
 
     if playlist_update["blocked"] is not None:
@@ -111,8 +110,8 @@ def update_playlist(
 
 @router.delete("/playlists/{playlist_id}")
 def delete_playlist(
-    playlist: models.PlaylistModel = Depends(playlist_utils.get_playlist),
-    uid: str = Depends(user_utils.retrieve_uid),
+    playlist: models.PlaylistModel = Depends(utils.playlist.get_playlist),
+    uid: str = Depends(utils.user.retrieve_uid),
     pdb: Session = Depends(get_db),
     role: roles.Role = Depends(get_role),
 ):
@@ -130,9 +129,9 @@ def delete_playlist(
 
 @router.delete("/playlists/{playlist_id}/songs/{song_id}/")
 def remove_song_from_playlist(
-    song: models.SongModel = Depends(song_utils.get_song),
-    playlist: models.PlaylistModel = Depends(playlist_utils.get_playlist),
-    uid: str = Depends(user_utils.retrieve_uid),
+    song: models.SongModel = Depends(utils.song.get_song),
+    playlist: models.PlaylistModel = Depends(utils.playlist.get_playlist),
+    uid: str = Depends(utils.user.retrieve_uid),
     pdb: Session = Depends(get_db),
     role: roles.Role = Depends(get_role),
 ):
@@ -154,9 +153,9 @@ def remove_song_from_playlist(
 
 @router.post("/playlists/{playlist_id}/songs/")
 def add_song_to_playlist(
-    song: models.SongModel = Depends(song_utils.get_song_from_form),
-    playlist: models.PlaylistModel = Depends(playlist_utils.get_playlist),
-    uid: str = Depends(user_utils.retrieve_uid),
+    song: models.SongModel = Depends(utils.song.get_song_from_form),
+    playlist: models.PlaylistModel = Depends(utils.playlist.get_playlist),
+    uid: str = Depends(utils.user.retrieve_uid),
     pdb: Session = Depends(get_db),
     role: roles.Role = Depends(get_role),
 ):
@@ -180,9 +179,9 @@ def add_song_to_playlist(
 
 @router.post("/playlists/{playlist_id}/colabs/")
 def add_colab_to_playlist(
-    playlist: models.PlaylistModel = Depends(playlist_utils.get_playlist),
+    playlist: models.PlaylistModel = Depends(utils.playlist.get_playlist),
     colab_id: str = Form(...),
-    uid: str = Depends(user_utils.retrieve_uid),
+    uid: str = Depends(utils.user.retrieve_uid),
     pdb: Session = Depends(get_db),
 ):
     """Adds a song to a playlist"""

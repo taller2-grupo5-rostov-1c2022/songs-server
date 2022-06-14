@@ -10,7 +10,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from src.main import app, API_VERSION_PREFIX
 from src.postgres.database import get_db, Base
-from src.repositories.subscription_utils import CREATE_WALLET_ENDPOINT, DEPOSIT_ENDPOINT
+from src.utils.subscription import CREATE_WALLET_ENDPOINT, DEPOSIT_ENDPOINT
 import json
 
 import os

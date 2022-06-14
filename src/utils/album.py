@@ -1,13 +1,12 @@
 from sqlalchemy.orm import contains_eager
-from src.postgres import models
+from src.database import models
 from fastapi import HTTPException, Depends, Form
 from sqlalchemy import func
-from .. import roles
+from .. import roles, utils
 from typing import IO
 import datetime
 from src.constants import SUPPRESS_BLOB_ERRORS, STORAGE_PATH
 from sqlalchemy import and_
-from src.repositories import resource_utils, song_utils, artist_utils
 from ..postgres import schemas
 from ..postgres.database import get_db
 from typing import List, Optional
@@ -83,7 +82,7 @@ def update_songs(
 ):
     songs = []
     for song_id in songs_ids:
-        song = song_utils.get_song_by_id(pdb, role, song_id)
+        song = utils.song.get_song_by_id(pdb, role, song_id)
         if song.creator_id != uid:
             raise HTTPException(
                 status_code=403,
@@ -175,18 +174,18 @@ def get_album(
 
 def retrieve_album_update(
     resource_creator_update: schemas.ResourceCreatorUpdate = Depends(
-        resource_utils.retrieve_resource_creator_update
+        utils.resource.retrieve_resource_creator_update
     ),
-    songs_ids: List[int] = Depends(song_utils.retrieve_songs_ids),
+    songs_ids: List[int] = Depends(utils.song.retrieve_songs_ids),
 ):
     return schemas.AlbumUpdate(songs_ids=songs_ids, **resource_creator_update.dict())
 
 
 def retrieve_album(
     resource_creator: schemas.ResourceCreatorBase = Depends(
-        resource_utils.retrieve_resource_creator
+        utils.resource.retrieve_resource_creator
     ),
-    songs_ids: List[int] = Depends(song_utils.retrieve_songs_ids),
+    songs_ids: List[int] = Depends(utils.song.retrieve_songs_ids),
 ):
     return schemas.AlbumPost(songs_ids=songs_ids, **resource_creator.dict())
 
@@ -202,9 +201,9 @@ def retrieve_album_info(album: Optional[int] = Form(None), pdb=Depends(get_db)):
 
 def retrieve_song(
     resource_creator: schemas.ResourceCreatorBase = Depends(
-        resource_utils.retrieve_resource_creator
+        utils.resource.retrieve_resource_creator
     ),
-    artists_names: List[str] = Depends(artist_utils.retrieve_artists_names),
+    artists_names: List[str] = Depends(utils.artist.retrieve_artists_names),
     album_info: Optional[schemas.AlbumBase] = Depends(retrieve_album_info),
     sub_level: Optional[int] = Form(None),
 ):

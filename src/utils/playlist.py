@@ -1,10 +1,9 @@
 import json
 
 from src.postgres.database import get_db
-from src.postgres.models import song_playlist_association_table
-from src.repositories import resource_utils, song_utils
-from src import roles
-from src.postgres import models, schemas
+from src.database import models
+from src import roles, utils
+from src.postgres import schemas
 from typing import Optional, List
 from fastapi import HTTPException, Depends, Form
 from sqlalchemy import or_, and_
@@ -42,7 +41,9 @@ def get_playlists(pdb, role: roles.Role, colab_id: Optional[str]):
 
 
 def get_playlist_by_id(pdb, role: roles.Role, playlist_id: int):
-    join_conditions = [models.SongModel.id == song_playlist_association_table.c.song_id]
+    join_conditions = [
+        models.SongModel.id == models.song_playlist_association_table.c.song_id
+    ]
     filters = [playlist_id == models.PlaylistModel.id]
 
     if not role.can_see_blocked():
@@ -52,8 +53,9 @@ def get_playlist_by_id(pdb, role: roles.Role, playlist_id: int):
     playlists = (
         pdb.query(models.PlaylistModel)
         .join(
-            song_playlist_association_table,
-            song_playlist_association_table.c.playlist_id == models.PlaylistModel.id,
+            models.song_playlist_association_table,
+            models.song_playlist_association_table.c.playlist_id
+            == models.PlaylistModel.id,
             isouter=True,
         )
         .join(models.SongModel, and_(True, *join_conditions), isouter=True)
@@ -69,7 +71,7 @@ def get_playlist_by_id(pdb, role: roles.Role, playlist_id: int):
 def get_songs_list(pdb, role: roles.Role, songs_ids: List[int]):
     songs = []
     for song_id in songs_ids:
-        song = song_utils.get_song_by_id(pdb, role, song_id)
+        song = utils.song.get_song_by_id(pdb, role, song_id)
         songs.append(song)
     return songs
 
@@ -107,8 +109,8 @@ def retrieve_colabs_ids_update(colabs_ids: Optional[str] = Form(None)):
 
 
 def retrieve_playlist(
-    resource: schemas.ResourceBase = Depends(resource_utils.retrieve_resource),
-    songs_ids: List[int] = Depends(song_utils.retrieve_songs_ids),
+    resource: schemas.ResourceBase = Depends(utils.resource.retrieve_resource),
+    songs_ids: List[int] = Depends(utils.song.retrieve_songs_ids),
     colabs_ids: List[str] = Depends(retrieve_colabs_ids),
 ):
     return schemas.PlaylistPost(
@@ -118,9 +120,9 @@ def retrieve_playlist(
 
 def retrieve_playlist_update(
     resource_update: schemas.ResourceUpdate = Depends(
-        resource_utils.retrieve_resource_update
+        utils.resource.retrieve_resource_update
     ),
-    songs_ids: Optional[List[int]] = Depends(song_utils.retrieve_songs_ids_update),
+    songs_ids: Optional[List[int]] = Depends(utils.song.retrieve_songs_ids_update),
     colabs_ids: Optional[List[str]] = Depends(retrieve_colabs_ids),
 ):
     return schemas.PlaylistUpdate(

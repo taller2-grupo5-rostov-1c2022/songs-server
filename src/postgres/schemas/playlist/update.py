@@ -8,4 +8,3 @@ class PlaylistUpdate(ResourceUpdate):
 
     class Config:
         orm_mode = True
-

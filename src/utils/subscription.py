@@ -1,6 +1,6 @@
 import datetime
 from sqlalchemy.orm import Session
-from fastapi import status, HTTPException
+from fastapi import status, HTTPException, Body
 import requests
 
 from src.postgres import schemas
@@ -50,19 +50,11 @@ def get_days_to_expire(sub_level: int):
     return SUB_LEVELS_DAYS_TO_EXPIRE[sub_level]
 
 
-def get_valid_sub_level(sub_level: schemas.SubLevelBase):
+def get_valid_sub_level(
+    sub_level: int = Body(..., ge=SUB_LEVEL_FREE, le=SUB_LEVEL_GOD, embed=True)
+):
     """Returns a valid subscription level"""
 
-    if sub_level.sub_level not in [
-        SUB_LEVEL_FREE,
-        SUB_LEVEL_PREMIUM,
-        SUB_LEVEL_PRO,
-        SUB_LEVEL_GOD,
-    ]:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invalid subscription level",
-        )
     return sub_level
 
 

@@ -5,4 +5,3 @@ from ..song.base import SongBase
 
 class Album(AlbumBase):
     songs: List[SongBase]
-

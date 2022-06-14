@@ -1,19 +1,20 @@
 import datetime
+
+from src import utils
 from src.postgres import schemas
 from fastapi import APIRouter
 from fastapi import Depends, HTTPException
 from typing import List
 from sqlalchemy.orm import Session
 from src.postgres.database import get_db
-from src.postgres import models
-from src.repositories import album_utils, user_utils, comment_utils
+from src.database import models
 
 router = APIRouter(tags=["comments"])
 
 
 @router.get("/albums/{album_id}/comments/", response_model=List[schemas.CommentGet])
 def get_album_comments(
-    album: models.AlbumModel = Depends(album_utils.get_album),
+    album: models.AlbumModel = Depends(utils.album.get_album),
     pdb: Session = Depends(get_db),
 ):
     return (
@@ -28,8 +29,8 @@ def get_album_comments(
 
 @router.post("/albums/{album_id}/comments/", response_model=schemas.CommentGet)
 def post_album_comment(
-    album: models.AlbumModel = Depends(album_utils.get_album),
-    comment: schemas.CommentPost = Depends(comment_utils.retrieve_comment_post),
+    album: models.AlbumModel = Depends(utils.album.get_album),
+    comment: schemas.CommentPost = Depends(utils.comment.retrieve_comment_post),
     pdb: Session = Depends(get_db),
 ):
 
@@ -50,9 +51,9 @@ def post_album_comment(
 @router.put("/albums/comments/{comment_id}/", response_model=schemas.CommentGet)
 def edit_album_comment(
     comment_update: schemas.CommentUpdate,
-    comment: models.CommentModel = Depends(comment_utils.get_comment),
+    comment: models.CommentModel = Depends(utils.comment.get_comment),
     pdb: Session = Depends(get_db),
-    uid: str = Depends(user_utils.retrieve_uid),
+    uid: str = Depends(utils.user.retrieve_uid),
 ):
 
     if comment.commenter_id != uid:
@@ -72,8 +73,8 @@ def edit_album_comment(
 
 @router.delete("/albums/comments/{comment_id}/")
 def delete_album_comment(
-    comment: models.CommentModel = Depends(comment_utils.get_comment),
-    uid: str = Depends(user_utils.retrieve_uid),
+    comment: models.CommentModel = Depends(utils.comment.get_comment),
+    uid: str = Depends(utils.user.retrieve_uid),
     pdb: Session = Depends(get_db),
 ):
     if comment.commenter_id != uid:
@@ -86,7 +87,7 @@ def delete_album_comment(
 
 @router.get("/users/comments/", response_model=List[schemas.CommentGet])
 def get_user_comments(
-    uid: models.UserModel = Depends(user_utils.retrieve_uid),
+    uid: models.UserModel = Depends(utils.user.retrieve_uid),
     pdb: Session = Depends(get_db),
 ):
     return (

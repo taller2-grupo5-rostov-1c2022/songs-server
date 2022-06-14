@@ -6,4 +6,3 @@ class ResourceCreatorBase(ResourceBase):
 
     class Config:
         orm_mode = True
-

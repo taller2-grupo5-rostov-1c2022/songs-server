@@ -40,4 +40,3 @@ class CommentPost(BaseModel):
 
     class Config:
         orm_mode = True
-

@@ -5,9 +5,8 @@ from fastapi import Depends, HTTPException
 from typing import List, Optional
 from sqlalchemy.orm import Session
 from src.postgres.database import get_db
-from src.postgres import models
-from src import roles
-from src.repositories import user_utils, streaming_utils
+from src.database import models
+from src import roles, utils
 from src.roles import get_role
 
 router = APIRouter(tags=["streamings"])
@@ -28,7 +27,7 @@ def get_streamings(
 def post_streaming(
     name: str = Form(...),
     img: Optional[UploadFile] = File(None),
-    user: models.UserModel = Depends(user_utils.retrieve_user),
+    user: models.UserModel = Depends(utils.user.retrieve_user),
     pdb: Session = Depends(get_db),
     bucket=Depends(get_bucket),
     role: roles.Role = Depends(get_role),
@@ -46,10 +45,10 @@ def post_streaming(
     (
         streaming_artist_token,
         streaming_listener_token,
-    ) = streaming_utils.build_streaming_tokens(user.id)
+    ) = utils.streaming.build_streaming_tokens(user.id)
 
     if img is not None:
-        img_url = streaming_utils.upload_img(img, user.id, bucket)
+        img_url = utils.streaming.upload_img(img, user.id, bucket)
     else:
         img_url = None
 
@@ -64,7 +63,7 @@ def post_streaming(
 
 @router.delete("/streamings/")
 def delete_streaming(
-    user: models.UserModel = Depends(user_utils.retrieve_user),
+    user: models.UserModel = Depends(utils.user.retrieve_user),
     pdb: Session = Depends(get_db),
     bucket=Depends(get_bucket),
 ):
@@ -75,7 +74,7 @@ def delete_streaming(
         raise HTTPException(status_code=404, detail="You don't have a streaming")
 
     if streaming.img_url is not None:
-        streaming_utils.delete_img(user.id, bucket)
+        utils.streaming.delete_img(user.id, bucket)
 
     pdb.delete(user.streaming)
     pdb.commit()

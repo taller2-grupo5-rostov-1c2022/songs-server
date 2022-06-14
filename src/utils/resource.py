@@ -1,7 +1,7 @@
 from fastapi import Form, Depends, HTTPException, Header
 
 from src import roles
-from src.postgres import models
+from src.database import models
 from typing import Optional
 from src.postgres import schemas
 from src.postgres.database import get_db
