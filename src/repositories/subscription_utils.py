@@ -36,7 +36,7 @@ def get_subscriptions():
 
 
 def create_wallet(uid: str):
-    response = requests.post(f"{CREATE_WALLET_ENDPOINT}/:{uid}")
+    response = requests.post(f"{CREATE_WALLET_ENDPOINT}/{uid}")
 
     if response.status_code != status.HTTP_200_OK:
         raise HTTPException(
