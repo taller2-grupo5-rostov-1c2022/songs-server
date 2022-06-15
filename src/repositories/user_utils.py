@@ -60,14 +60,15 @@ def remove_song_from_favorites(pdb, user: models.UserModel, song: models.SongMod
 def get_favorite_albums(pdb, uid: str, role: roles.Role):
     user = get_user(uid, pdb)
     join_conditions = [models.SongModel.album_id == models.AlbumModel.id]
-
+    filters = []
     if not role.can_see_blocked():
+        filters.append(models.AlbumModel.blocked == False)
         join_conditions.append(models.SongModel.blocked == False)
 
     albums = (
         user.favorite_albums.options(contains_eager("songs"))
         .join(models.SongModel, and_(*join_conditions), full=True)
-        .filter(models.AlbumModel.blocked == False)
+        .filter(*filters)
         .all()
     )
     return albums

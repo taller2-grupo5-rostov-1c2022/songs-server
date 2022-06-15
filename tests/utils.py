@@ -276,10 +276,10 @@ def delete_song_from_favorites(client, uid, song_id):
     return response_delete
 
 
-def get_favorite_albums(client, uid):
+def get_favorite_albums(client, uid, role: Optional[str] = "listener"):
     response = client.get(
         f"{API_VERSION_PREFIX}/users/{uid}/favorites/albums/",
-        headers={"api_key": "key", "uid": uid},
+        headers={"api_key": "key", "uid": uid, "role": role},
     )
     return response
 
