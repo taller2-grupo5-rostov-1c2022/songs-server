@@ -107,10 +107,8 @@ def get_song(
     user: models.UserModel = Depends(user_utils.retrieve_user),
 ):
     song = get_song_by_id(pdb, role, song_id)
-    print(song)
-    print(user)
 
-    if song.sub_level > user.sub_level:
+    if song.sub_level > user.sub_level and not role.ignore_sub_level():
         raise HTTPException(
             status_code=403,
             detail=f"You are not allowed to see this song, expected at least level {song.sub_level}, you have level {user.sub_level}",
