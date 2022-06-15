@@ -4,7 +4,7 @@ from fastapi import APIRouter, UploadFile, File, Form
 from fastapi import Depends, HTTPException
 from typing import List, Optional
 from sqlalchemy.orm import Session
-from src.database import models
+from src.database import models, crud
 from src import roles, utils, schemas
 from src.roles import get_role
 
@@ -17,9 +17,7 @@ def get_streamings(
 ):
     """Get all active streamings"""
 
-    streamings = pdb.query(models.StreamingModel).all()
-
-    return streamings
+    return crud.streaming.get_streamings(pdb)
 
 
 @router.post("/streamings/")
@@ -51,11 +49,13 @@ def post_streaming(
     else:
         img_url = None
 
-    streaming = models.StreamingModel(
-        name=name, listener_token=streaming_listener_token, img_url=img_url, artist=user
+    crud.streaming.create_streaming(
+        pdb,
+        name,
+        img_url,
+        user,
+        streaming_listener_token
     )
-    pdb.add(streaming)
-    pdb.commit()
 
     return streaming_artist_token
 
@@ -75,5 +75,4 @@ def delete_streaming(
     if streaming.img_url is not None:
         utils.streaming.delete_img(user.id, bucket)
 
-    pdb.delete(user.streaming)
-    pdb.commit()
+    crud.streaming.delete_streaming(pdb, streaming)

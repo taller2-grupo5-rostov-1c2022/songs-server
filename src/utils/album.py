@@ -68,24 +68,6 @@ def calculate_score(pdb, album: models.AlbumModel):
     return round(sum_scores / scores_amount, 1)
 
 
-def get_review_by_uid(pdb, role: roles.Role, album: models.AlbumModel, uid: str):
-    if album.blocked and not role.can_see_blocked():
-        raise HTTPException(status_code=403, detail="Album is blocked")
-
-    review = (
-        pdb.query(models.ReviewModel)
-        .filter(
-            models.ReviewModel.reviewer_id == uid,
-            models.ReviewModel.album_id == album.id,
-        )
-        .first()
-    )
-
-    if review is None:
-        raise HTTPException(status_code=404, detail="Review not found")
-    return review
-
-
 def get_album(
     album_id: int, role: roles.Role = Depends(get_role), pdb: Session = Depends(get_db)
 ):

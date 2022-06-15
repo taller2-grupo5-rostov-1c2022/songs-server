@@ -17,3 +17,14 @@ class User(UserBase):
     location: str
     interests: str
     pfp: Optional[str] = None
+
+    class Config:
+        orm_mode = True
+        example = {
+            "location": "New York, NY",
+            "interests": "Rock, Pop, Jazz",
+            "wallet": "0x123456789",
+            "sub_level": 0,
+            "sub_expires": None,
+            "pfp": None,
+        }

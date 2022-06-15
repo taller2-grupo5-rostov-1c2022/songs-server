@@ -9,7 +9,7 @@ ROLE_SUBSCRIBER = 2
 TOKEN_VALIDITY_TIME = datetime.timedelta(hours=10)
 
 
-def build_streaming_tokens(channel_name: str):
+def build_streaming_tokens(channel_name: str) -> [str, str]:
 
     now = datetime.datetime.now()
     timestamp = (now + TOKEN_VALIDITY_TIME).timestamp()

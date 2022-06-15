@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 
 from src.database.access import get_db
 from src import roles, utils
-from src.database import models
+from src.database import models, crud
 
 
 def get_reviews_by_uid(pdb, uid: str):
@@ -19,6 +19,6 @@ def get_review(
     album: models.AlbumModel = Depends(utils.album.get_album),
     role: roles.Role = Depends(roles.get_role),
     pdb: Session = Depends(get_db),
-    uid: str = Depends(utils.user.retrieve_uid),
+    user: models.UserModel = Depends(utils.user.retrieve_user),
 ):
-    return utils.album.get_review_by_uid(pdb, role, album, uid)
+    return crud.review.get_reviews_by_user(pdb, album, user, role.can_see_blocked())

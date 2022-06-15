@@ -1,9 +1,11 @@
 from pydantic import BaseModel
 
 
-class UserBase(BaseModel):
-    id: str
+class UserPost(BaseModel):
+    uid: str
     name: str
+    location: str
+    interests: str
 
     class Config:
         orm_mode = True
@@ -11,4 +13,6 @@ class UserBase(BaseModel):
         example = {
             "uid": "123456789",
             "name": "John Doe",
+            "location": "New York, NY",
+            "interests": "Rock, Pop, Jazz",
         }

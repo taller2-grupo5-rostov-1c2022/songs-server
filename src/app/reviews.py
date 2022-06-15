@@ -4,7 +4,7 @@ from fastapi import APIRouter
 from fastapi import Depends, HTTPException
 from typing import List
 from sqlalchemy.orm import Session
-from src.database import models
+from src.database import models, crud
 
 router = APIRouter(tags=["reviews"])
 
@@ -13,31 +13,24 @@ router = APIRouter(tags=["reviews"])
 def post_review(
     review_info: schemas.ReviewBase,
     album: models.AlbumModel = Depends(utils.album.get_album),
-    uid: str = Depends(utils.user.retrieve_uid),
+    user: models.UserModel = Depends(utils.user.retrieve_user),
     pdb: Session = Depends(get_db),
 ):
     if review_info.text is None and review_info.score is None:
         raise HTTPException(
             status_code=422, detail="Text and score cannot be None at the same time"
         )
-    review = (
-        pdb.query(models.AlbumModel)
-        .join(models.ReviewModel.album)
-        .filter(models.AlbumModel.id == album.id, models.ReviewModel.reviewer_id == uid)
-        .first()
-    )
-    if review is not None:
+
+    reviews = crud.review.get_reviews_by_album_and_user(pdb, album, user)
+    if reviews:
         raise HTTPException(
-            status_code=403, detail=f"User {uid} already reviewed in album {album.id}"
+            status_code=403,
+            detail=f"User {user.id} already reviewed in album {album.id}",
         )
 
-    new_review = models.ReviewModel(
-        **review_info.dict(), reviewer=pdb.get(models.UserModel, uid), album=album
-    )
-    pdb.add(new_review)
-    pdb.commit()
-    pdb.refresh(new_review)
-    return new_review
+    review = crud.review.create_review(pdb, album, review_info, user)
+
+    return review
 
 
 @router.get("/albums/{album_id}/reviews/", response_model=List[schemas.ReviewGet])

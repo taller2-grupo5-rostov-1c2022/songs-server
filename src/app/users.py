@@ -6,7 +6,7 @@ from fastapi import APIRouter
 from fastapi import Depends, HTTPException, Form, Header, UploadFile
 from sqlalchemy.orm import Session
 from src.firebase.access import get_bucket, get_auth
-from src.database import models
+from src.database import models, crud
 import datetime
 from src.utils.subscription import SUB_LEVEL_FREE
 
@@ -16,7 +16,8 @@ router = APIRouter(tags=["users"])
 @router.get("/users/", response_model=List[schemas.User])
 def get_all_users(pdb: Session = Depends(get_db)):
     """Returns all users"""
-    users = pdb.query(models.UserModel).all()
+
+    users = crud.user.get_users(pdb)
 
     for user in users:
         user.pfp = utils.user.pfp_url(user)
@@ -27,13 +28,11 @@ def get_all_users(pdb: Session = Depends(get_db)):
 @router.get("/users/{uid}", response_model=schemas.User)
 def get_user_by_id(
     uid: str,
-    pdb: Session = Depends(get_db),
+    pdb: Session = Depends(get_db)
 ):
     """Returns a user by its id or 404 if not found"""
-    user = pdb.get(models.UserModel, uid)
 
-    if user is None:
-        raise HTTPException(status_code=404, detail="User not found")
+    user = crud.user.get_user_by_id(pdb, uid)
 
     user.pfp = utils.user.pfp_url(user)
 
@@ -42,14 +41,9 @@ def get_user_by_id(
 
 @router.get("/my_user/", response_model=schemas.User)
 def get_my_user(
-    uid: str = Header(...),
-    pdb: Session = Depends(get_db),
+    user: models.UserModel = Depends(utils.user.retrieve_user)
 ):
     """Returns own user"""
-    user = pdb.get(models.UserModel, uid)
-
-    if user is None:
-        raise HTTPException(status_code=404, detail="User not found")
 
     user.pfp = utils.user.pfp_url(user)
 
@@ -58,50 +52,56 @@ def get_my_user(
 
 @router.post("/users/", response_model=schemas.User)
 def post_user(
-    uid: str = Header(...),
-    name: str = Form(...),
-    location: str = Form(...),
-    interests: str = Form(...),
+    user_info: schemas.UserPost = Depends(utils.user.retrieve_user_info),
     img: UploadFile = None,
-    pdb: Session = Depends(get_db),
     bucket=Depends(get_bucket),
     auth=Depends(get_auth),
+    pdb: Session = Depends(get_db)
 ):
     """Creates a user and returns its id"""
 
-    wallet = utils.subscription.create_wallet(uid)
+    wallet = utils.subscription.create_wallet(user_info.uid)
 
-    new_user = models.UserModel(
-        id=uid,
-        name=name,
+    user_info = user_info.dict()
+    user_info["id"] = user_info["uid"]
+
+    user_info_complete = schemas.UserPostComplete(
+        **user_info,
         sub_level=SUB_LEVEL_FREE,
         wallet=wallet,
-        sub_expires=utils.subscription.get_days_to_expire(SUB_LEVEL_FREE),
-        location=location,
-        interests=interests,
+        sub_expires=utils.subscription.get_expiration_date(utils.subscription.SUB_LEVEL_FREE, datetime.datetime.now()),
+        songs=[],
+        albums=[],
+        playlists=[],
+        my_playlists=[],
+        other_playlists=[]
     )
 
-    auth.update_user(uid=uid, display_name=name)
+    user = crud.user.create_user(
+        pdb,
+        user_info_complete
+    )
+
+    auth.update_user(uid=user_info_complete.uid, display_name=user_info_complete.name)
 
     if img is not None:
         try:
-            blob = bucket.blob("pfp/" + uid)
+            blob = bucket.blob("pfp/" + user_info_complete.uid)
             blob.upload_from_file(img.file)
             blob.make_public()
-            auth.update_user(uid=uid, photo_url=blob.public_url)
-            new_user.pfp_last_update = datetime.datetime.now()
+            auth.update_user(uid=user_info_complete.uid, photo_url=blob.public_url)
+            user.pfp_last_update = datetime.datetime.now()
+            pdb.commit()
         except Exception as e:
+            crud.user.delete_user(pdb, user)
+
             if not SUPPRESS_BLOB_ERRORS:
                 raise HTTPException(
                     status_code=507,
-                    detail=f"Image for User '{uid}' could not be uploaded",
+                    detail=f"Image for User '{user_info_complete.uid}' could not be uploaded",
                 ) from e
 
-    pdb.add(new_user)
-    pdb.commit()
-    pdb.refresh(new_user)
-
-    return new_user
+    return user
 
 
 @router.put("/users/{uid_to_modify}", response_model=schemas.User)

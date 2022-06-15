@@ -4,7 +4,7 @@ from fastapi import status, HTTPException, Body
 import requests
 
 from src import schemas
-
+from src.database import crud, models
 
 DEPOSIT_ENDPOINT = "https://rostov-payments-server.herokuapp.com/api/v1/deposit"
 CREATE_WALLET_ENDPOINT = "https://rostov-payments-server.herokuapp.com/api/v1/wallets"
@@ -24,9 +24,9 @@ SUBSCRIPTIONS = [
 
 SUB_LEVELS_DAYS_TO_EXPIRE = {
     SUB_LEVEL_FREE: None,
-    SUB_LEVEL_PREMIUM: 30,
-    SUB_LEVEL_PRO: 30,
-    SUB_LEVEL_GOD: 365,
+    SUB_LEVEL_PREMIUM: datetime.timedelta(days=30),
+    SUB_LEVEL_PRO: datetime.timedelta(days=30),
+    SUB_LEVEL_GOD: datetime.timedelta(days=365),
 }
 
 
@@ -47,16 +47,13 @@ def create_wallet(uid: str):
     return response.json()["address"]
 
 
-def get_days_to_expire(sub_level: int):
-    return SUB_LEVELS_DAYS_TO_EXPIRE[sub_level]
+def get_expiration_date(sub_level: int, subscription_date: datetime.datetime):
+    if SUB_LEVELS_DAYS_TO_EXPIRE[sub_level] is None:
+        return None
 
-
-def get_valid_sub_level(
-    sub_level: int = Body(..., ge=SUB_LEVEL_FREE, le=SUB_LEVEL_GOD, embed=True)
-):
-    """Returns a valid subscription level"""
-
-    return sub_level
+    expiration_date = subscription_date + SUB_LEVELS_DAYS_TO_EXPIRE[sub_level]
+    expiration_date = expiration_date.replace(minute=0, second=0, microsecond=0)
+    return expiration_date
 
 
 def get_sub_price(sub_level: int):
@@ -72,29 +69,28 @@ def get_sub_price(sub_level: int):
     )
 
 
-def subscribe(user: schemas.UserBase, sub_level: int, pdb: Session):
-    if sub_level == 0:
-        user.sub_level = 0
-        user.sub_expires = None
-    else:
-        payment_response = requests.post(
-            f"{DEPOSIT_ENDPOINT}/:{user.id}",
-            json={"amountInEthers": get_sub_price(sub_level)},
+def _make_payment(
+    user: models.UserModel, sub_level: int
+):
+    payment_response = requests.post(
+        f"{DEPOSIT_ENDPOINT}/:{user.id}",
+        json={"amountInEthers": get_sub_price(sub_level)},
+    )
+
+    if payment_response.status_code != status.HTTP_200_OK:
+        raise HTTPException(
+            status_code=payment_response.status_code,
+            detail=payment_response.text,
         )
 
-        if payment_response.status_code != status.HTTP_200_OK:
-            raise HTTPException(
-                status_code=payment_response.status_code,
-                detail=payment_response.text,
-            )
 
-        user.sub_level = sub_level
-        expiration_date = datetime.datetime.now() + datetime.timedelta(
-            days=get_days_to_expire(sub_level)
-        )
-        expiration_date = expiration_date.replace(minute=0, second=0, microsecond=0)
+def subscribe(user: models.UserModel, sub_level: int, pdb: Session) -> models.UserModel:
+    if sub_level > SUB_LEVEL_FREE:
+        _make_payment(user, sub_level)
 
-        user.sub_expires = expiration_date
+    user_update_sub = schemas.UserUpdateSub(
+        sub_level=sub_level,
+        sub_expires=get_expiration_date(sub_level, datetime.datetime.now()),
+    )
 
-    pdb.commit()
-    pdb.refresh(user)
+    return crud.user.update_user_sub(pdb, user, user_update_sub)

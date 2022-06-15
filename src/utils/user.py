@@ -1,145 +1,35 @@
 import datetime
-from fastapi import HTTPException, Header, Depends
+from fastapi import Header, Depends, Form, HTTPException
+from sqlalchemy.orm import Session
 
-from src import roles
+from src import schemas
 from src.constants import STORAGE_PATH
-from src.database import models
+from src.database import models, crud
 from src.database.access import get_db
-from sqlalchemy import and_
-from sqlalchemy.orm import contains_eager
-
-from src.database.models import (
-    song_playlist_association_table,
-    playlist_favorite_association_table,
-)
-
-
-def retrieve_uid(uid: str = Header(...), pdb=Depends(get_db)):
-    # The user is not in the database
-    if pdb.get(models.UserModel, uid) is None:
-        raise HTTPException(status_code=404, detail=f"User with ID {uid} not found")
-    return uid
-
-
-def get_favorite_songs(pdb, uid: str, role: roles.Role):
-    user = get_user(uid, pdb)
-    if role.can_see_blocked():
-        return user.favorite_songs.all()
-    else:
-        return user.favorite_songs.filter(models.SongModel.blocked == False).all()
-
-
-def get_user(uid: str, pdb=Depends(get_db)):
-    user = pdb.get(models.UserModel, uid)
-    if user is None:
-        raise HTTPException(status_code=404, detail=f"User with ID {uid} not found")
-    return user
 
 
 def retrieve_user(uid: str = Header(...), pdb=Depends(get_db)):
-    return get_user(uid, pdb)
+    return crud.user.get_user_by_id(pdb, uid)
 
 
-def add_song_to_favorites(pdb, user: models.UserModel, song: models.SongModel):
-    user.favorite_songs.append(song)
-
-    pdb.commit()
-    return song
+def retrieve_uid(uid: str = Header(...), pdb=Depends(get_db)):
+    return crud.user.get_user_by_id(pdb, uid).id
 
 
-def remove_song_from_favorites(pdb, user: models.UserModel, song: models.SongModel):
-    if song in user.favorite_songs:
-        user.favorite_songs.remove(song)
-        pdb.commit()
+def retrieve_user_info(
+        uid: str = Header(...),
+        name: str = Form(...),
+        location: str = Form(...),
+        interests: str = Form(...),
+        pdb: Session = Depends(get_db),
+) -> schemas.UserPost:
+    try:
+        crud.user.get_user_by_id(pdb, uid)
+    except HTTPException:
+        user = schemas.UserPost(uid=uid, name=name, location=location, interests=interests)
+        return user
     else:
-        raise HTTPException(
-            status_code=404, detail=f"Song {song.id} not found in favorites"
-        )
-
-
-def get_favorite_albums(pdb, uid: str, role: roles.Role):
-    user = get_user(uid, pdb)
-    join_conditions = [models.SongModel.album_id == models.AlbumModel.id]
-
-    if not role.can_see_blocked():
-        join_conditions.append(models.SongModel.blocked == False)
-
-    albums = (
-        user.favorite_albums.options(contains_eager("songs"))
-        .join(models.SongModel, and_(*join_conditions), full=True)
-        .filter(models.AlbumModel.blocked == False)
-        .all()
-    )
-    return albums
-
-
-def add_album_to_favorites(pdb, user: models.UserModel, album: models.AlbumModel):
-    user.favorite_albums.append(album)
-    pdb.commit()
-    return album
-
-
-def remove_album_from_favorites(pdb, user: models.UserModel, album: models.AlbumModel):
-    if album in user.favorite_albums:
-        user.favorite_albums.remove(album)
-        pdb.commit()
-    else:
-        raise HTTPException(
-            status_code=404, detail=f"Album {album.id} not found in favorites"
-        )
-
-
-def get_favorite_playlists(pdb, uid: str, role: roles.Role):
-    filters = [models.UserModel.id == uid]
-    join_conditions = []
-    if not role.can_see_blocked():
-        filters.append(models.PlaylistModel.blocked == False)
-        join_conditions.append(models.SongModel.blocked == False)
-
-    playlists = (
-        pdb.query(models.PlaylistModel)
-        .join(
-            song_playlist_association_table,
-            song_playlist_association_table.c.playlist_id == models.PlaylistModel.id,
-            isouter=True,
-        )
-        .join(models.SongModel, and_(True, *join_conditions), isouter=True)
-        .join(
-            playlist_favorite_association_table,
-            playlist_favorite_association_table.c.playlist_id
-            == models.PlaylistModel.id,
-        )
-        .join(
-            models.UserModel,
-            playlist_favorite_association_table.c.user_id == models.UserModel.id,
-        )
-        .options(contains_eager("songs"))
-        .filter(and_(True, *filters))
-    ).all()
-
-    playlists = [p for p in playlists if p is not None]
-
-    return playlists
-
-
-def add_playlist_to_favorites(
-    pdb, user: models.UserModel, playlist: models.PlaylistModel
-):
-    user.favorite_playlists.append(playlist)
-    pdb.commit()
-    return playlist
-
-
-def remove_playlist_from_favorites(
-    pdb, user: models.UserModel, playlist: models.PlaylistModel
-):
-    if playlist in user.favorite_playlists:
-        user.favorite_playlists.remove(playlist)
-        pdb.commit()
-    else:
-        raise HTTPException(
-            status_code=404, detail=f"Playlist {playlist.id} not found in favorites"
-        )
+        raise HTTPException(status_code=400, detail="User already exists")
 
 
 def pfp_url(user: models.UserModel):
