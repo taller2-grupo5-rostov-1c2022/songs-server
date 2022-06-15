@@ -15,14 +15,12 @@ def post_user(
     client,
     uid,
     user_name,
-    wallet="wallet",
     location="location",
     interests="interests",
     include_pfp=False,
 ):
     data = {
         "name": user_name,
-        "wallet": wallet,
         "location": location,
         "interests": interests,
     }
@@ -92,6 +90,19 @@ def post_song(
     return response_post
 
 
+def get_song_by_id(
+    client, song_id: int, uid: Optional[str] = None, role: Optional[str] = "listener"
+):
+    if uid is None:
+        uid = post_user(client, "__user_id__", "__user_name__").json()["id"]
+
+    response = client.get(
+        f"{API_VERSION_PREFIX}/songs/{song_id}",
+        headers={"api_key": "key", "uid": uid, "role": role},
+    )
+    return response
+
+
 def post_album(
     client,
     uid: Optional[str] = "album_creator_id",
@@ -99,7 +110,6 @@ def post_album(
     description: Optional[str] = "album_desc",
     genre: Optional[str] = "album_genre",
     songs_ids: Optional[List[str]] = None,
-    sub_level: Optional[int] = 1,
     cover: Optional[str] = "./tests/test.cover",
     blocked: bool = False,
     headers: Optional[dict] = None,
@@ -118,7 +128,6 @@ def post_album(
             data={
                 "name": name,
                 "description": description,
-                "sub_level": sub_level,
                 "songs_ids": json.dumps(songs_ids),
                 "genre": genre,
             },
@@ -141,7 +150,6 @@ def post_album_with_song(
     uid="user_id",
     album_name="album_name",
     album_genre="album_genre",
-    album_sub_level=0,
     song_name="song_name",
     song_genre="song_genre",
     song_sub_level=0,
@@ -154,7 +162,6 @@ def post_album_with_song(
         uid=uid,
         name=album_name,
         genre=album_genre,
-        sub_level=album_sub_level,
         songs_ids=[song_id],
     )
 
@@ -198,6 +205,24 @@ def post_playlist(
             headers={"api_key": "key", "uid": uid, "role": "admin"},
         )
         assert response_put.status_code == 200
+    return response_post
+
+
+def wrap_post_playlist(client):
+    post_user(client, uid="user_playlist_owner", user_name="Ricardito")
+    post_user(client, uid="user_playlist_colab", user_name="Fernandito")
+    res_1 = post_song(client, uid="user_playlist_owner", name="song_for_playlist1")
+    res_2 = post_song(client, uid="user_playlist_owner", name="song_for_playlist2")
+    colabs_id = ["user_playlist_colab"]
+    songs_id = [res_1.json()["id"], res_2.json()["id"]]
+    response_post = post_playlist(
+        client,
+        uid="user_playlist_owner",
+        playlist_name="playlist_name",
+        description="playlist_description",
+        colabs_ids=colabs_id,
+        songs_ids=songs_id,
+    )
     return response_post
 
 
@@ -309,14 +334,6 @@ def get_favorite_playlists(client, uid, role="listener"):
     return response
 
 
-def get_song(client, song_id: int, role: str = "listener"):
-    response = client.get(
-        f"{API_VERSION_PREFIX}/songs/{song_id}",
-        headers={"api_key": "key", "role": role},
-    )
-    return response
-
-
 def add_playlist_to_favorites(client, uid, playlist_id, role="listener"):
     response_post = client.post(
         f"{API_VERSION_PREFIX}/users/{uid}/favorites/playlists/?playlist_id={playlist_id}",
@@ -375,3 +392,21 @@ def post_streaming(client, uid: str, name="streaming_name", include_img=False):
         )
 
     return response_post
+
+
+def post_user_with_sub_level(client, user_id: str, user_name: str, sub_level: int):
+    post_user(client, user_id, user_name)
+    response = client.post(
+        f"{API_VERSION_PREFIX}/subscriptions/",
+        headers={"api_key": "key", "uid": "user_id"},
+        json={"sub_level": sub_level},
+    )
+
+    assert response.status_code == 200
+
+    response = client.post(
+        f"{API_VERSION_PREFIX}/subscriptions/",
+        headers={"api_key": "key", "uid": "user_id"},
+        json={"sub_level": sub_level},
+    )
+    return response

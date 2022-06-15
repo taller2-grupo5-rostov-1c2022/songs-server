@@ -11,7 +11,6 @@
 /.idea/
 .vscode
 alembic.ini
-alembic
 
 # Generated files
 .idea/**/contentModel.xml

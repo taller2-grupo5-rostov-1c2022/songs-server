@@ -44,6 +44,9 @@ class Role:
     def can_see_blocked(self):
         return self == Role.admin()
 
+    def ignore_sub_level(self):
+        return self == Role.admin()
+
     def can_block(self):
         return self == Role.admin()
 

@@ -12,7 +12,9 @@ import datetime
 
 from src.repositories import (
     user_utils,
+    subscription_utils,
 )
+from src.repositories.subscription_utils import SUB_LEVEL_FREE
 
 router = APIRouter(tags=["users"])
 
@@ -33,7 +35,7 @@ def get_user_by_id(
     uid: str,
     pdb: Session = Depends(get_db),
 ):
-    """Returns an user by its id or 404 if not found"""
+    """Returns a user by its id or 404 if not found"""
     user = pdb.get(models.UserModel, uid)
 
     if user is None:
@@ -64,7 +66,6 @@ def get_my_user(
 def post_user(
     uid: str = Header(...),
     name: str = Form(...),
-    wallet: str = Form(None),
     location: str = Form(...),
     interests: str = Form(...),
     img: UploadFile = None,
@@ -73,10 +74,15 @@ def post_user(
     auth=Depends(get_auth),
 ):
     """Creates a user and returns its id"""
+
+    wallet = subscription_utils.create_wallet(uid)
+
     new_user = models.UserModel(
         id=uid,
         name=name,
+        sub_level=SUB_LEVEL_FREE,
         wallet=wallet,
+        sub_expires=subscription_utils.get_days_to_expire(SUB_LEVEL_FREE),
         location=location,
         interests=interests,
     )
@@ -88,7 +94,6 @@ def post_user(
             blob = bucket.blob("pfp/" + uid)
             blob.upload_from_file(img.file)
             blob.make_public()
-            auth.update_user(uid=uid, photo_url=blob.public_url)
             new_user.pfp_last_update = datetime.datetime.now()
         except Exception as e:
             if not SUPPRESS_BLOB_ERRORS:
@@ -101,6 +106,8 @@ def post_user(
     pdb.commit()
     pdb.refresh(new_user)
 
+    auth.update_user(uid=uid, photo_url=user_utils.pfp_url(new_user))
+
     return new_user
 
 
@@ -109,7 +116,6 @@ def put_user(
     uid_to_modify: str,
     uid: str = Header(...),
     name: str = Form(None),
-    wallet: str = Form(None),
     location: str = Form(None),
     interests: str = Form(None),
     img: UploadFile = None,
@@ -135,9 +141,6 @@ def put_user(
         user.name = name
         auth.update_user(uid=uid, display_name=name)
 
-    if wallet is not None:
-        user.wallet = wallet
-
     if location is not None:
         user.location = location
 
@@ -159,37 +162,38 @@ def put_user(
 
     pdb.commit()
 
+    auth.update_user(uid=uid, photo_url=user_utils.pfp_url(user))
+
     return user
 
 
 @router.delete("/users/{uid_to_delete}")
 def delete_user(
     uid_to_delete: str,
-    uid: str = Header(...),
+    user: models.UserModel = Depends(user_utils.retrieve_user),
     pdb: Session = Depends(get_db),
     bucket=Depends(get_bucket),
 ):
     """Deletes a user given its id or 404 if not found or 403 if not authorized to delete"""
 
-    if uid != uid_to_delete:
+    if user.id != uid_to_delete:
         raise HTTPException(
             status_code=403,
-            detail=f"User with id {uid} attempted to delete user of id {uid_to_delete}",
+            detail=f"User with id {user.id} attempted to delete user of id {uid_to_delete}",
         )
 
-    user = pdb.query(models.UserModel).filter(models.UserModel.id == uid).first()
-    if user is None:
-        raise HTTPException(status_code=404, detail=f"User '{uid}' not found")
+    user_utils.give_ownership_of_playlists_to_colabs(user)
+
     pdb.delete(user)
 
     if user.pfp_last_update is not None:
         try:
-            bucket.blob("pfp/" + str(uid)).delete()
+            bucket.blob("pfp/" + str(user.id)).delete()
         except:  # noqa: W0707 # Want to catch all exceptions
             if not SUPPRESS_BLOB_ERRORS:
                 raise HTTPException(
                     status_code=507,
-                    detail=f"Image for User '{uid}' could not be deleted",
+                    detail=f"Image for User '{user.id}' could not be deleted",
                 )
 
     pdb.commit()

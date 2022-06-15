@@ -21,7 +21,6 @@ def get_albums(
     creator: str = None,
     artist: str = None,
     genre: str = None,
-    sub_level: int = None,
     name: str = None,
 ):
     join_conditions = [models.SongModel.album_id == models.AlbumModel.id]
@@ -40,8 +39,6 @@ def get_albums(
             )
         )
 
-    if sub_level is not None:
-        filters.append(models.AlbumModel.sub_level == sub_level)
     if genre is not None:
         filters.append(func.lower(models.AlbumModel.genre).contains(genre.lower()))
     if name is not None:
@@ -209,7 +206,13 @@ def retrieve_song(
     ),
     artists_names: List[str] = Depends(artist_utils.retrieve_artists_names),
     album_info: Optional[schemas.AlbumInfoBase] = Depends(retrieve_album_info),
+    sub_level: Optional[int] = Form(None),
 ):
+    if sub_level is None:
+        sub_level = 0
     return schemas.SongPost(
-        artists_names=artists_names, album=album_info, **resource_creator.dict()
+        artists_names=artists_names,
+        album=album_info,
+        sub_level=sub_level,
+        **resource_creator.dict(),
     )

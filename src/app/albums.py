@@ -21,13 +21,12 @@ def get_albums(
     role: roles.Role = Depends(get_role),
     artist: str = None,
     genre: str = None,
-    sub_level: int = None,
     name: str = None,
     pdb: Session = Depends(get_db),
 ):
     """Returns all Albums"""
 
-    albums = album_utils.get_albums(pdb, role, creator, artist, genre, sub_level, name)
+    albums = album_utils.get_albums(pdb, role, creator, artist, genre, name)
 
     albums = list(filter(None, albums))
 

@@ -11,7 +11,7 @@ class ResourceBase(BaseModel):
     name: str
     description: str
     blocked: bool
-    creator_id: str
+    creator_id: Optional[str]
 
     class Config:
         orm_mode = True
@@ -36,7 +36,6 @@ class UserInfo(BaseModel):
 
 class ResourceCreator(ResourceBase):
     genre: str
-    sub_level: int
 
     class Config:
         orm_mode = True
@@ -68,6 +67,7 @@ class ArtistBase(BaseModel):
 class SongBase(ResourceCreator):
     artists: List[ArtistBase]
     album: Optional[AlbumInfoBase] = None
+    sub_level: int
 
     class Config:
         orm_mode = True
@@ -76,6 +76,7 @@ class SongBase(ResourceCreator):
 class SongPost(ResourceCreator):
     artists_names: List[str]
     album: Optional[AlbumInfoBase] = None
+    sub_level: int
 
     class Config:
         orm_mode = True
@@ -83,6 +84,7 @@ class SongPost(ResourceCreator):
 
 class SongUpdate(ResourceCreatorUpdate):
     artists_names: Optional[List[str]]
+    sub_level: Optional[int]
 
     class Config:
         orm_mode = True
@@ -149,7 +151,9 @@ class PlaylistUpdate(ResourceUpdate):
 class UserBase(BaseModel):
     id: str
     name: str
-    wallet: Optional[str] = None
+    wallet: str
+    sub_level: int
+    sub_expires: Optional[datetime]
     location: str
     interests: str
     pfp: Optional[str] = None
@@ -254,3 +258,13 @@ class StreamingBase(BaseModel):
     class Config:
         orm_mode = True
         getter_dict = StreamingGetter
+
+
+class SubLevelBase(BaseModel):
+    sub_level: int
+
+
+class SubscriptionBase(BaseModel):
+    level: int
+    name: str
+    price: str

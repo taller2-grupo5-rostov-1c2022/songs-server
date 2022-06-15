@@ -152,3 +152,10 @@ def pfp_url(user: models.UserModel):
             + "?t="
             + str(int(datetime.datetime.timestamp(user.pfp_last_update)))
         )
+
+
+def give_ownership_of_playlists_to_colabs(user: models.UserModel):
+    for playlist in user.my_playlists:
+        if len(playlist.colabs) > 0:
+            playlist.creator = playlist.colabs[0]
+            playlist.colabs.remove(playlist.creator)

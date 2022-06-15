@@ -2,7 +2,7 @@ from src.main import API_VERSION_PREFIX
 from tests import utils
 
 
-def test_get_all_comments_of_album_without_comments(client):
+def test_get_all_comments_of_album_without_comments(client, custom_requests_mock):
     utils.post_user(client, "creator_id", "creator_name")
 
     album_id = utils.post_album(client, uid="creator_id", name="album_name").json()[
@@ -18,7 +18,7 @@ def test_get_all_comments_of_album_without_comments(client):
     assert len(comments) == 0
 
 
-def test_get_all_comments_of_album_with_comments(client):
+def test_get_all_comments_of_album_with_comments(client, custom_requests_mock):
     utils.post_user(client, "creator_id", "creator_name")
 
     album_id = utils.post_album(client, uid="creator_id", name="album_name").json()[
@@ -44,7 +44,9 @@ def test_get_all_comments_of_album_with_comments(client):
     assert comments[0]["created_at"] is not None
 
 
-def test_get_all_comments_of_album_with_comments_and_sub_comments(client):
+def test_get_all_comments_of_album_with_comments_and_sub_comments(
+    client, custom_requests_mock
+):
     utils.post_user(client, "creator_id", "creator_name")
 
     album_id = utils.post_album(client, uid="creator_id", name="album_name").json()[
@@ -79,7 +81,9 @@ def test_get_all_comments_of_album_with_comments_and_sub_comments(client):
     assert comments[0]["responses"][0]["text"] == "sub_comment_text"
 
 
-def test_get_all_comments_of_album_with_many_root_comments(client):
+def test_get_all_comments_of_album_with_many_root_comments(
+    client, custom_requests_mock
+):
     utils.post_user(client, "creator_id", "creator_name")
 
     album_id = utils.post_album(client, uid="creator_id", name="album_name").json()[
@@ -117,7 +121,7 @@ def test_get_all_comments_of_album_with_many_root_comments(client):
     assert len(comments) == 3
 
 
-def get_all_comments_of_album_with_many_sub_comments(client):
+def get_all_comments_of_album_with_many_sub_comments(client, custom_requests_mock):
     utils.post_user(client, "creator_id", "creator_name")
 
     album_id = utils.post_album(client, uid="creator_id", name="album_name").json()[
@@ -154,7 +158,7 @@ def get_all_comments_of_album_with_many_sub_comments(client):
     assert comments[0]["responses"][1]["text"] == "sub_comment_text_2"
 
 
-def test_get_all_comments_only_return_comments_of_album(client):
+def test_get_all_comments_only_return_comments_of_album(client, custom_requests_mock):
     utils.post_user(client, "creator_id", "creator_name")
 
     album_id = utils.post_album(client, uid="creator_id", name="album_name").json()[
@@ -181,7 +185,7 @@ def test_get_all_comments_only_return_comments_of_album(client):
     assert len(comments) == 0
 
 
-def test_get_all_comments_of_album_with_sub_sub_comments(client):
+def test_get_all_comments_of_album_with_sub_sub_comments(client, custom_requests_mock):
 
     utils.post_user(client, "creator_id", "creator_name")
 
@@ -227,7 +231,7 @@ def test_get_all_comments_of_album_with_sub_sub_comments(client):
     assert comments[0]["responses"][0]["responses"][0]["text"] == "sub_sub_comment_text"
 
 
-def test_delete_comment(client):
+def test_delete_comment(client, custom_requests_mock):
     utils.post_user(client, "creator_id", "creator_name")
 
     album_id = utils.post_album(client, uid="creator_id", name="album_name").json()[
@@ -258,7 +262,7 @@ def test_delete_comment(client):
     assert comments[0]["text"] is None
 
 
-def test_another_user_cannot_delete_comment(client):
+def test_another_user_cannot_delete_comment(client, custom_requests_mock):
     utils.post_user(client, "creator_id", "creator_name")
     utils.post_user(client, "another_user_id", "another_user_name")
 
@@ -280,7 +284,7 @@ def test_another_user_cannot_delete_comment(client):
     assert response_delete.status_code == 403
 
 
-def test_edit_comment(client):
+def test_edit_comment(client, custom_requests_mock):
 
     utils.post_user(client, "creator_id", "creator_name")
 
@@ -304,7 +308,7 @@ def test_edit_comment(client):
     assert response_put.json()["text"] == "new_comment_text"
 
 
-def test_another_user_cannot_edit_comment(client):
+def test_another_user_cannot_edit_comment(client, custom_requests_mock):
     utils.post_user(client, "creator_id", "creator_name")
     utils.post_user(client, "another_user_id", "another_user_name")
 
@@ -327,7 +331,7 @@ def test_another_user_cannot_edit_comment(client):
     assert response_put.status_code == 403
 
 
-def test_listener_cannot_post_comment_in_blocked_album(client):
+def test_listener_cannot_post_comment_in_blocked_album(client, custom_requests_mock):
     utils.post_user(client, "creator_id", "creator_name")
     utils.post_user(client, "listener_id", "listener_name")
 
@@ -344,7 +348,7 @@ def test_listener_cannot_post_comment_in_blocked_album(client):
     assert response_post.status_code == 404
 
 
-def test_admin_can_post_comment_in_blocked_album(client):
+def test_admin_can_post_comment_in_blocked_album(client, custom_requests_mock):
     utils.post_user(client, "creator_id", "creator_name")
     utils.post_user(client, "admin_id", "admin_name")
 
@@ -362,7 +366,7 @@ def test_admin_can_post_comment_in_blocked_album(client):
     assert response_post.status_code == 200
 
 
-def test_listener_cannot_edit_comment_in_blocked_album(client):
+def test_listener_cannot_edit_comment_in_blocked_album(client, custom_requests_mock):
     utils.post_user(client, "creator_id", "creator_name")
     utils.post_user(client, "listener_id", "listener_name")
 
@@ -387,7 +391,7 @@ def test_listener_cannot_edit_comment_in_blocked_album(client):
     assert response_put.status_code == 404
 
 
-def test_admin_can_edit_comment_in_blocked_album(client):
+def test_admin_can_edit_comment_in_blocked_album(client, custom_requests_mock):
     utils.post_user(client, "creator_id", "creator_name")
     utils.post_user(client, "admin_id", "admin_name")
 
@@ -413,7 +417,7 @@ def test_admin_can_edit_comment_in_blocked_album(client):
     assert response_put.status_code == 200
 
 
-def test_listener_cannot_delete_comment_in_blocked_album(client):
+def test_listener_cannot_delete_comment_in_blocked_album(client, custom_requests_mock):
     utils.post_user(client, "creator_id", "creator_name")
     utils.post_user(client, "listener_id", "listener_name")
 
@@ -437,7 +441,7 @@ def test_listener_cannot_delete_comment_in_blocked_album(client):
     assert response_delete.status_code == 404
 
 
-def test_get_comments_of_user(client):
+def test_get_comments_of_user(client, custom_requests_mock):
     utils.post_user(client, "creator_id", "creator_name")
     utils.post_user(client, "listener_id", "listener_name")
 

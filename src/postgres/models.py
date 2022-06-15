@@ -1,4 +1,4 @@
-from sqlalchemy import Column, ForeignKey, Integer, String, TIMESTAMP, Boolean
+from sqlalchemy import Column, ForeignKey, Integer, String, TIMESTAMP, Boolean, DateTime
 from sqlalchemy.orm import relationship
 from sqlalchemy import Table
 
@@ -84,6 +84,8 @@ class UserModel(Base):
 
     id = Column(String, primary_key=True, index=True, autoincrement=False)
     name = Column(String, index=True)
+    sub_level = Column(Integer, nullable=False)
+    sub_expires = Column(DateTime, nullable=True)
 
     wallet = Column(String, nullable=True, index=True)
     location = Column(String, nullable=False, index=True)
@@ -147,7 +149,6 @@ class ResourceModel(Base):
 class ResourceCreatorModel(ResourceModel):
     __abstract__ = True
     genre = Column(String, nullable=False, index=True)
-    sub_level = Column(Integer, nullable=False)
 
 
 class ReviewModel(Base):
@@ -170,7 +171,7 @@ class AlbumModel(ResourceCreatorModel):
     cover_last_update = Column(TIMESTAMP, nullable=False)
 
     creator = relationship("UserModel", back_populates="albums")
-    creator_id = Column(String, ForeignKey("users.id"))
+    creator_id = Column(String, ForeignKey("users.id"), nullable=True)
 
     songs = relationship("SongModel", back_populates="album")
 
@@ -199,6 +200,8 @@ class ArtistModel(Base):
 class SongModel(ResourceCreatorModel):
     __tablename__ = "songs"
 
+    sub_level = Column(Integer, nullable=False)
+
     file_last_update = Column(TIMESTAMP, nullable=False)
 
     artists = relationship(
@@ -211,7 +214,7 @@ class SongModel(ResourceCreatorModel):
     )
 
     creator = relationship("UserModel", back_populates="songs")
-    creator_id = Column(String, ForeignKey("users.id"))
+    creator_id = Column(String, ForeignKey("users.id"), nullable=True)
 
     favorited_by = relationship(
         "UserModel",
@@ -234,7 +237,7 @@ class PlaylistModel(ResourceModel):
         back_populates="other_playlists",
     )
     creator = relationship("UserModel", back_populates="my_playlists")
-    creator_id = Column(String, ForeignKey("users.id"))
+    creator_id = Column(String, ForeignKey("users.id"), nullable=True)
 
     favorited_by = relationship(
         "UserModel",

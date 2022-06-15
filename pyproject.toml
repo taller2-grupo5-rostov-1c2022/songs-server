@@ -19,6 +19,8 @@ psycopg2-binary = "^2.9.3"
 python-decouple = "^3.6"
 python-multipart = "^0.0.5"
 agora-token-builder = "^1.0.0"
+requests-mock = "^1.9.3"
+python-dateutil = "^2.8.2"
 
 [tool.poetry.dev-dependencies]
 pytest = "^5.2"
