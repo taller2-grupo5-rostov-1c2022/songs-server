@@ -1,7 +1,7 @@
 from .resource import ResourceBase, ResourceUpdate
 from .resource_creator import ResourceCreatorBase, ResourceCreatorUpdate
-from .song import SongBase, SongUpdate, SongGet, SongPost
-from .album import AlbumBase, AlbumUpdate, AlbumGet, Album, AlbumPost
+from .song import SongBase, SongUpdate, SongGet, SongPost, SongUpdateFile
+from .album import AlbumBase, AlbumUpdate, AlbumGet, Album, AlbumPost, AlbumUpdateCover
 from .user import UserBase, User
 from .comment import CommentGet, CommentPost, CommentUpdate
 from .artist import ArtistBase

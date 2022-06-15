@@ -1,114 +1,34 @@
-from sqlalchemy.orm import contains_eager
-from src.database import models
-from fastapi import HTTPException, Depends, Form
-from sqlalchemy import func
+from src.database import models, crud
+from fastapi import HTTPException, Depends, Form, status
 from .. import roles, utils
 from typing import IO
 import datetime
 from src.constants import SUPPRESS_BLOB_ERRORS, STORAGE_PATH
-from sqlalchemy import and_
 from src import schemas
 from src.database.access import get_db
 from typing import List, Optional
 from sqlalchemy.orm import Session
+
 from ..roles import get_role
 
 
-def get_albums(
-    pdb: Session = Depends(get_db),
-    role: roles.Role = Depends(get_role),
-    creator: str = None,
-    artist: str = None,
-    genre: str = None,
-    name: str = None,
-):
-    join_conditions = [models.SongModel.album_id == models.AlbumModel.id]
-    filters = []
-
-    if not role.can_see_blocked():
-        join_conditions.append(models.SongModel.blocked == False)
-        filters.append(models.AlbumModel.blocked == False)
-
-    if creator is not None:
-        filters.append(models.AlbumModel.creator_id == creator)
-    if artist is not None:
-        filters.append(
-            models.SongModel.artists.any(
-                func.lower(models.ArtistModel.name).contains(artist.lower())
-            )
-        )
-
-    if genre is not None:
-        filters.append(func.lower(models.AlbumModel.genre).contains(genre.lower()))
-    if name is not None:
-        filters.append(func.lower(models.AlbumModel.name).contains(name.lower()))
-
-    albums = (
-        pdb.query(models.AlbumModel)
-        .options(contains_eager("songs"))
-        .join(models.SongModel, and_(*join_conditions), full=True)
-        .filter(and_(True, *filters))
-        .all()
-    )
-
-    return albums
-
-
-def get_album_by_id(pdb, role: roles.Role, album_id: int):
-    join_conditions = [models.SongModel.album_id == models.AlbumModel.id]
-    filters = [album_id == models.AlbumModel.id]
-
-    if not role.can_see_blocked():
-        join_conditions.append(models.SongModel.blocked == False)
-        filters.append(models.AlbumModel.blocked == False)
-
-    album = (
-        pdb.query(models.AlbumModel)
-        .options(contains_eager("songs"))
-        .join(models.SongModel, and_(*join_conditions), full=True)
-        .filter(and_(True, *filters))
-        .all()
-    )
-    if len(album) == 0:
-        raise HTTPException(
-            status_code=404,
-            detail="Album not found",
-        )
-    return album[0]
-
-
-def update_songs(
-    pdb, uid: str, role: roles.Role, album: models.AlbumModel, songs_ids: List[int]
-):
-    songs = []
-    for song_id in songs_ids:
-        song = utils.song.get_song_by_id(pdb, role, song_id)
-        if song.creator_id != uid:
-            raise HTTPException(
-                status_code=403,
-                detail=f"User {uid} attempted to add song of another artist to its album",
-            )
-
-        if song.album is not None and song.album != album:
-            raise HTTPException(
-                status_code=403,
-                detail=f"User {uid} attempted to add song to album but it was already in one",
-            )
-        songs.append(song)
-    album.songs = songs
-
-
-def upload_cover(bucket, album: models.AlbumModel, file: IO):
+def upload_cover(pdb, bucket, album: models.AlbumModel, file: IO, delete_if_fail: bool):
     try:
-        blob = bucket.blob("covers/" + str(album.id))
+        blob = bucket.blob(f"covers/{album.id}")
         blob.upload_from_file(file)
         blob.make_public()
-        album.cover_last_update = datetime.datetime.now()
+        album_update = schemas.AlbumUpdateCover(
+            cover_last_update=datetime.datetime.now()
+        )
+        crud.album.update_album(pdb, album, album_update, False, False)
     except Exception as entry_not_found:
         if not SUPPRESS_BLOB_ERRORS:
+            if delete_if_fail:
+                crud.album.delete_album(pdb, album)
             raise HTTPException(
                 status_code=507,
-                detail=f"Could not upload cover for album {album.id}",
+                detail=f"Could not upload cover for album {album.id}"
+                + str(entry_not_found),
             ) from entry_not_found
 
 
@@ -169,33 +89,76 @@ def get_review_by_uid(pdb, role: roles.Role, album: models.AlbumModel, uid: str)
 def get_album(
     album_id: int, role: roles.Role = Depends(get_role), pdb: Session = Depends(get_db)
 ):
-    return get_album_by_id(pdb, role, album_id)
+    return crud.album.get_album_by_id(
+        pdb, album_id, role.can_see_blocked(), role.can_see_blocked()
+    )
 
 
 def retrieve_album_update(
     resource_creator_update: schemas.ResourceCreatorUpdate = Depends(
         utils.resource.retrieve_resource_creator_update
     ),
-    songs_ids: List[int] = Depends(utils.song.retrieve_songs_ids),
+    album: models.AlbumModel = Depends(get_album),
+    songs_ids: Optional[List[int]] = Depends(utils.song.retrieve_songs_ids),
+    role: roles.Role = Depends(get_role),
+    pdb: Session = Depends(get_db),
+    uid: str = Depends(utils.user.retrieve_uid),
 ):
-    return schemas.AlbumUpdate(songs_ids=songs_ids, **resource_creator_update.dict())
+    validate_songs_for_album(album, songs_ids, uid, role, pdb)
+
+    return schemas.AlbumUpdate(**resource_creator_update.dict(), songs_ids=songs_ids)
+
+
+def validate_songs_for_album(
+    album: Optional[models.AlbumModel],
+    songs_ids: List[int],
+    uid: str,
+    role: roles.Role,
+    pdb: Session,
+):
+    if songs_ids is not None:
+        for song_id in songs_ids:
+            song = crud.song.get_song_by_id(pdb, role.can_see_blocked(), song_id)
+            if song.creator_id != uid:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="You can only add songs you created",
+                )
+            if album is not None:
+                if song.album_id is not None and song.album_id != album.id:
+                    raise HTTPException(
+                        status_code=status.HTTP_403_FORBIDDEN,
+                        detail="You can only add songs that belong to the same album or none",
+                    )
 
 
 def retrieve_album(
     resource_creator: schemas.ResourceCreatorBase = Depends(
         utils.resource.retrieve_resource_creator
     ),
-    songs_ids: List[int] = Depends(utils.song.retrieve_songs_ids),
+    songs_ids: Optional[List[int]] = Depends(utils.song.retrieve_songs_ids),
+    pdb: Session = Depends(get_db),
+    uid: str = Depends(utils.user.retrieve_uid),
+    role: roles.Role = Depends(get_role),
 ):
-    return schemas.AlbumPost(songs_ids=songs_ids, **resource_creator.dict())
+    validate_songs_for_album(None, songs_ids, uid, role, pdb)
+
+    return schemas.AlbumPost(**resource_creator.dict(), songs_ids=songs_ids)
 
 
-def retrieve_album_info(album: Optional[int] = Form(None), pdb=Depends(get_db)):
-    if album is not None:
-        album_id = album
-        album = pdb.get(models.AlbumModel, album_id)
-        if album is None:
-            raise HTTPException(status_code=404, detail="Album not found")
+def retrieve_album_from_form(
+    album_id: Optional[int] = Form(None),
+    pdb: Session = Depends(get_db),
+    role: roles.Role = Depends(get_role),
+):
+    if album_id is None:
+        return None
+
+    album = crud.album.get_album_by_id(
+        pdb, album_id, role.can_see_blocked(), role.can_see_blocked()
+    )
+    if album is None:
+        raise HTTPException(status_code=404, detail="Album not found")
     return album
 
 
@@ -204,14 +167,17 @@ def retrieve_song(
         utils.resource.retrieve_resource_creator
     ),
     artists_names: List[str] = Depends(utils.artist.retrieve_artists_names),
-    album_info: Optional[schemas.AlbumBase] = Depends(retrieve_album_info),
+    album: Optional[schemas.AlbumBase] = Depends(retrieve_album_from_form),
     sub_level: Optional[int] = Form(None),
 ):
+    if album is not None:
+        album = schemas.AlbumBase.from_orm(album)
+
     if sub_level is None:
         sub_level = 0
     return schemas.SongPost(
         artists_names=artists_names,
-        album=album_info,
+        album=album,
         sub_level=sub_level,
         **resource_creator.dict(),
     )

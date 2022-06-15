@@ -190,7 +190,7 @@ def delete_user(
     pdb.commit()
 
 
-@router.post("/users/make_artist/", response_model=schemas.PlaylistBase)
+@router.post("/users/make_artist/")
 def make_artist(
     uid: str = Depends(utils.user.retrieve_uid),
     role: roles.Role = Depends(roles.get_role),

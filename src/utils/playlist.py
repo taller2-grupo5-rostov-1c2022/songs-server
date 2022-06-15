@@ -1,89 +1,24 @@
 import json
 
 from src.database.access import get_db
-from src.database import models
+from src.database import models, crud
 from src import roles, utils
 from src import schemas
 from typing import Optional, List
 from fastapi import HTTPException, Depends, Form
-from sqlalchemy import or_, and_
-from sqlalchemy.orm import contains_eager
+from sqlalchemy.orm import Session
 
 from src.roles import get_role
 
 
-def get_playlists(pdb, role: roles.Role, colab_id: Optional[str]):
-    queries = []
-    join_conditions = []
-    if not role.can_see_blocked():
-        queries.append(models.PlaylistModel.blocked == False)
-        join_conditions.append(models.SongModel.blocked == False)
-
-    if colab_id is not None:
-        queries.append(
-            or_(
-                models.PlaylistModel.creator_id == colab_id,
-                models.UserModel.id == colab_id,
-            )
-        )
-
-    playlists = (
-        pdb.query(models.PlaylistModel)
-        .join(models.UserModel.other_playlists, full=True)
-        .join(models.SongModel, and_(True, *join_conditions), full=True)
-        .filter(*queries)
-        .all()
-    )
-
-    playlists = [p for p in playlists if p is not None]
-
-    return playlists
+def get_colab_from_form(pdb: Session = Depends(get_db), colab_id: str = Form(...)):
+    return crud.user.get_user_by_id(pdb, colab_id)
 
 
-def get_playlist_by_id(pdb, role: roles.Role, playlist_id: int):
-    join_conditions = [
-        models.SongModel.id == models.song_playlist_association_table.c.song_id
-    ]
-    filters = [playlist_id == models.PlaylistModel.id]
-
-    if not role.can_see_blocked():
-        join_conditions.append(models.SongModel.blocked == False)
-        filters.append(models.PlaylistModel.blocked == False)
-
-    playlists = (
-        pdb.query(models.PlaylistModel)
-        .join(
-            models.song_playlist_association_table,
-            models.song_playlist_association_table.c.playlist_id
-            == models.PlaylistModel.id,
-            isouter=True,
-        )
-        .join(models.SongModel, and_(True, *join_conditions), isouter=True)
-        .options(contains_eager("songs"))
-        .filter(and_(True, *filters))
-    ).all()
-
-    if len(playlists) == 0:
-        raise HTTPException(status_code=404, detail="Playlist not found")
-    return playlists[0]
-
-
-def get_songs_list(pdb, role: roles.Role, songs_ids: List[int]):
-    songs = []
-    for song_id in songs_ids:
-        song = utils.song.get_song_by_id(pdb, role, song_id)
-        songs.append(song)
-    return songs
-
-
-def get_colabs_list(pdb, colabs_ids: List[str]):
+def get_colabs_list(pdb: Session, colabs_ids: List[str]) -> List[models.UserModel]:
     colabs = []
     for colab_id in colabs_ids:
-        colab = pdb.get(models.UserModel, colab_id)
-        if colab is None:
-            raise HTTPException(
-                status_code=404, detail=f"User with id {colab_id} not found"
-            )
+        colab = crud.user.get_user_by_id(pdb, colab_id)
         colabs.append(colab)
     return colabs
 
@@ -118,6 +53,22 @@ def retrieve_playlist(
     )
 
 
+def get_playlist(
+    playlist_id: int, pdb=Depends(get_db), role: roles.Role = Depends(get_role)
+):
+    return crud.playlist.get_playlist_by_id(
+        pdb, playlist_id, role.can_see_blocked(), role.can_see_blocked()
+    )
+
+
+def can_edit_playlist(playlist: models.PlaylistModel, role: roles.Role, uid: str):
+    return (
+        uid == playlist.creator_id
+        or uid in [colab.id for colab in playlist.colabs]
+        or role.can_edit_everything()
+    )
+
+
 def retrieve_playlist_update(
     resource_update: schemas.ResourceUpdate = Depends(
         utils.resource.retrieve_resource_update
@@ -125,12 +76,7 @@ def retrieve_playlist_update(
     songs_ids: Optional[List[int]] = Depends(utils.song.retrieve_songs_ids_update),
     colabs_ids: Optional[List[str]] = Depends(retrieve_colabs_ids),
 ):
+
     return schemas.PlaylistUpdate(
         songs_ids=songs_ids, colabs_ids=colabs_ids, **resource_update.dict()
     )
-
-
-def get_playlist(
-    playlist_id: int, role: roles.Role = Depends(get_role), pdb=Depends(get_db)
-):
-    return get_playlist_by_id(pdb, role, playlist_id)

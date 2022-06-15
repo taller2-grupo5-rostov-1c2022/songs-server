@@ -1,12 +1,12 @@
-import datetime
 from src.constants import SUPPRESS_BLOB_ERRORS
 from fastapi import APIRouter
 from fastapi import Depends, File, HTTPException, UploadFile
+
 from src.firebase.access import get_bucket
 from typing import List
 from sqlalchemy.orm import Session
 from src.database.access import get_db
-from src.database import models
+from src.database import models, crud
 from src import roles, utils
 from src.roles import get_role
 from src.schemas.album.get import AlbumGet
@@ -27,7 +27,15 @@ def get_albums(
 ):
     """Returns all Albums"""
 
-    albums = utils.album.get_albums(pdb, role, creator, artist, genre, name)
+    albums = crud.album.get_albums(
+        pdb,
+        role.can_see_blocked(),
+        role.can_see_blocked(),
+        creator,
+        artist,
+        genre,
+        name,
+    )
 
     albums = list(filter(None, albums))
 
@@ -45,7 +53,9 @@ def get_my_albums(
     pdb: Session = Depends(get_db),
 ):
 
-    albums = utils.album.get_albums(pdb, roles.Role.admin(), uid)
+    albums = crud.album.get_albums(
+        pdb, show_blocked_albums=True, show_blocked_songs=True, creator=uid
+    )
 
     for album in albums:
         album.cover = utils.album.cover_url(album)
@@ -71,29 +81,16 @@ def get_album_by_id(
 
 @router.post("/albums/", response_model=AlbumGet)
 def post_album(
-    uid: str = Depends(utils.user.retrieve_uid),
-    role: roles.Role = Depends(get_role),
-    album_info: AlbumPost = Depends(utils.album.retrieve_album),
+    album_post: AlbumPost = Depends(utils.album.retrieve_album),
     cover: UploadFile = File(...),
+    role: roles.Role = Depends(get_role),
     pdb: Session = Depends(get_db),
     bucket=Depends(get_bucket),
 ):
     """Creates an album and returns its id. Songs_ids form is encoded like '["song_id_1", "song_id_2", ...]'"""
+    album = crud.album.create_album(pdb, album_post, role.can_see_blocked())
 
-    album = models.AlbumModel(
-        cover_last_update=datetime.datetime.now(),
-        songs=[],
-        **album_info.dict(exclude={"songs_ids"}),
-    )
-
-    pdb.add(album)
-    pdb.commit()
-
-    utils.album.update_songs(pdb, uid, role, album, album_info.songs_ids)
-    utils.album.upload_cover(bucket, album, cover.file)
-
-    pdb.add(album)
-    pdb.commit()
+    utils.album.upload_cover(pdb, bucket, album, cover.file, delete_if_fail=True)
 
     album.score = utils.album.calculate_score(pdb, album)
     album.scores_amount = utils.album.calculate_scores_amount(pdb, album)
@@ -119,26 +116,12 @@ def update_album(
             detail=f"User {uid} attempted to edit album of user with ID {album.creator_id}",
         )
 
-    album_update = album_update.dict()
-
-    for album_attr in album_update:
-        if album_update[album_attr] is not None:
-            setattr(album, album_attr, album_update[album_attr])
-    if album_update["songs_ids"] is not None:
-        utils.album.update_songs(pdb, uid, role, album, album_update["songs_ids"])
-
-    if album_update["blocked"] is not None:
-        if not role.can_block():
-            raise HTTPException(
-                status_code=403,
-                detail=f"User {uid} without permissions tried to block album {album.id}",
-            )
-        album.blocked = album_update["blocked"]
+    crud.album.update_album(
+        pdb, album, album_update, role.can_see_blocked(), role.can_see_blocked()
+    )
 
     if cover is not None:
-        utils.album.upload_cover(bucket, album, cover.file)
-
-    pdb.commit()
+        utils.album.upload_cover(pdb, bucket, album, cover.file, delete_if_fail=False)
 
 
 @router.delete("/albums/{album_id}")
@@ -156,7 +139,6 @@ def delete_album(
             status_code=403,
             detail=f"User '{uid} attempted to delete album of user with ID {album.creator_id}",
         )
-    pdb.delete(album)
     try:
         bucket.blob(f"covers/{album.id}").delete()
     except Exception as entry_not_found:
@@ -164,4 +146,5 @@ def delete_album(
             raise HTTPException(
                 status_code=507, detail=f"Could not delete cover for album {album.id}"
             ) from entry_not_found
-    pdb.commit()
+
+    crud.album.delete_album(pdb, album)

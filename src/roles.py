@@ -57,5 +57,5 @@ class Role:
         return Role.artist() <= self
 
 
-async def get_role(role: str = Header("listener")):
+def get_role(role: str = Header("listener")):
     return Role(role)
