@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 from fastapi import status, HTTPException
 import requests
 
+from src.constants import PAYMENTS_API_KEY
 from src.postgres import schemas
 
 DEPOSIT_ENDPOINT = "https://rostov-payments-server.herokuapp.com/api/v1/deposit"
@@ -36,7 +37,9 @@ def get_subscriptions():
 
 
 def create_wallet(uid: str):
-    response = requests.post(f"{CREATE_WALLET_ENDPOINT}/{uid}")
+    response = requests.post(
+        f"{CREATE_WALLET_ENDPOINT}/{uid}", headers={"api_key": PAYMENTS_API_KEY}
+    )
 
     if response.status_code != status.HTTP_200_OK:
         raise HTTPException(
@@ -87,6 +90,7 @@ def subscribe(user: schemas.UserBase, sub_level: int, pdb: Session):
         payment_response = requests.post(
             f"{DEPOSIT_ENDPOINT}/{user.id}",
             json={"amountInEthers": get_sub_price(sub_level)},
+            headers={"api_key": PAYMENTS_API_KEY},
         )
 
         if payment_response.status_code != status.HTTP_200_OK:
