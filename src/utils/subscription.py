@@ -3,8 +3,7 @@ from sqlalchemy.orm import Session
 from fastapi import HTTPException, status
 import requests
 
-from src import schemas
-from src.database import crud, models
+from src.database import models
 
 DEPOSIT_ENDPOINT = "https://rostov-payments-server.herokuapp.com/api/v1/deposit"
 CREATE_WALLET_ENDPOINT = "https://rostov-payments-server.herokuapp.com/api/v1/wallets"
@@ -86,9 +85,6 @@ def subscribe(user: models.UserModel, sub_level: int, pdb: Session) -> models.Us
     if sub_level > SUB_LEVEL_FREE:
         _make_payment(user, sub_level)
 
-    user_update_sub = schemas.UserUpdateSub(
-        sub_level=sub_level,
-        sub_expires=get_expiration_date(sub_level, datetime.datetime.now()),
-    )
+    expiration_date = get_expiration_date(sub_level, datetime.datetime.now())
 
-    return crud.user.update_user_sub(pdb, user, user_update_sub)
+    return user.update(pdb, sub_level=sub_level, sub_expires=expiration_date)

@@ -5,7 +5,7 @@ from fastapi import Depends, HTTPException
 from typing import List
 from sqlalchemy.orm import Session
 from src.database.access import get_db
-from src.database import models, crud
+from src.database import models
 
 router = APIRouter(tags=["comments"])
 
@@ -15,7 +15,7 @@ def get_album_comments(
     album: models.AlbumModel = Depends(utils.album.get_album),
     pdb: Session = Depends(get_db),
 ):
-    return crud.comment.get_comments(pdb, album)
+    return models.CommentModel.get_roots_by_album(pdb, album)
 
 
 @router.post("/albums/{album_id}/comments/", response_model=schemas.CommentGet)
@@ -25,7 +25,7 @@ def post_album_comment(
     pdb: Session = Depends(get_db),
 ):
 
-    comment = crud.comment.create_comment(pdb, album, comment_info)
+    comment = models.CommentModel.create(pdb, album=album, **comment_info.dict())
 
     return comment
 
@@ -37,13 +37,12 @@ def edit_album_comment(
     pdb: Session = Depends(get_db),
     uid: str = Depends(utils.user.retrieve_uid),
 ):
-
     if comment.commenter_id != uid:
         raise HTTPException(
             status_code=403, detail="You are not allowed to edit this comment"
         )
 
-    comment = crud.comment.edit_comment(pdb, comment, comment_update)
+    comment = comment.update(pdb, **comment_update.dict())
 
     return comment
 
@@ -59,7 +58,7 @@ def delete_album_comment(
             status_code=403, detail="You are not allowed to delete this comment"
         )
 
-    crud.comment.set_text_none(pdb, comment)
+    comment.soft_delete(pdb)
 
 
 @router.get("/users/comments/", response_model=List[schemas.CommentGet])
@@ -68,4 +67,4 @@ def get_user_comments(
     pdb: Session = Depends(get_db),
 ):
 
-    return crud.comment.get_comments_by_uid(pdb, uid)
+    return models.CommentModel.search(pdb, commenter_id=uid)

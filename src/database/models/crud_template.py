@@ -17,7 +17,7 @@ class CRUDMixin(Base):
         return instance.save(pdb, commit=commit)
 
     @classmethod
-    def get(cls, pdb: Session, _id, raise_if_not_found=True):
+    def get(cls, pdb: Session, _id, raise_if_not_found=True, **kwargs):
         """Get a record by its id."""
         item = pdb.query(cls).get(_id)
         if item is None and raise_if_not_found:

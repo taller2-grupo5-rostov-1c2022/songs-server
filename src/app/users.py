@@ -1,14 +1,11 @@
 from src import roles, utils, schemas
-from src.constants import SUPPRESS_BLOB_ERRORS
 from src.database.access import get_db
-from typing import List
+from typing import List, Optional
 from fastapi import APIRouter
-from fastapi import Depends, HTTPException, Form, Header, UploadFile
+from fastapi import Depends, HTTPException, UploadFile
 from sqlalchemy.orm import Session
 from src.firebase.access import get_bucket, get_auth
-from src.database import models, crud
-import datetime
-from src.utils.subscription import SUB_LEVEL_FREE
+from src.database import models
 
 router = APIRouter(tags=["users"])
 
@@ -17,7 +14,7 @@ router = APIRouter(tags=["users"])
 def get_all_users(pdb: Session = Depends(get_db)):
     """Returns all users"""
 
-    users = crud.user.get_users(pdb)
+    users = models.UserModel.search(pdb)
 
     for user in users:
         user.pfp = utils.user.pfp_url(user)
@@ -29,7 +26,7 @@ def get_all_users(pdb: Session = Depends(get_db)):
 def get_user_by_id(uid: str, pdb: Session = Depends(get_db)):
     """Returns a user by its id or 404 if not found"""
 
-    user = crud.user.get_user_by_id(pdb, uid)
+    user = models.UserModel.get(pdb, _id=uid)
 
     user.pfp = utils.user.pfp_url(user)
 
@@ -60,96 +57,52 @@ def post_user(
     user_info = user_info.dict()
     user_info["id"] = user_info["uid"]
 
-    user_info_complete = schemas.UserPostComplete(
-        **user_info,
-        sub_level=SUB_LEVEL_FREE,
-        wallet=wallet,
-        sub_expires=utils.subscription.get_expiration_date(
-            utils.subscription.SUB_LEVEL_FREE, datetime.datetime.now()
-        ),
-        songs=[],
-        albums=[],
-        playlists=[],
-        my_playlists=[],
-        other_playlists=[],
-    )
+    if img:
+        user = models.UserModel.create(
+            pdb, **user_info, wallet=wallet, pfp=img, bucket=bucket
+        )
+        pfp_url = utils.user.pfp_url(user)
+        auth.update_user(uid=user_info["id"], photo_url=pfp_url)
+        user.pfp = pfp_url
+    else:
+        user = models.UserModel.create(pdb, **user_info, wallet=wallet)
 
-    user = crud.user.create_user(pdb, user_info_complete)
-
-    auth.update_user(uid=user_info_complete.uid, display_name=user_info_complete.name)
-
-    if img is not None:
-        try:
-            blob = bucket.blob("pfp/" + user_info_complete.uid)
-            blob.upload_from_file(img.file)
-            blob.make_public()
-            auth.update_user(uid=user_info_complete.uid, photo_url=blob.public_url)
-            user.pfp_last_update = datetime.datetime.now()
-            pdb.commit()
-        except Exception as e:
-            crud.user.delete_user(pdb, user)
-
-            if not SUPPRESS_BLOB_ERRORS:
-                raise HTTPException(
-                    status_code=507,
-                    detail=f"Image for User '{user_info_complete.uid}' could not be uploaded",
-                ) from e
-
+    auth.update_user(uid=user.id, display_name=user.name)
     return user
 
 
 @router.put("/users/{uid_to_modify}", response_model=schemas.User)
 def put_user(
-    uid_to_modify: str,
-    uid: str = Header(...),
-    name: str = Form(None),
-    location: str = Form(None),
-    interests: str = Form(None),
-    img: UploadFile = None,
+    uid: str = Depends(utils.user.retrieve_uid),
+    user_to_modify: models.UserModel = Depends(utils.user.retrieve_user_to_modify),
+    user_update: schemas.UserUpdate = Depends(utils.user.retrieve_user_update),
     pdb: Session = Depends(get_db),
+    img: Optional[UploadFile] = None,
     bucket=Depends(get_bucket),
     auth=Depends(get_auth),
 ):
     """Updates a user and returns its id or 404 if not found or 403 if not authorized to update"""
-    if uid != uid_to_modify:
+    if uid != user_to_modify.id:
         raise HTTPException(
             status_code=403,
-            detail=f"User with id {uid} attempted to modify user of id {uid_to_modify}",
+            detail=f"User with id {uid} attempted to modify user of id {user_to_modify.id}",
         )
 
-    user = (
-        pdb.query(models.UserModel).filter(models.UserModel.id == uid_to_modify).first()
-    )
+    if img:
+        modified_user = user_to_modify.update(
+            pdb, **user_update.dict(exclude_none=True), pfp=img, bucket=bucket
+        )
+        pfp_url = utils.user.pfp_url(modified_user)
+        modified_user.pfp = pfp_url
+        auth.update_user(uid=uid, photo_url=pfp_url)
+    else:
+        modified_user = user_to_modify.update(
+            pdb, **user_update.dict(exclude_none=True)
+        )
+    if user_update.name is not None:
+        auth.update_user(uid=uid, display_name=user_update.name)
 
-    if user is None:
-        raise HTTPException(status_code=404, detail=f"User '{uid}' not found")
-
-    if name is not None:
-        user.name = name
-        auth.update_user(uid=uid, display_name=name)
-
-    if location is not None:
-        user.location = location
-
-    if interests is not None:
-        user.interests = interests
-
-    if img is not None:
-        try:
-            blob = bucket.blob(f"pfp/{uid}")
-            blob.upload_from_file(img.file)
-            blob.make_public()
-            user.pfp_last_update = datetime.datetime.now()
-        except Exception:  # noqa: E722 # Want to catch all exceptions
-            if not SUPPRESS_BLOB_ERRORS:
-                raise HTTPException(
-                    status_code=507,
-                    detail=f"Image for User '{uid}' could not be uploaded",
-                )
-
-    pdb.commit()
-
-    return user
+    return modified_user
 
 
 @router.delete("/users/{uid_to_delete}")
@@ -169,19 +122,7 @@ def delete_user(
 
     utils.user.give_ownership_of_playlists_to_colabs(user)
 
-    pdb.delete(user)
-
-    if user.pfp_last_update is not None:
-        try:
-            bucket.blob("pfp/" + str(user.id)).delete()
-        except:  # noqa: W0707 # Want to catch all exceptions
-            if not SUPPRESS_BLOB_ERRORS:
-                raise HTTPException(
-                    status_code=507,
-                    detail=f"Image for User '{user.id}' could not be deleted",
-                )
-
-    pdb.commit()
+    user.delete(pdb, bucket=bucket)
 
 
 @router.post("/users/make_artist/")

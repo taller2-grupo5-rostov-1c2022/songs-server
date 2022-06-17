@@ -21,8 +21,10 @@ def post_review(
             status_code=422, detail="Text and score cannot be None at the same time"
         )
 
-    reviews = crud.review.get_reviews_by_album_and_user(pdb, album, user)
-    if reviews:
+    review = models.ReviewModel.get(
+        pdb, album=album, reviewer=user, raise_if_not_found=False
+    )
+    if review:
         raise HTTPException(
             status_code=403,
             detail=f"User {user.id} already reviewed in album {album.id}",
@@ -51,13 +53,7 @@ def edit_review(
     review: models.ReviewModel = Depends(utils.review.get_review),
     pdb: Session = Depends(get_db),
 ):
-    review_attrs = review_info_update.dict()
-    for review_attr_key in review_attrs:
-        if review_attrs[review_attr_key] is not None:
-            setattr(review, review_attr_key, review_attrs[review_attr_key])
-
-    pdb.commit()
-    pdb.refresh(review)
+    review.update(pdb, **review_info_update.dict(exclude_none=True))
 
 
 @router.delete("/albums/{album_id}/reviews/")
@@ -65,12 +61,12 @@ def delete_review(
     review: models.ReviewModel = Depends(utils.review.get_review),
     pdb: Session = Depends(get_db),
 ):
-    pdb.delete(review)
-    pdb.commit()
+    review.delete(pdb)
 
 
 @router.get("/users/{uid}/reviews/", response_model=List[schemas.ReviewMyReviews])
 def get_reviews_of_user(
-    uid: str = Depends(utils.user.retrieve_uid), pdb: Session = Depends(get_db)
+    user: models.UserModel = Depends(utils.user.retrieve_user),
+    pdb: Session = Depends(get_db),
 ):
-    return utils.review.get_reviews_by_uid(pdb, uid)
+    return models.ReviewModel.get_by_reviewer(pdb, user)

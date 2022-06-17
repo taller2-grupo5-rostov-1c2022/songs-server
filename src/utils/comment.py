@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
 
-from fastapi import Depends, HTTPException, Body
+from fastapi import Depends, Body
 
 from src import roles, utils
 from src.database import models
@@ -24,8 +24,7 @@ def get_comment(
     pdb: Session = Depends(get_db),
     role: roles.Role = Depends(roles.get_role),
 ):
-    comment = pdb.get(models.CommentModel, comment_id)
-    if comment is None:
-        raise HTTPException(status_code=404, detail="Comment not found")
-    _ = utils.album.get_album(comment.album_id, role, pdb)
+    comment: models.CommentModel = models.CommentModel.get(
+        pdb, _id=comment_id, role=role
+    )
     return comment

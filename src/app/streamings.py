@@ -4,7 +4,7 @@ from fastapi import APIRouter, UploadFile, File, Form
 from fastapi import Depends, HTTPException
 from typing import List, Optional
 from sqlalchemy.orm import Session
-from src.database import models, crud
+from src.database import models
 from src import roles, utils, schemas
 from src.roles import get_role
 
@@ -17,7 +17,7 @@ def get_streamings(
 ):
     """Get all active streamings"""
 
-    return crud.streaming.get_streamings(pdb)
+    return models.StreamingModel.search(pdb)
 
 
 @router.post("/streamings/")
@@ -31,27 +31,33 @@ def post_streaming(
 ):
     """Create a new streaming and returns the publisher token"""
 
-    if user.streaming is not None:
-        raise HTTPException(status_code=403, detail="You already have a streaming")
-
     if not role.can_stream():
         raise HTTPException(
             status_code=403, detail="You don't have the permission to stream"
         )
 
+    if user.streaming:
+        raise HTTPException(status_code=403, detail="You already have a streaming")
+
     (
-        streaming_artist_token,
-        streaming_listener_token,
+        artist_token,
+        listener_token,
     ) = utils.streaming.build_streaming_tokens(user.id)
 
     if img is not None:
-        img_url = utils.streaming.upload_img(img, user.id, bucket)
+        models.StreamingModel.create(
+            pdb,
+            name=name,
+            img=img,
+            artist=user,
+            bucket=bucket,
+            listener_token=listener_token,
+        )
     else:
-        img_url = None
-
-    crud.streaming.create_streaming(pdb, name, img_url, user, streaming_listener_token)
-
-    return streaming_artist_token
+        models.StreamingModel.create(
+            pdb, name=name, artist=user, listener_token=listener_token
+        )
+    return artist_token
 
 
 @router.delete("/streamings/")
@@ -66,7 +72,4 @@ def delete_streaming(
     if streaming is None:
         raise HTTPException(status_code=404, detail="You don't have a streaming")
 
-    if streaming.img_url is not None:
-        utils.streaming.delete_img(user.id, bucket)
-
-    crud.streaming.delete_streaming(pdb, streaming)
+    streaming.delete(pdb, bucket=bucket)

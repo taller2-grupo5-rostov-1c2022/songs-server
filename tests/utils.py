@@ -412,3 +412,11 @@ def post_user_with_sub_level(client, user_id: str, user_name: str, sub_level: in
         json={"sub_level": sub_level},
     )
     return response
+
+
+def delete_user(client, user_id: str):
+    response = client.delete(
+        f"{API_VERSION_PREFIX}/users/{user_id}",
+        headers={"api_key": "key", "uid": user_id},
+    )
+    return response

@@ -210,7 +210,8 @@ def test_get_my_reviews(client, custom_requests_mock):
     post_user(client, "reviewer_id", "reviewer_name")
 
     album_id = post_album(client, "creator_id").json()["id"]
-    post_review(client, "reviewer_id", album_id)
+    response = post_review(client, "reviewer_id", album_id)
+    assert response.status_code == 200
 
     response = client.get(
         f"{API_VERSION_PREFIX}/users/reviewer_id/reviews",

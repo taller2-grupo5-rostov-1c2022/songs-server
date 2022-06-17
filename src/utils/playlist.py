@@ -1,7 +1,7 @@
 import json
 
 from src.database.access import get_db
-from src.database import models, crud
+from src.database import models
 from src import roles, utils
 from src import schemas
 from typing import Optional, List
@@ -12,7 +12,7 @@ from src.roles import get_role
 
 
 def get_colab_from_form(pdb: Session = Depends(get_db), colab_id: str = Form(...)):
-    return crud.user.get_user_by_id(pdb, colab_id)
+    return models.UserModel.get(pdb, _id=colab_id)
 
 
 def retrieve_colabs_ids(colabs_ids: Optional[str] = Form(None)):
