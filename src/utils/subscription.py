@@ -1,6 +1,6 @@
 import datetime
 from sqlalchemy.orm import Session
-from fastapi import status, HTTPException, Body
+from fastapi import HTTPException, status
 import requests
 
 from src import schemas
@@ -69,9 +69,7 @@ def get_sub_price(sub_level: int):
     )
 
 
-def _make_payment(
-    user: models.UserModel, sub_level: int
-):
+def _make_payment(user: models.UserModel, sub_level: int):
     payment_response = requests.post(
         f"{DEPOSIT_ENDPOINT}/:{user.id}",
         json={"amountInEthers": get_sub_price(sub_level)},

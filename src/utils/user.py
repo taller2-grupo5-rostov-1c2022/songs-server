@@ -17,16 +17,18 @@ def retrieve_uid(uid: str = Header(...), pdb=Depends(get_db)):
 
 
 def retrieve_user_info(
-        uid: str = Header(...),
-        name: str = Form(...),
-        location: str = Form(...),
-        interests: str = Form(...),
-        pdb: Session = Depends(get_db),
+    uid: str = Header(...),
+    name: str = Form(...),
+    location: str = Form(...),
+    interests: str = Form(...),
+    pdb: Session = Depends(get_db),
 ) -> schemas.UserPost:
     try:
         crud.user.get_user_by_id(pdb, uid)
     except HTTPException:
-        user = schemas.UserPost(uid=uid, name=name, location=location, interests=interests)
+        user = schemas.UserPost(
+            uid=uid, name=name, location=location, interests=interests
+        )
         return user
     else:
         raise HTTPException(status_code=400, detail="User already exists")

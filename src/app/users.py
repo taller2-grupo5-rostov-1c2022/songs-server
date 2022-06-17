@@ -26,10 +26,7 @@ def get_all_users(pdb: Session = Depends(get_db)):
 
 
 @router.get("/users/{uid}", response_model=schemas.User)
-def get_user_by_id(
-    uid: str,
-    pdb: Session = Depends(get_db)
-):
+def get_user_by_id(uid: str, pdb: Session = Depends(get_db)):
     """Returns a user by its id or 404 if not found"""
 
     user = crud.user.get_user_by_id(pdb, uid)
@@ -40,9 +37,7 @@ def get_user_by_id(
 
 
 @router.get("/my_user/", response_model=schemas.User)
-def get_my_user(
-    user: models.UserModel = Depends(utils.user.retrieve_user)
-):
+def get_my_user(user: models.UserModel = Depends(utils.user.retrieve_user)):
     """Returns own user"""
 
     user.pfp = utils.user.pfp_url(user)
@@ -56,7 +51,7 @@ def post_user(
     img: UploadFile = None,
     bucket=Depends(get_bucket),
     auth=Depends(get_auth),
-    pdb: Session = Depends(get_db)
+    pdb: Session = Depends(get_db),
 ):
     """Creates a user and returns its id"""
 
@@ -69,18 +64,17 @@ def post_user(
         **user_info,
         sub_level=SUB_LEVEL_FREE,
         wallet=wallet,
-        sub_expires=utils.subscription.get_expiration_date(utils.subscription.SUB_LEVEL_FREE, datetime.datetime.now()),
+        sub_expires=utils.subscription.get_expiration_date(
+            utils.subscription.SUB_LEVEL_FREE, datetime.datetime.now()
+        ),
         songs=[],
         albums=[],
         playlists=[],
         my_playlists=[],
-        other_playlists=[]
+        other_playlists=[],
     )
 
-    user = crud.user.create_user(
-        pdb,
-        user_info_complete
-    )
+    user = crud.user.create_user(pdb, user_info_complete)
 
     auth.update_user(uid=user_info_complete.uid, display_name=user_info_complete.name)
 

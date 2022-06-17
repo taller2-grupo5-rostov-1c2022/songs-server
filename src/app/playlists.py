@@ -3,7 +3,7 @@ from fastapi import Depends, HTTPException, status, APIRouter
 from typing import List
 from sqlalchemy.orm import Session
 from src.database.access import get_db
-from src.database import models, crud
+from src.database import models
 from src.roles import get_role
 
 router = APIRouter(tags=["playlists"])
@@ -17,18 +17,14 @@ def get_playlists(
 ):
     """Returns playlists either filtered by colab or all playlists"""
 
-    return crud.playlist.get_playlists(
-        pdb, role.can_see_blocked(), role.can_see_blocked(), colab
-    )
+    return models.PlaylistModel.search(pdb, role=role, colab=colab)
 
 
 @router.get("/my_playlists/", response_model=List[schemas.PlaylistBase])
 def get_my_playlists(
     uid: str = Depends(utils.user.retrieve_uid), pdb: Session = Depends(get_db)
 ):
-    return crud.playlist.get_playlists(
-        pdb, show_blocked_songs=True, show_blocked_playlists=True, colab_id=uid
-    )
+    return models.PlaylistModel.search(pdb, colab=uid, role=roles.Role.admin())
 
 
 @router.get("/playlists/{playlist_id}", response_model=schemas.Playlist)
@@ -49,7 +45,7 @@ def post_playlist(
     """Creates a playlist and returns its id. Songs_ids form is encoded like '["song_id_1", "song_id_2", ...]'.
     Colabs_ids form is encoded like '["colab_id_1", "colab_id_2", ...]'"""
 
-    playlist = crud.playlist.create_playlist(pdb, playlist_info, role.can_see_blocked())
+    playlist = models.PlaylistModel.create(pdb, **playlist_info.dict(), role=role)
 
     return playlist
 
@@ -71,9 +67,7 @@ def update_playlist(
             status_code=status.HTTP_403_FORBIDDEN, detail="You can't edit this playlist"
         )
 
-    crud.playlist.update_playlist(
-        pdb, playlist, playlist_update, role.can_see_blocked(), role.can_block()
-    )
+    playlist.update(pdb, **playlist_update.dict(exclude_none=True), role=role)
 
 
 @router.delete("/playlists/{playlist_id}")
@@ -90,7 +84,7 @@ def delete_playlist(
             status_code=status.HTTP_403_FORBIDDEN,
             detail=f"User '{uid} attempted to delete playlist of user with ID {playlist.creator_id}",
         )
-    crud.playlist.delete_playlist(pdb, playlist)
+    playlist.delete(pdb)
 
 
 @router.delete("/playlists/{playlist_id}/songs/{song_id}/")
@@ -108,7 +102,7 @@ def remove_song_from_playlist(
             status_code=status.HTTP_403_FORBIDDEN, detail="You can't edit this playlist"
         )
 
-    crud.playlist.remove_song(pdb, playlist, song)
+    playlist.remove_song(pdb, song)
 
 
 @router.post("/playlists/{playlist_id}/songs/")
@@ -126,7 +120,7 @@ def add_song_to_playlist(
             status_code=status.HTTP_403_FORBIDDEN, detail="You can't edit this playlist"
         )
 
-    crud.playlist.add_song(pdb, playlist, song)
+    playlist.add_song(pdb, song)
 
     return {"id": playlist.id}
 
@@ -146,6 +140,6 @@ def add_colab_to_playlist(
             detail=f"User {uid} attempted to add a colab to playlist of user with ID {playlist.creator_id}",
         )
 
-    crud.playlist.add_colab(pdb, playlist, colab)
+    playlist.add_colab(pdb, colab)
 
     return {"id": playlist.id}

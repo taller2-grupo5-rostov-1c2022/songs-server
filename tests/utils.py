@@ -58,6 +58,7 @@ def post_song(
     blocked: Optional[bool] = False,
     headers: Optional[dict] = None,
     role: Optional[str] = "artist",
+    album_id: Optional[int] = None,
 ):
     if headers is None:
         headers = header(uid, role=role)
@@ -75,6 +76,7 @@ def post_song(
                 "artists": json.dumps(artists),
                 "genre": genre,
                 "sub_level": sub_level,
+                "album_id": album_id,
             },
             files={"file": ("song.txt", f, "plain/text")},
             headers=headers,

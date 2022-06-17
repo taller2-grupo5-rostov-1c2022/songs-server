@@ -6,8 +6,8 @@ song_artist_association_table = Table(
     "song_artist_association",
     Base.metadata,
     Column(
-        "artist_id",
-        ForeignKey("artists.id", ondelete="CASCADE", onupdate="CASCADE"),
+        "artist_name",
+        ForeignKey("artists.name", ondelete="CASCADE", onupdate="CASCADE"),
         primary_key=True,
     ),
     Column(

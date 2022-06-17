@@ -185,7 +185,9 @@ def get_favorite_songs(
     return songs
 
 
-def update_user_sub(pdb: Session, user: models.UserModel, user_update_sub: schemas.UserUpdateSub) -> models.UserModel:
+def update_user_sub(
+    pdb: Session, user: models.UserModel, user_update_sub: schemas.UserUpdateSub
+) -> models.UserModel:
     user_update_sub = user_update_sub.dict(exclude_none=False)
 
     for key, value in user_update_sub.items():

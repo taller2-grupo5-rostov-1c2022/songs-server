@@ -1,10 +1,10 @@
 from sqlalchemy import Column, Integer, String, TIMESTAMP, DateTime
 from sqlalchemy.orm import relationship
-from src.database.access import Base
 from . import tables
+from .crud_template import CRUDMixin
 
 
-class UserModel(Base):
+class UserModel(CRUDMixin):
     __tablename__ = "users"
 
     id = Column(String, primary_key=True, index=True, autoincrement=False)

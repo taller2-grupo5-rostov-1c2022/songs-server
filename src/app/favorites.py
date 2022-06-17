@@ -79,7 +79,9 @@ def get_favorite_playlists(
     role: roles.Role = Depends(roles.get_role),
     pdb: Session = Depends(get_db),
 ):
-    return crud.user.get_favorite_playlists(pdb, user, role.can_see_blocked(), role.can_see_blocked())
+    return crud.user.get_favorite_playlists(
+        pdb, user, role.can_see_blocked(), role.can_see_blocked()
+    )
 
 
 @router.post(

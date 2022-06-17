@@ -49,13 +49,7 @@ def post_streaming(
     else:
         img_url = None
 
-    crud.streaming.create_streaming(
-        pdb,
-        name,
-        img_url,
-        user,
-        streaming_listener_token
-    )
+    crud.streaming.create_streaming(pdb, name, img_url, user, streaming_listener_token)
 
     return streaming_artist_token
 

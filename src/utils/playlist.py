@@ -15,14 +15,6 @@ def get_colab_from_form(pdb: Session = Depends(get_db), colab_id: str = Form(...
     return crud.user.get_user_by_id(pdb, colab_id)
 
 
-def get_colabs_list(pdb: Session, colabs_ids: List[str]) -> List[models.UserModel]:
-    colabs = []
-    for colab_id in colabs_ids:
-        colab = crud.user.get_user_by_id(pdb, colab_id)
-        colabs.append(colab)
-    return colabs
-
-
 def retrieve_colabs_ids(colabs_ids: Optional[str] = Form(None)):
     if colabs_ids is None:
         return []
@@ -34,13 +26,6 @@ def retrieve_colabs_ids(colabs_ids: Optional[str] = Form(None)):
                 status_code=422, detail="Colabs string is not well encoded"
             ) from e
     return colabs_ids
-
-
-def retrieve_colabs_ids_update(colabs_ids: Optional[str] = Form(None)):
-    if colabs_ids is None:
-        return None
-    else:
-        return retrieve_colabs_ids(colabs_ids=colabs_ids)
 
 
 def retrieve_playlist(
@@ -56,9 +41,7 @@ def retrieve_playlist(
 def get_playlist(
     playlist_id: int, pdb=Depends(get_db), role: roles.Role = Depends(get_role)
 ):
-    return crud.playlist.get_playlist_by_id(
-        pdb, playlist_id, role.can_see_blocked(), role.can_see_blocked()
-    )
+    return models.PlaylistModel.get(pdb, _id=playlist_id, role=role)
 
 
 def can_edit_playlist(playlist: models.PlaylistModel, role: roles.Role, uid: str):

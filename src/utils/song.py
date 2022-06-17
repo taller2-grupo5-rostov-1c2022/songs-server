@@ -1,5 +1,5 @@
 import json
-from src.database import models, crud
+from src.database import models
 from fastapi import HTTPException, Depends, Form
 from src import schemas
 from sqlalchemy.orm import Session
@@ -48,7 +48,7 @@ def get_song(
     pdb: Session = Depends(get_db),
     user: models.UserModel = Depends(utils.user.retrieve_user),
 ):
-    song = crud.song.get_song_by_id(pdb, role.can_see_blocked(), song_id)
+    song = models.SongModel.get(pdb, role=role, _id=song_id)
 
     if song.sub_level > user.sub_level:
         raise HTTPException(
@@ -65,3 +65,22 @@ def get_song_from_form(
     user: models.UserModel = Depends(utils.user.retrieve_user),
 ):
     return get_song(song_id=song_id, role=role, pdb=pdb, user=user)
+
+
+def retrieve_song(
+    resource_creator: schemas.ResourceCreatorBase = Depends(
+        utils.resource.retrieve_resource_creator
+    ),
+    artists_names: List[str] = Depends(utils.artist.retrieve_artists_names),
+    album_id: Optional[str] = Form(None),
+    sub_level: Optional[int] = Form(None),
+):
+    if sub_level is None:
+        sub_level = 0
+    song = schemas.SongPost(
+        artists_names=artists_names,
+        album_id=album_id,
+        sub_level=sub_level,
+        **resource_creator.dict(),
+    )
+    return song

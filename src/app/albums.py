@@ -1,4 +1,3 @@
-from src.constants import SUPPRESS_BLOB_ERRORS
 from fastapi import APIRouter
 from fastapi import Depends, File, HTTPException, UploadFile
 
@@ -6,7 +5,7 @@ from src.firebase.access import get_bucket
 from typing import List
 from sqlalchemy.orm import Session
 from src.database.access import get_db
-from src.database import models, crud
+from src.database import models
 from src import roles, utils
 from src.roles import get_role
 from src.schemas.album.get import AlbumGet
@@ -27,14 +26,8 @@ def get_albums(
 ):
     """Returns all Albums"""
 
-    albums = crud.album.get_albums(
-        pdb,
-        role.can_see_blocked(),
-        role.can_see_blocked(),
-        creator,
-        artist,
-        genre,
-        name,
+    albums = models.AlbumModel.search(
+        pdb, role=role, creator=creator, artist=artist, genre=genre, name=name
     )
 
     albums = list(filter(None, albums))
@@ -53,9 +46,7 @@ def get_my_albums(
     pdb: Session = Depends(get_db),
 ):
 
-    albums = crud.album.get_albums(
-        pdb, show_blocked_albums=True, show_blocked_songs=True, creator=uid
-    )
+    albums = models.AlbumModel.search(pdb, role=roles.Role.admin(), creator=uid)
 
     for album in albums:
         album.cover = utils.album.cover_url(album)
@@ -88,9 +79,9 @@ def post_album(
     bucket=Depends(get_bucket),
 ):
     """Creates an album and returns its id. Songs_ids form is encoded like '["song_id_1", "song_id_2", ...]'"""
-    album = crud.album.create_album(pdb, album_post, role.can_see_blocked())
-
-    utils.album.upload_cover(pdb, bucket, album, cover.file, delete_if_fail=True)
+    album = models.AlbumModel.create(
+        pdb, **album_post.dict(), role=role, file=cover.file, bucket=bucket
+    )
 
     album.score = utils.album.calculate_score(pdb, album)
     album.scores_amount = utils.album.calculate_scores_amount(pdb, album)
@@ -116,12 +107,11 @@ def update_album(
             detail=f"User {uid} attempted to edit album of user with ID {album.creator_id}",
         )
 
-    crud.album.update_album(
-        pdb, album, album_update, role.can_see_blocked(), role.can_see_blocked()
-    )
-
+    album_update = album_update.dict(exclude_none=True)
     if cover is not None:
-        utils.album.upload_cover(pdb, bucket, album, cover.file, delete_if_fail=False)
+        album.update(pdb, **album_update, file=cover.file, bucket=bucket, role=role)
+    else:
+        album.update(pdb, **album_update, role=role)
 
 
 @router.delete("/albums/{album_id}")
@@ -139,12 +129,5 @@ def delete_album(
             status_code=403,
             detail=f"User '{uid} attempted to delete album of user with ID {album.creator_id}",
         )
-    try:
-        bucket.blob(f"covers/{album.id}").delete()
-    except Exception as entry_not_found:
-        if not SUPPRESS_BLOB_ERRORS:
-            raise HTTPException(
-                status_code=507, detail=f"Could not delete cover for album {album.id}"
-            ) from entry_not_found
 
-    crud.album.delete_album(pdb, album)
+    album.delete(pdb, bucket=bucket)

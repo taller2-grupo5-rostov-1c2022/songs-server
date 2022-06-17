@@ -376,6 +376,42 @@ def test_listener_get_album_by_id_with_blocked_songs_should_retrieve_not_blocked
     assert response.json()["songs"][0]["name"] == "not_blocked_song"
 
 
+def test_listener_get_all_albums_return_only_not_blocked_songs(
+    client, custom_requests_mock
+):
+    post_user(client, uid="artist_id", user_name="artist_name")
+
+    song_id_1 = post_song(
+        client, uid="artist_id", name="blocked_song", blocked=False
+    ).json()["id"]
+
+    song_id_2 = post_song(
+        client, uid="artist_id", name="not_blocked_song", blocked=False
+    ).json()["id"]
+
+    post_album(
+        client,
+        uid="artist_id",
+        songs_ids=[song_id_1, song_id_2],
+        blocked=False,
+    )
+    block_song(client, song_id=song_id_1)
+
+    response = client.get(
+        f"{API_VERSION_PREFIX}/albums/",
+        headers={"role": "listener", "api_key": "key"},
+    )
+
+    albums = response.json()
+    print(albums)
+
+    assert response.status_code == 200
+    assert len(albums) == 1
+    assert len(albums[0]["songs"]) == 1
+    songs = albums[0]["songs"]
+    assert songs[0]["name"] == "not_blocked_song"
+
+
 def test_listener_get_album_by_id_with_blocked_songs_should_not_remove_song(
     client, custom_requests_mock
 ):

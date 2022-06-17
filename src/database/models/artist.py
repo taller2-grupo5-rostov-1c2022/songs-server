@@ -1,16 +1,19 @@
-from sqlalchemy import Column, Integer, String
-from sqlalchemy.orm import relationship
-from src.database.access import Base
+from sqlalchemy import Column, String
+from sqlalchemy.orm import relationship, Session
 from . import tables
+from .crud_template import CRUDMixin
 
 
-class ArtistModel(Base):
+class ArtistModel(CRUDMixin):
     __tablename__ = "artists"
 
-    id = Column(Integer, primary_key=True, nullable=False, index=True)
-    name = Column(String, nullable=False, index=True)
+    name = Column(String, primary_key=True, nullable=False, index=True)
     songs = relationship(
         "SongModel",
         secondary=tables.song_artist_association_table,
         back_populates="artists",
     )
+
+    @classmethod
+    def create(cls, pdb: Session, **kwargs):
+        return super().create(pdb, **kwargs)

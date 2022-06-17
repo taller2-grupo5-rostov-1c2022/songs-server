@@ -10,7 +10,7 @@ class UserGetter(GetterDict):
             return self._obj.attrib.get("id", default)
         else:
             try:
-                return self._obj.find(key).attrib['Value']
+                return self._obj.find(key).attrib["Value"]
             except (AttributeError, KeyError):
                 return default
 

@@ -1,4 +1,3 @@
-from fastapi import HTTPException, status
 from sqlalchemy.sql import and_
 from typing import List
 from sqlalchemy.orm import Session
@@ -17,7 +16,7 @@ def get_reviews_by_album_and_user(
 
 
 def get_reviews_by_user(
-        pdb: Session, user: models.UserModel, can_see_blocked: bool = False
+    pdb: Session, user: models.UserModel, can_see_blocked: bool = False
 ) -> List[models.ReviewModel]:
     filters = [models.ReviewModel.reviewer == user]
     if not can_see_blocked:
