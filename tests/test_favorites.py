@@ -573,3 +573,22 @@ def test_get_favorite_playlists_return_playlist_without_blocked_songs(
     assert len(playlists) == 1
     assert playlists[0]["name"] == "playlist_name"
     assert len(playlists[0]["songs"]) == 0
+
+
+def test_admin_get_favorite_albums_return_blocked_albums(client, custom_requests_mock):
+    utils.post_user(client, "admin_id", "admin_name")
+    response = utils.post_user(client, "creator_id", "creator_name")
+    assert response.status_code == 200
+
+    response = utils.post_album(client, name="album_name", uid="creator_id")
+    assert response.status_code == 200
+    album_id = response.json()["id"]
+
+    utils.add_album_to_favorites(client, uid="admin_id", album_id=album_id)
+    utils.block_album(client, id=album_id)
+
+    response_get = utils.get_favorite_albums(client, uid="admin_id", role="admin")
+    albums = response_get.json()
+    assert response_get.status_code == 200
+    assert len(albums) == 1
+    assert albums[0]["name"] == "album_name"

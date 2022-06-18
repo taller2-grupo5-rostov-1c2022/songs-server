@@ -278,10 +278,10 @@ def delete_song_from_favorites(client, uid, song_id):
     return response_delete
 
 
-def get_favorite_albums(client, uid):
+def get_favorite_albums(client, uid, role="listener"):
     response = client.get(
         f"{API_VERSION_PREFIX}/users/{uid}/favorites/albums/",
-        headers={"api_key": "key", "uid": uid},
+        headers={"api_key": "key", "uid": uid, "role": role},
     )
     return response
 
@@ -397,18 +397,19 @@ def post_streaming(client, uid: str, name="streaming_name", include_img=False):
 
 
 def post_user_with_sub_level(client, user_id: str, user_name: str, sub_level: int):
-    post_user(client, user_id, user_name)
-    response = client.post(
-        f"{API_VERSION_PREFIX}/subscriptions/",
-        headers={"api_key": "key", "uid": "user_id"},
-        json={"sub_level": sub_level},
-    )
-
+    response = post_user(client, user_id, user_name)
     assert response.status_code == 200
 
     response = client.post(
         f"{API_VERSION_PREFIX}/subscriptions/",
-        headers={"api_key": "key", "uid": "user_id"},
+        headers={"api_key": "key", "uid": user_id},
+        json={"sub_level": sub_level},
+    )
+    assert response.status_code == 200
+
+    response = client.post(
+        f"{API_VERSION_PREFIX}/subscriptions/",
+        headers={"api_key": "key", "uid": user_id},
         json={"sub_level": sub_level},
     )
     return response

@@ -88,7 +88,7 @@ def api_matcher(request):
     return None
 
 
-@pytest.fixture
+@pytest.fixture(autouse=True)
 def custom_requests_mock():
     m = requests_mock.Mocker(real_http=True)
     m.start()
@@ -102,7 +102,7 @@ def custom_requests_mock():
         m.stop()
 
 
-@pytest.fixture()
+@pytest.fixture(autouse=True)
 def session():
     connection = engine.connect()
     transaction = connection.begin()
@@ -117,19 +117,25 @@ def session():
     def end_savepoint(session, transaction):
         nonlocal nested
         if not nested.is_active:
-            print("Starting a new savepoint")
             nested = connection.begin_nested()
 
-    try:
-        yield session
-    finally:
-        # Rollback the overall transaction, restoring the state before the test ran.
-        session.close()
-        transaction.rollback()
-        connection.close()
+    yield session
+
+    # Rollback the overall transaction, restoring the state before the test ran.
+    session.close()
+    transaction.rollback()
+    connection.close()
 
 
+# For some reason, nested transactions don't work with playlists tests
+# so I need to drop the tables and create them again in that module
 @pytest.fixture()
+def drop_tables():
+    Base.metadata.drop_all(bind=engine)
+    Base.metadata.create_all(bind=engine)
+
+
+@pytest.fixture(autouse=True)
 def client(session):
 
     # Dependency override
