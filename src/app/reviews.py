@@ -4,7 +4,7 @@ from fastapi import APIRouter
 from fastapi import Depends, HTTPException
 from typing import List
 from sqlalchemy.orm import Session
-from src.database import models, crud
+from src.database import models
 
 router = APIRouter(tags=["reviews"])
 
@@ -30,7 +30,9 @@ def post_review(
             detail=f"User {user.id} already reviewed in album {album.id}",
         )
 
-    review = crud.review.create_review(pdb, album, review_info, user)
+    review = models.ReviewModel.create(
+        pdb, album=album, **review_info.dict(), reviewer=user
+    )
 
     return review
 

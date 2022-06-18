@@ -127,7 +127,6 @@ def test_delete_streaming_deletes_it(client, custom_requests_mock):
         f"{API_VERSION_PREFIX}/streamings/",
         headers={"api_key": "key", "uid": "streaming_user_id"},
     )
-    print(response_delete.json())
     assert response_delete.status_code == 200
 
     response_get = client.get(

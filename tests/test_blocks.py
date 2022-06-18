@@ -403,7 +403,6 @@ def test_listener_get_all_albums_return_only_not_blocked_songs(
     )
 
     albums = response.json()
-    print(albums)
 
     assert response.status_code == 200
     assert len(albums) == 1

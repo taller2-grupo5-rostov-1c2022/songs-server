@@ -52,7 +52,6 @@ def test_get_playlist_by_id(client, custom_requests_mock):
     )
 
     playlist = response_get.json()
-    print(playlist)
 
     assert response_get.status_code == 200
     assert playlist["id"] == 1
@@ -143,7 +142,6 @@ def test_owner_should_be_able_to_edit_its_own_playlist(client, custom_requests_m
         headers={"api_key": "key"},
     )
     assert response_get.status_code == 200
-    print(response_get.json())
 
     response_put = client.put(
         f"{API_VERSION_PREFIX}/playlists/{response_post.json()['id']}",
