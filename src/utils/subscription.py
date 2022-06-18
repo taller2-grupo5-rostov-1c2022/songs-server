@@ -91,3 +91,14 @@ def subscribe(user: models.UserModel, sub_level: int, pdb: Session) -> models.Us
     expiration_date = get_expiration_date(sub_level, datetime.datetime.now())
 
     return user.update(pdb, sub_level=sub_level, sub_expires=expiration_date)
+
+
+def revoke_subscription(pdb: Session, now: datetime.datetime):
+    users = models.UserModel.search(pdb, expiration_date=now)
+
+    for user in users:
+        user.update(
+            pdb,
+            sub_level=SUB_LEVEL_FREE,
+            sub_expires=get_expiration_date(SUB_LEVEL_FREE, datetime.datetime.now()),
+        )

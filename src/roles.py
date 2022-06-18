@@ -59,6 +59,9 @@ class Role:
     def can_stream(self):
         return Role.artist() <= self
 
+    def can_revoke(self):
+        return self == Role.admin()
+
 
 def get_role(role: str = Header("listener")):
     return Role(role)

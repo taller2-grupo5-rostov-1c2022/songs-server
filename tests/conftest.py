@@ -1,14 +1,16 @@
-import time
+import datetime
+
 import sqlalchemy as sa
 from fastapi import HTTPException
-from sqlalchemy.orm import sessionmaker, declarative_base
+from sqlalchemy.orm import sessionmaker
 
 from fastapi import status
 import requests
 import requests_mock
 import pytest
 from fastapi.testclient import TestClient
-from sqlalchemy import create_engine
+
+from src.app.subscriptions import get_time_now
 from src.main import app, API_VERSION_PREFIX
 from src.database.access import get_db, Base
 from src.utils.subscription import CREATE_WALLET_ENDPOINT, DEPOSIT_ENDPOINT
@@ -127,7 +129,7 @@ def session():
     connection.close()
 
 
-# For some reason, nested transactions don't work with playlists tests
+# For some reason, nested transactions don't work with playlists tests,
 # so I need to drop the tables and create them again in that module
 @pytest.fixture()
 def drop_tables():
@@ -148,3 +150,23 @@ def client(session):
         yield TestClient(app)
     finally:
         del app.dependency_overrides[get_db]
+
+
+@pytest.fixture()
+def time_now_10_days_future():
+    def get_time_now_10_days_future():
+        return datetime.datetime.now() + datetime.timedelta(days=10)
+
+    app.dependency_overrides[get_time_now] = get_time_now_10_days_future
+    try:
+        yield
+    finally:
+        del app.dependency_overrides[get_time_now]
+
+
+@pytest.fixture()
+def time_now_40_days_future():
+    def get_time_now_40_days_future():
+        return datetime.datetime.now() + datetime.timedelta(days=40)
+
+    app.dependency_overrides[get_time_now] = get_time_now_40_days_future

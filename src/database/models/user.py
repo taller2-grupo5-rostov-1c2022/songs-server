@@ -101,6 +101,17 @@ class UserModel(CRUDMixin):
 
         return user
 
+    @classmethod
+    def search(cls, pdb: Session, **kwargs):
+        query = kwargs.pop("query", None)
+        if query is None:
+            query = pdb.query(cls)
+
+        expiration_date = kwargs.pop("expiration_date", None)
+        if expiration_date is not None:
+            query = query.filter(cls.sub_expires < expiration_date)
+        return super().search(pdb, query=query, **kwargs)
+
     def update(self, pdb: Session, **kwargs):
         pfp = kwargs.pop("pfp", None)
         if pfp is not None:

@@ -1,9 +1,8 @@
 import datetime
+
 from dateutil import parser
 
-import requests_mock
-
-from src.utils.subscription import SUBSCRIPTIONS
+from src.utils.subscription import SUBSCRIPTIONS, get_expiration_date, SUB_LEVEL_PREMIUM
 from tests import utils
 from tests.conftest import (
     successful_payment_matcher,
@@ -234,3 +233,107 @@ def test_user_with_pro_can_get_free_song(client, custom_requests_mock):
     )
 
     assert response.status_code == 200
+
+
+def test_admin_can_get_premium_song_even_without_subscription(
+    client, custom_requests_mock
+):
+    post_user(client, "creator_id", "creator_name")
+    post_user_with_sub_level(client, "user_id", "user_name", 0)
+
+    song_id = utils.post_song(
+        client, uid="creator_id", name="song_name", sub_level=1
+    ).json()["id"]
+
+    response = client.get(
+        f"{API_VERSION_PREFIX}/songs/{song_id}",
+        headers={"api_key": "key", "uid": "user_id", "role": "admin"},
+    )
+
+    assert response.status_code == 200
+
+
+def test_user_with_expired_subscription_gets_its_subscription_revoked(
+    client, custom_requests_mock, time_now_40_days_future
+):
+    post_user_with_sub_level(client, "user_id", "user_name", 1)
+    post_user(client, "creator_id", "creator_name")
+    post_user(client, "admin_id", "admin_name")
+
+    song_id = utils.post_song(
+        client, uid="creator_id", name="song_name", sub_level=1
+    ).json()["id"]
+
+    response = client.post(
+        f"{API_VERSION_PREFIX}/subscriptions/revoke/",
+        headers={"api_key": "key", "uid": "admin_id", "role": "admin"},
+    )
+    assert response.status_code == 200
+    response = client.get(
+        f"{API_VERSION_PREFIX}/songs/{song_id}",
+        headers={"api_key": "key", "uid": "user_id"},
+    )
+    assert response.status_code == 403
+
+
+def test_user_without_expired_subscription_does_not_get_its_subscription_revoked(
+    client, custom_requests_mock, time_now_10_days_future
+):
+    post_user_with_sub_level(client, "user_id", "user_name", 1)
+    post_user(client, "creator_id", "creator_name")
+    post_user(client, "admin_id", "admin_name")
+
+    song_id = utils.post_song(
+        client, uid="creator_id", name="song_name", sub_level=1
+    ).json()["id"]
+
+    response = client.post(
+        f"{API_VERSION_PREFIX}/subscriptions/revoke/",
+        headers={"api_key": "key", "uid": "admin_id", "role": "admin"},
+    )
+    assert response.status_code == 200
+    response = client.get(
+        f"{API_VERSION_PREFIX}/songs/{song_id}",
+        headers={"api_key": "key", "uid": "user_id"},
+    )
+    assert response.status_code == 200
+
+
+def test_revoke_user_expired_and_other_user_not_expired(
+    client, custom_requests_mock, time_now_40_days_future
+):
+    post_user_with_sub_level(client, "user_id", "user_name", 1)
+    post_user_with_sub_level(client, "user_id_2", "user_name_2", 3)
+    post_user(client, "creator_id", "creator_name")
+    post_user(client, "admin_id", "admin_name")
+
+    song_id = utils.post_song(
+        client, uid="creator_id", name="song_name", sub_level=1
+    ).json()["id"]
+
+    response = client.post(
+        f"{API_VERSION_PREFIX}/subscriptions/revoke/",
+        headers={"api_key": "key", "uid": "admin_id", "role": "admin"},
+    )
+    assert response.status_code == 200
+    response = client.get(
+        f"{API_VERSION_PREFIX}/songs/{song_id}",
+        headers={"api_key": "key", "uid": "user_id"},
+    )
+    assert response.status_code == 403
+
+    response = client.get(
+        f"{API_VERSION_PREFIX}/songs/{song_id}",
+        headers={"api_key": "key", "uid": "user_id_2"},
+    )
+    assert response.status_code == 200
+
+
+def test_only_admin_can_revoke_subscriptions(client, custom_requests_mock):
+    post_user(client, "user_id", "user_name")
+
+    response = client.post(
+        f"{API_VERSION_PREFIX}/subscriptions/revoke/",
+        headers={"api_key": "key", "uid": "user_id"},
+    )
+    assert response.status_code == 403
