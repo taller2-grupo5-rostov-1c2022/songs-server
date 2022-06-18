@@ -2,7 +2,7 @@ import time
 
 from src.constants import STORAGE_PATH
 from tests import utils
-from tests.utils import post_song, post_user
+from tests.utils import post_song, post_user, post_album
 from tests.utils import API_VERSION_PREFIX
 from urllib.parse import urlparse
 from urllib.parse import parse_qs
@@ -274,3 +274,20 @@ def test_admin_can_edit_song_of_another_user(client, custom_requests_mock):
     )
 
     assert response_put.status_code == 200
+
+
+def test_post_song_with_album(client, custom_requests_mock):
+    post_user(client, "song_creator_id", "song_creator")
+    album_id = post_album(client, uid="song_creator_id").json()["id"]
+
+    response = post_song(client, uid="song_creator_id", album_id=album_id)
+
+    assert response.status_code == 200
+
+    response = utils.get_song_by_id(
+        client, response.json()["id"], uid="song_creator_id"
+    )
+    song = response.json()
+
+    assert response.status_code == 200
+    assert song["album"]["id"] == album_id

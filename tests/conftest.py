@@ -1,5 +1,7 @@
 import time
+import sqlalchemy as sa
 from fastapi import HTTPException
+from sqlalchemy.orm import sessionmaker, declarative_base
 
 from fastapi import status
 import requests
@@ -7,16 +9,19 @@ import requests_mock
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
 from src.main import app, API_VERSION_PREFIX
-from src.postgres.database import get_db, Base
-from src.repositories.subscription_utils import CREATE_WALLET_ENDPOINT, DEPOSIT_ENDPOINT
+from src.database.access import get_db, Base
+from src.utils.subscription import CREATE_WALLET_ENDPOINT, DEPOSIT_ENDPOINT
 import json
 
 import os
 
 SQLALCHEMY_DATABASE_URL = os.environ.get("TEST_POSTGRES_URL")
+engine = sa.create_engine(SQLALCHEMY_DATABASE_URL)
+TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
+Base.metadata.drop_all(engine)
+Base.metadata.create_all(bind=engine)
 
 SUCCESSFUL_PAYMENT_RESPONSE = {
     "nonce": 2,
@@ -83,7 +88,7 @@ def api_matcher(request):
     return None
 
 
-@pytest.fixture
+@pytest.fixture(autouse=True)
 def custom_requests_mock():
     m = requests_mock.Mocker(real_http=True)
     m.start()
@@ -97,48 +102,49 @@ def custom_requests_mock():
         m.stop()
 
 
-@pytest.fixture(scope="session")
-def connect_to_database():
-    engine = create_engine(SQLALCHEMY_DATABASE_URL)
-    for x in range(10):
-        try:
-            print("Trying to connect to DB - " + str(x))
-            engine.connect()
-            break
-        except Exception:  # noqa: E722 # Want to catch all exceptions
-            time.sleep(1)
-            engine = create_engine(SQLALCHEMY_DATABASE_URL)
-    yield engine
+@pytest.fixture(autouse=True)
+def session():
+    connection = engine.connect()
+    transaction = connection.begin()
+    session = TestingSessionLocal(bind=connection)
+
+    # Begin a nested transaction (using SAVEPOINT).
+    nested = connection.begin_nested()
+
+    # If the application code calls session.commit, it will end the nested
+    # transaction. Need to start a new one when that happens.
+    @sa.event.listens_for(session, "after_transaction_end")
+    def end_savepoint(session, transaction):
+        nonlocal nested
+        if not nested.is_active:
+            nested = connection.begin_nested()
+
+    yield session
+
+    # Rollback the overall transaction, restoring the state before the test ran.
+    session.close()
+    transaction.rollback()
+    connection.close()
 
 
+# For some reason, nested transactions don't work with playlists tests
+# so I need to drop the tables and create them again in that module
 @pytest.fixture()
-def session(connect_to_database):
-
-    Base.metadata.drop_all(bind=connect_to_database)
-    Base.metadata.create_all(bind=connect_to_database)
-    testing_session_local = sessionmaker(
-        autocommit=False, autoflush=False, bind=connect_to_database
-    )
-
-    db = testing_session_local()
-
-    try:
-        yield db
-    finally:
-        db.close()
+def drop_tables():
+    Base.metadata.drop_all(bind=engine)
+    Base.metadata.create_all(bind=engine)
 
 
-@pytest.fixture()
+@pytest.fixture(autouse=True)
 def client(session):
 
     # Dependency override
 
     def override_get_db():
-        try:
-            yield session
-        finally:
-            session.close()
+        yield session
 
     app.dependency_overrides[get_db] = override_get_db
-
-    yield TestClient(app)
+    try:
+        yield TestClient(app)
+    finally:
+        del app.dependency_overrides[get_db]

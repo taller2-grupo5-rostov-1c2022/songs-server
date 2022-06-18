@@ -58,6 +58,7 @@ def post_song(
     blocked: Optional[bool] = False,
     headers: Optional[dict] = None,
     role: Optional[str] = "artist",
+    album_id: Optional[int] = None,
 ):
     if headers is None:
         headers = header(uid, role=role)
@@ -75,6 +76,7 @@ def post_song(
                 "artists": json.dumps(artists),
                 "genre": genre,
                 "sub_level": sub_level,
+                "album_id": album_id,
             },
             files={"file": ("song.txt", f, "plain/text")},
             headers=headers,
@@ -395,18 +397,27 @@ def post_streaming(client, uid: str, name="streaming_name", include_img=False):
 
 
 def post_user_with_sub_level(client, user_id: str, user_name: str, sub_level: int):
-    post_user(client, user_id, user_name)
-    response = client.post(
-        f"{API_VERSION_PREFIX}/subscriptions/",
-        headers={"api_key": "key", "uid": "user_id"},
-        json={"sub_level": sub_level},
-    )
-
+    response = post_user(client, user_id, user_name)
     assert response.status_code == 200
 
     response = client.post(
         f"{API_VERSION_PREFIX}/subscriptions/",
-        headers={"api_key": "key", "uid": "user_id"},
+        headers={"api_key": "key", "uid": user_id},
         json={"sub_level": sub_level},
+    )
+    assert response.status_code == 200
+
+    response = client.post(
+        f"{API_VERSION_PREFIX}/subscriptions/",
+        headers={"api_key": "key", "uid": user_id},
+        json={"sub_level": sub_level},
+    )
+    return response
+
+
+def delete_user(client, user_id: str):
+    response = client.delete(
+        f"{API_VERSION_PREFIX}/users/{user_id}",
+        headers={"api_key": "key", "uid": user_id},
     )
     return response

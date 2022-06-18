@@ -375,7 +375,7 @@ def test_listener_cannot_edit_comment_in_blocked_album(client, custom_requests_m
     ]
     comment_id = utils.post_comment(
         client,
-        uid="creator_id",
+        uid="listener_id",
         album_id=album_id,
         text="comment_text",
         parent_id=None,
@@ -472,3 +472,39 @@ def test_get_comments_of_user(client, custom_requests_mock):
     assert response_get.status_code == 200
     assert len(comments) == 1
     assert comments[0]["text"] == "listener_comment"
+
+
+def test_comment_of_deleted_user_gets_deleted(client, custom_requests_mock):
+    utils.post_user(client, "creator_id", "creator_name")
+    utils.post_user(client, "listener_id", "listener_name")
+    utils.post_user(client, "another_id", "another_name")
+
+    album_id = utils.post_album(client, uid="creator_id", name="album_name").json()[
+        "id"
+    ]
+    comment_id = utils.post_comment(
+        client,
+        uid="creator_id",
+        album_id=album_id,
+        text="creator_comment",
+        parent_id=None,
+    ).json()["id"]
+    utils.post_comment(
+        client,
+        uid="listener_id",
+        album_id=album_id,
+        text="listener_comment",
+        parent_id=comment_id,
+    )
+
+    response = utils.delete_user(client, "listener_id")
+    assert response.status_code == 200
+
+    response_get = client.get(
+        f"{API_VERSION_PREFIX}/users/comments/",
+        headers={"uid": "another_id", "api_key": "key"},
+    )
+    comments = response_get.json()
+
+    assert response_get.status_code == 200
+    assert len(comments) == 0
