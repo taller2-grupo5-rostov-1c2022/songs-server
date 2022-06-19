@@ -1,7 +1,7 @@
 import datetime
 
 import sqlalchemy as sa
-from fastapi import HTTPException, status
+from fastapi import HTTPException
 from sqlalchemy.orm import sessionmaker
 
 from fastapi import status

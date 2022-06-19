@@ -2,7 +2,7 @@ import datetime
 
 from dateutil import parser
 
-from src.utils.subscription import SUBSCRIPTIONS, get_expiration_date, SUB_LEVEL_PREMIUM
+from src.utils.subscription import SUBSCRIPTIONS
 from tests import utils
 from tests.conftest import (
     successful_payment_matcher,
