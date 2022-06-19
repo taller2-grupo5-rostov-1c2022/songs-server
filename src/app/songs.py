@@ -100,7 +100,7 @@ def post_song(
 ):
     """Creates a song and returns its id. Artists form is encoded like '["artist1", "artist2", ...]'"""
     new_song = models.SongModel.create(
-        pdb, **song_post.dict(), bucket=bucket, file=file
+        pdb, **song_post.dict(), bucket=bucket, file=file.file
     )
 
     return new_song
