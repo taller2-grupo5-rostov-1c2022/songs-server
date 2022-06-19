@@ -1,21 +1,24 @@
+from typing import List
+
 from fastapi import APIRouter
-from fastapi import Depends, File, HTTPException, UploadFile
+from fastapi import Depends, File, HTTPException, UploadFile, Query
 
 from src.firebase.access import get_bucket
-from typing import List
 from sqlalchemy.orm import Session
 from src.database.access import get_db
 from src.database import models
 from src import roles, utils
 from src.roles import get_role
+from src.schemas import Album
 from src.schemas.album.get import AlbumGet
 from src.schemas.album.post import AlbumPost
 from src.schemas.album.update import AlbumUpdate
 
+
 router = APIRouter(tags=["albums"])
 
 
-@router.get("/albums/", response_model=List[AlbumGet])
+@router.get("/albums/", response_model=List[Album])
 def get_albums(
     creator: str = None,
     role: roles.Role = Depends(get_role),
@@ -23,14 +26,21 @@ def get_albums(
     genre: str = None,
     name: str = None,
     pdb: Session = Depends(get_db),
+    page: int = Query(0, ge=0),
+    size: int = Query(50, ge=1, le=100),
 ):
     """Returns all Albums"""
 
     albums = models.AlbumModel.search(
-        pdb, role=role, creator=creator, artist=artist, genre=genre, name=name
+        pdb,
+        role=role,
+        creator=creator,
+        artist=artist,
+        genre=genre,
+        name=name,
+        page=page,
+        size=size,
     )
-
-    albums = list(filter(None, albums))
 
     for album in albums:
         album.cover = utils.album.cover_url(album)
@@ -40,13 +50,17 @@ def get_albums(
     return albums
 
 
-@router.get("/my_albums/", response_model=List[AlbumGet])
+@router.get("/my_albums/", response_model=List[Album])
 def get_my_albums(
     uid: str = Depends(utils.user.retrieve_uid),
     pdb: Session = Depends(get_db),
+    page: int = Query(0, ge=0),
+    size: int = Query(50, ge=1, le=100),
 ):
 
-    albums = models.AlbumModel.search(pdb, role=roles.Role.admin(), creator=uid)
+    albums = models.AlbumModel.search(
+        pdb, role=roles.Role.admin(), creator=uid, page=page, size=size
+    )
 
     for album in albums:
         album.cover = utils.album.cover_url(album)

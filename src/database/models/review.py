@@ -37,6 +37,4 @@ class ReviewModel(CRUDMixin):
     @classmethod
     def get_by_reviewer(cls, pdb: Session, reviewer: UserModel):
         reviews = pdb.query(cls).filter(cls.reviewer == reviewer)
-        print(reviews)
-        print(pdb.query(cls).all())
         return reviews.all()

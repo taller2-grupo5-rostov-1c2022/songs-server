@@ -18,7 +18,12 @@ def test_get_albums(client, custom_requests_mock):
 
 
 def test_get_album_by_invalid_id(client, custom_requests_mock):
-    response = client.get(API_VERSION_PREFIX + "/albums/5", headers={"api_key": "key"})
+    post_user(client, "album_creator_id", "album_creator_name")
+
+    response = client.get(
+        API_VERSION_PREFIX + "/albums/5",
+        headers={"api_key": "key", "uid": "album_creator_id"},
+    )
 
     assert response.status_code == 404
 
@@ -74,7 +79,7 @@ def test_post_empty_album(client, custom_requests_mock):
 
     response_get = client.get(
         f"{API_VERSION_PREFIX}/albums/{response_post.json()['id']}",
-        headers={"api_key": "key"},
+        headers={"api_key": "key", "uid": "album_creator_id"},
     )
 
     assert str(response_get.json()["id"]) == str(response_post.json()["id"])
@@ -99,7 +104,7 @@ def test_post_album_with_song(client, custom_requests_mock):
 
     response_get = client.get(
         f"{API_VERSION_PREFIX}/albums/{album_id}",
-        headers={"api_key": "key"},
+        headers={"api_key": "key", "uid": "album_creator_id"},
     )
     assert response_get.json()["songs"][0]["name"] == "song_name"
     assert len(response_get.json()["songs"]) == 1
@@ -145,7 +150,7 @@ def test_put_album(client, custom_requests_mock):
 
     response_get = client.get(
         f"{API_VERSION_PREFIX}/albums/{album_id}",
-        headers={"api_key": "key"},
+        headers={"api_key": "key", "uid": "album_creator_id"},
     )
 
     assert str(response_get.json()["id"]) == str(response_post.json()["id"])
@@ -187,7 +192,7 @@ def test_update_songs_in_album(client, custom_requests_mock):
 
     response_get = client.get(
         f"{API_VERSION_PREFIX}/albums/{album_id}",
-        headers={"api_key": "key"},
+        headers={"api_key": "key", "uid": "album_creator_id"},
     )
     assert response_get.status_code == 200
     assert len(response_get.json()["songs"]) == 0
@@ -220,7 +225,7 @@ def test_delete_album(client, custom_requests_mock):
 
     response_get = client.get(
         f"{API_VERSION_PREFIX}/albums/{response_post.json()['id']}",
-        headers={"api_key": "key"},
+        headers={"api_key": "key", "uid": "album_creator_id"},
     )
     assert response_get.status_code == 404
 
@@ -275,7 +280,7 @@ def test_update_cover_updates_cover_timestamp(client, custom_requests_mock):
 
     response_get_1 = client.get(
         f"{API_VERSION_PREFIX}/albums/{album_id}",
-        headers={"api_key": "key"},
+        headers={"api_key": "key", "uid": "album_creator_id"},
     )
     time.sleep(1)
     with open("./new_cover.img", "wb") as f:
@@ -290,7 +295,7 @@ def test_update_cover_updates_cover_timestamp(client, custom_requests_mock):
 
     response_get_2 = client.get(
         f"{API_VERSION_PREFIX}/albums/{album_id}",
-        headers={"api_key": "key"},
+        headers={"api_key": "key", "uid": "album_creator_id"},
     )
 
     url_1 = response_get_1.json()["cover"]

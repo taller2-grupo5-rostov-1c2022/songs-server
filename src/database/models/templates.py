@@ -73,6 +73,7 @@ class ResourceModel(CRUDMixin):
             query = query.filter(cls.name.ilike(f"%{name}%"))
         if creator_id is not None:
             query = query.filter(cls.creator_id == creator_id)
+        query = query.order_by(cls.id)
 
         return super().search(pdb, query=query, **kwargs)
 

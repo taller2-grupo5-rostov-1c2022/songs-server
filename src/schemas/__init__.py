@@ -6,6 +6,6 @@ from .user import UserBase, User, UserUpdate, UserUpdateSub, UserPost, UserPostC
 from .comment import CommentGet, CommentPost, CommentUpdate
 from .artist import ArtistBase
 from .review import ReviewBase, ReviewGet, ReviewUpdate, ReviewMyReviews
-from .playlist import PlaylistBase, PlaylistUpdate, PlaylistPost, Playlist
+from .playlist import PlaylistBase, PlaylistUpdate, PlaylistPost, PlaylistGet
 from .streaming import StreamingBase
 from .subscription import SubscriptionBase

@@ -2,6 +2,7 @@ from sqlalchemy.orm import Session
 from src.database.access import Base
 from fastapi import HTTPException, status
 from sqlalchemy.orm.query import Query
+from fastapi_pagination import paginate
 
 
 class CRUDMixin(Base):
@@ -43,7 +44,12 @@ class CRUDMixin(Base):
         """Search for records."""
         query: Query = kwargs.pop("query", None)
         if query is None:
-            return pdb.query(cls).all()
+            query = pdb.query(cls)
+
+        page = kwargs.pop("page", None)
+        if page is not None:
+            size = kwargs.pop("size")
+            query = query.limit(size).offset(page * size)
         return query.all()
 
     def update(self, pdb: Session, **kwargs):

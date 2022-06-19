@@ -48,9 +48,12 @@ def calculate_score(pdb, album: models.AlbumModel):
 
 
 def get_album(
-    album_id: int, role: roles.Role = Depends(get_role), pdb: Session = Depends(get_db)
+    album_id: int,
+    role: roles.Role = Depends(get_role),
+    pdb: Session = Depends(get_db),
+    uid: str = Depends(utils.user.retrieve_uid),
 ):
-    return models.AlbumModel.get(pdb, _id=album_id, role=role)
+    return models.AlbumModel.get(pdb, _id=album_id, role=role, requester_id=uid)
 
 
 def retrieve_album_update(

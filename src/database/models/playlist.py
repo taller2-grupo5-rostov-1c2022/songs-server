@@ -1,5 +1,5 @@
 from sqlalchemy import Column, ForeignKey, String
-from sqlalchemy.orm import relationship, Session, contains_eager
+from sqlalchemy.orm import relationship, Session, contains_eager, joinedload
 from sqlalchemy.orm.query import Query
 from sqlalchemy.sql import or_
 from fastapi import HTTPException, status
@@ -52,24 +52,15 @@ class PlaylistModel(templates.ResourceModel):
     @classmethod
     def search(cls, pdb: Session, **kwargs):
         query: Query = kwargs.pop("query", None)
-        role: roles.Role = kwargs.get("role")
         colab = kwargs.pop("colab", None)
 
-        join_conditions = []
         if query is None:
             query = pdb.query(cls)
 
         if colab is not None:
             query = query.filter(or_(UserModel.id == colab, cls.creator_id == colab))
 
-        if not role.can_see_blocked():
-            join_conditions.append(SongModel.blocked == False)
-
-        query = (
-            query.options(contains_eager("songs"))
-            .join(cls.songs.and_(*join_conditions), isouter=True)
-            .join(cls.colabs, isouter=True)
-        )
+        query = query.join(cls.colabs, isouter=True)
 
         return super().search(pdb, query=query, **kwargs)
 
@@ -77,13 +68,14 @@ class PlaylistModel(templates.ResourceModel):
     def get(cls, pdb: Session, *args, **kwargs):
         role = kwargs.get("role")
         playlist_id = kwargs.get("_id")
+        requester_id = kwargs.get("requester_id")
 
         join_conditions = []
         filters = [playlist_id == cls.id]
 
         if not role.can_see_blocked():
             join_conditions.append(SongModel.blocked == False)
-            filters.append(cls.blocked == False)
+            # filters.append(cls.blocked == False)
 
         playlists = (
             pdb.query(cls)
@@ -96,7 +88,16 @@ class PlaylistModel(templates.ResourceModel):
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND, detail="Playlist not found"
             )
-        return playlists[0]
+        playlist = playlists[0]
+        if (
+            playlist.blocked
+            and not role.can_see_blocked()
+            and playlist.creator_id != requester_id
+        ):
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="Playlist not found"
+            )
+        return playlist
 
     def add_song(self, pdb: Session, song: SongModel):
         if song not in self.songs:

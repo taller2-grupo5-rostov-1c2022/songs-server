@@ -39,9 +39,12 @@ def retrieve_playlist(
 
 
 def get_playlist(
-    playlist_id: int, pdb=Depends(get_db), role: roles.Role = Depends(get_role)
+    playlist_id: int,
+    pdb=Depends(get_db),
+    role: roles.Role = Depends(get_role),
+    uid: str = Depends(utils.user.retrieve_uid),
 ):
-    return models.PlaylistModel.get(pdb, _id=playlist_id, role=role)
+    return models.PlaylistModel.get(pdb, _id=playlist_id, role=role, requester_id=uid)
 
 
 def can_edit_playlist(playlist: models.PlaylistModel, role: roles.Role, uid: str):

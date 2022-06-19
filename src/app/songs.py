@@ -4,7 +4,7 @@ from src import roles, utils, schemas
 from src.constants import STORAGE_PATH
 from typing import List
 from fastapi import APIRouter
-from fastapi import Depends, File, HTTPException, UploadFile, status
+from fastapi import Depends, File, HTTPException, UploadFile, status, Query
 
 from src.firebase.access import get_bucket
 from sqlalchemy.orm import Session
@@ -24,6 +24,8 @@ def get_songs(
     sub_level: int = None,
     name: str = None,
     pdb: Session = Depends(get_db),
+    page: int = Query(0, ge=0),
+    size: int = Query(50, ge=1, le=100),
 ):
     """Returns all songs"""
 
@@ -35,6 +37,8 @@ def get_songs(
         genre=genre,
         sub_level=sub_level,
         name=name,
+        page=page,
+        size=size,
     )
 
     return songs

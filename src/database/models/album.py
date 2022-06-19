@@ -50,34 +50,29 @@ class AlbumModel(templates.ResourceWithFile):
         if query is None:
             query = pdb.query(cls)
 
-        artist = kwargs.pop("artist", None)
-        role = kwargs.get("role", None)
+        artist_name = kwargs.pop("artist", None)
 
-        filters = []
-        join_conditions = []
-        if artist is not None:
-            filters.append(SongModel.artists.any(ArtistModel.name.ilike(f"%{artist}%")))
-
-        if not role.can_see_blocked():
-            join_conditions.append(SongModel.blocked == False)
-
-        query = (
-            query.options(contains_eager("songs"))
-            .join(cls.songs.and_(*join_conditions), full=True)
-            .filter(*filters)
-        )
-
-        return super().search(pdb, query=query, **kwargs)
+        albums = super().search(pdb, query=query, **kwargs)
+        if artist_name is not None:
+            albums_filtered = []
+            for album in albums:
+                for song in album.songs:
+                    for artist in song.artists:
+                        if artist_name.lower() in artist.name.lower():
+                            albums_filtered.append(album)
+                            break
+            albums = albums_filtered
+        return albums
 
     @classmethod
     def get(cls, pdb: Session, **kwargs):
         album_id = kwargs.pop("_id")
         role = kwargs.pop("role")
+        requester_id = kwargs.get("requester_id")
 
         join_conditions = [SongModel.album_id == AlbumModel.id]
         filters = [album_id == cls.id]
         if not role.can_see_blocked():
-            filters.append(cls.blocked == False)
             join_conditions.append(SongModel.blocked == False)
 
         albums = (
@@ -92,8 +87,16 @@ class AlbumModel(templates.ResourceWithFile):
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND, detail="Album not found"
             )
-
-        return albums[0]
+        album = albums[0]
+        if (
+            album.blocked
+            and not role.can_see_blocked()
+            and album.creator_id != requester_id
+        ):
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="Album not found"
+            )
+        return album
 
     def update(self, pdb: Session, **kwargs):
         songs_ids = kwargs.pop("songs_ids", None)

@@ -1,7 +1,7 @@
+from typing import List
 from .album import Album
+from ..song.base import SongBase
 
 
 class AlbumGet(Album):
-    cover: str
-    score: float
-    scores_amount: int
+    songs: List[SongBase]

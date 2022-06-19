@@ -11,8 +11,10 @@ from tests.utils import (
 def test_get_playlist_by_id_should_return_404_if_playlist_not_found(
     client, custom_requests_mock, drop_tables
 ):
+    post_user(client, uid="user_playlist_owner", user_name="Ricardito")
     response = client.get(
-        f"{API_VERSION_PREFIX}/playlists/1", headers={"api_key": "key"}
+        f"{API_VERSION_PREFIX}/playlists/1",
+        headers={"api_key": "key", "uid": "user_playlist_owner"},
     )
 
     assert response.status_code == 404
@@ -21,8 +23,10 @@ def test_get_playlist_by_id_should_return_404_if_playlist_not_found(
 def test_get_playlist_by_id_should_return_403_if_not_authorized(
     client, custom_requests_mock, drop_tables
 ):
+    post_user(client, uid="user_playlist_owner", user_name="Ricardito")
     response = client.get(
-        f"{API_VERSION_PREFIX}/playlists/1", headers={"api_key": "wrong_key"}
+        f"{API_VERSION_PREFIX}/playlists/1",
+        headers={"api_key": "wrong_key", "uid": "user_playlist_owner"},
     )
 
     assert response.status_code == 403
@@ -31,8 +35,10 @@ def test_get_playlist_by_id_should_return_403_if_not_authorized(
 def test_get_playlist_should_return_empty_response(
     client, custom_requests_mock, drop_tables
 ):
+    post_user(client, uid="user_playlist_owner", user_name="Ricardito")
     response = client.get(
-        f"{API_VERSION_PREFIX}/playlists/", headers={"api_key": "key"}
+        f"{API_VERSION_PREFIX}/playlists/",
+        headers={"api_key": "key", "uid": "user_playlist_owner"},
     )
     assert response.status_code == 200
     assert response.json() == []
@@ -50,7 +56,7 @@ def test_get_playlist_by_id(client, custom_requests_mock, drop_tables):
 
     response_get = client.get(
         f"{API_VERSION_PREFIX}/playlists/{response_post.json()['id']}",
-        headers={"api_key": "key"},
+        headers={"api_key": "key", "uid": "user_playlist_owner"},
     )
 
     playlist = response_get.json()
@@ -86,7 +92,8 @@ def test_get_all_playlists_with_no_specific_uid(
     )
 
     response_get = client.get(
-        f"{API_VERSION_PREFIX}/playlists/", headers={"api_key": "key"}
+        f"{API_VERSION_PREFIX}/playlists/",
+        headers={"api_key": "key", "uid": "user_playlist_owner"},
     )
 
     playlists = response_get.json()
@@ -128,7 +135,7 @@ def test_get_playlist_from_uid(client, custom_requests_mock, drop_tables):
 
     response_get = client.get(
         f"{API_VERSION_PREFIX}/playlists/?colab=user_playlist_owner",
-        headers={"api_key": "key"},
+        headers={"api_key": "key", "uid": "user_playlist_owner"},
     )
 
     playlists = response_get.json()
@@ -145,7 +152,7 @@ def test_owner_should_be_able_to_edit_its_own_playlist(
     response_post = wrap_post_playlist(client)
     response_get = client.get(
         f"{API_VERSION_PREFIX}/playlists/{response_post.json()['id']}",
-        headers={"api_key": "key"},
+        headers={"api_key": "key", "uid": "user_playlist_owner"},
     )
     assert response_get.status_code == 200
 
@@ -161,7 +168,7 @@ def test_owner_should_be_able_to_edit_its_own_playlist(
 
     response_get = client.get(
         f"{API_VERSION_PREFIX}/playlists/{response_post.json()['id']}",
-        headers={"api_key": "key"},
+        headers={"api_key": "key", "uid": "user_playlist_owner"},
     )
 
     playlist = response_get.json()
@@ -192,7 +199,7 @@ def test_colab_should_be_able_to_edit_playlist(
 
     response_get = client.get(
         f"{API_VERSION_PREFIX}/playlists/{response_post.json()['id']}",
-        headers={"api_key": "key"},
+        headers={"api_key": "key", "uid": "user_playlist_colab"},
     )
 
     playlist = response_get.json()
@@ -247,7 +254,7 @@ def test_owner_should_be_able_to_add_songs_to_its_own_playlist(
 
     response_get = client.get(
         f"{API_VERSION_PREFIX}/playlists/{res_post_playlist.json()['id']}",
-        headers={"api_key": "key"},
+        headers={"api_key": "key", "uid": "user_playlist_owner"},
     )
 
     playlist = response_get.json()

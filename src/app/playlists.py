@@ -1,5 +1,5 @@
 from src import roles, utils, schemas
-from fastapi import Depends, HTTPException, status, APIRouter
+from fastapi import Depends, HTTPException, status, APIRouter, Query
 from typing import List
 from sqlalchemy.orm import Session
 from src.database.access import get_db
@@ -14,20 +14,31 @@ def get_playlists(
     colab: str = None,
     role: roles.Role = Depends(get_role),
     pdb: Session = Depends(get_db),
+    page: int = Query(0, ge=0),
+    size: int = Query(50, ge=1, le=100),
 ):
     """Returns playlists either filtered by colab or all playlists"""
 
-    return models.PlaylistModel.search(pdb, role=role, colab=colab)
+    return models.PlaylistModel.search(
+        pdb, role=role, colab=colab, page=page, size=size
+    )
 
 
 @router.get("/my_playlists/", response_model=List[schemas.PlaylistBase])
 def get_my_playlists(
-    uid: str = Depends(utils.user.retrieve_uid), pdb: Session = Depends(get_db)
+    uid: str = Depends(utils.user.retrieve_uid),
+    pdb: Session = Depends(get_db),
+    page: int = Query(0, ge=0),
+    size: int = Query(50, ge=1, le=100),
 ):
-    return models.PlaylistModel.search(pdb, colab=uid, role=roles.Role.admin())
+    playlists = models.PlaylistModel.search(
+        pdb, colab=uid, role=roles.Role.admin(), page=page, size=size
+    )
+    playlists = [p for p in playlists if p is not None]
+    return playlists
 
 
-@router.get("/playlists/{playlist_id}", response_model=schemas.Playlist)
+@router.get("/playlists/{playlist_id}", response_model=schemas.PlaylistGet)
 def get_playlist_by_id(
     playlist: models.PlaylistModel = Depends(utils.playlist.get_playlist),
 ):

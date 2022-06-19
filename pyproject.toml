@@ -21,6 +21,8 @@ python-multipart = "^0.0.5"
 agora-token-builder = "^1.0.0"
 requests-mock = "^1.9.3"
 python-dateutil = "^2.8.2"
+fastapi-pagination = "^0.9.3"
+paginate-sqlalchemy = "^0.3.1"
 
 [tool.poetry.dev-dependencies]
 pytest = "^5.2"

@@ -572,7 +572,6 @@ def test_get_favorite_playlists_return_playlist_without_blocked_songs(
     assert response_get.status_code == 200
     assert len(playlists) == 1
     assert playlists[0]["name"] == "playlist_name"
-    assert len(playlists[0]["songs"]) == 0
 
 
 def test_admin_get_favorite_albums_return_blocked_albums(client, custom_requests_mock):
