@@ -93,14 +93,14 @@ def update_song(
 
 @router.post("/songs/", response_model=schemas.SongBase)
 def post_song(
-    song_post: schemas.SongPost = Depends(utils.song.retrieve_song),
+    song_create: schemas.SongCreate = Depends(utils.song.retrieve_song),
     file: UploadFile = File(...),
     pdb: Session = Depends(get_db),
     bucket=Depends(get_bucket),
 ):
     """Creates a song and returns its id. Artists form is encoded like '["artist1", "artist2", ...]'"""
     new_song = models.SongModel.create(
-        pdb, **song_post.dict(), bucket=bucket, file=file.file
+        pdb, **song_create.dict(), bucket=bucket, file=file.file
     )
 
     return new_song

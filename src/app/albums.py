@@ -9,10 +9,7 @@ from src.database.access import get_db
 from src.database import models
 from src import roles, utils
 from src.roles import get_role
-from src.schemas import Album
-from src.schemas.album.get import AlbumGet
-from src.schemas.album.post import AlbumPost
-from src.schemas.album.update import AlbumUpdate
+from src.schemas import Album, AlbumCreate, AlbumGet, AlbumUpdate
 
 
 router = APIRouter(tags=["albums"])
@@ -86,7 +83,7 @@ def get_album_by_id(
 
 @router.post("/albums/", response_model=AlbumGet)
 def post_album(
-    album_post: AlbumPost = Depends(utils.album.retrieve_album),
+    album_create: AlbumCreate = Depends(utils.album.retrieve_album),
     cover: UploadFile = File(...),
     role: roles.Role = Depends(get_role),
     pdb: Session = Depends(get_db),
@@ -94,7 +91,7 @@ def post_album(
 ):
     """Creates an album and returns its id. Songs_ids form is encoded like '["song_id_1", "song_id_2", ...]'"""
     album = models.AlbumModel.create(
-        pdb, **album_post.dict(), role=role, file=cover.file, bucket=bucket
+        pdb, **album_create.dict(), role=role, file=cover.file, bucket=bucket
     )
 
     album.score = utils.album.calculate_score(pdb, album)

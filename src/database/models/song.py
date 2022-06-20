@@ -37,27 +37,6 @@ class SongModel(templates.ResourceWithFile):
     )
 
     @classmethod
-    def create(cls, pdb: Session, *args, **kwargs):
-        sub_level = kwargs.pop("sub_level")
-        artists_names = kwargs.pop("artists_names")
-        album_id = kwargs.pop("album_id", None)
-        artists = []
-        for artist in artists_names:
-            try:
-                artist = ArtistModel.get(pdb, _id=artist)
-            except HTTPException:
-                artist = ArtistModel.create(pdb, name=artist, commit=False)
-            artists.append(artist)
-
-        return super().create(
-            pdb,
-            sub_level=sub_level,
-            album_id=album_id,
-            artists=artists,
-            **kwargs,
-        )
-
-    @classmethod
     def search(cls, pdb: Session, **kwargs):
         query: Query = kwargs.pop("query", None)
         if query is None:

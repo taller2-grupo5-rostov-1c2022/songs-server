@@ -4,7 +4,7 @@ from fastapi import HTTPException, Depends, Form
 from src import schemas
 from sqlalchemy.orm import Session
 from .. import roles, utils
-from typing import List, Optional
+from typing import Optional
 
 from src.database.access import get_db
 from ..roles import get_role
@@ -30,16 +30,12 @@ def retrieve_songs_ids_update(songs_ids: Optional[str] = Form(None)):
 
 
 def retrieve_song_update(
-    resource_creator_update: schemas.ResourceCreatorUpdate = Depends(
-        utils.resource.retrieve_resource_creator_update
+    song_update_collector: schemas.SongUpdateCollector = Depends(
+        schemas.SongUpdateCollector.as_form
     ),
-    artists_names: Optional[List[str]] = Depends(
-        utils.artist.retrieve_artists_names_update
-    ),
+    pdb: Session = Depends(get_db),
 ):
-    return schemas.SongUpdate(
-        artists_names=artists_names, **resource_creator_update.dict()
-    )
+    return schemas.SongUpdate(pdb, **song_update_collector.dict())
 
 
 def get_song(
@@ -68,19 +64,14 @@ def get_song_from_form(
 
 
 def retrieve_song(
-    resource_creator: schemas.ResourceCreatorBase = Depends(
-        utils.resource.retrieve_resource_creator
+    song_create_collector: schemas.SongCreateCollector = Depends(
+        schemas.SongCreateCollector.as_form
     ),
-    artists_names: List[str] = Depends(utils.artist.retrieve_artists_names),
-    album_id: Optional[str] = Form(None),
-    sub_level: Optional[int] = Form(None),
+    pdb: Session = Depends(get_db),
+    uid: str = Depends(utils.user.retrieve_uid),
+    role: roles.Role = Depends(get_role),
 ):
-    if sub_level is None:
-        sub_level = 0
-    song = schemas.SongPost(
-        artists_names=artists_names,
-        album_id=album_id,
-        sub_level=sub_level,
-        **resource_creator.dict(),
+    song = schemas.SongCreate(
+        pdb, **song_create_collector.dict(), creator_id=uid, role=role
     )
     return song

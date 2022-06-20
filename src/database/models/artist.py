@@ -17,3 +17,10 @@ class ArtistModel(CRUDMixin):
     @classmethod
     def create(cls, pdb: Session, **kwargs):
         return super().create(pdb, **kwargs)
+
+    @classmethod
+    def get_or_create(cls, pdb: Session, name: str):
+        artist = pdb.query(cls).filter(cls.name == name).first()
+        if artist is None:
+            artist = cls.create(pdb, name=name)
+        return artist

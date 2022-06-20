@@ -32,24 +32,6 @@ class PlaylistModel(templates.ResourceModel):
     )
 
     @classmethod
-    def create(cls, pdb: Session, *args, **kwargs):
-        creator_id = kwargs.pop("creator_id")
-        songs_ids = kwargs.pop("songs_ids")
-        colabs_ids = kwargs.pop("colabs_ids")
-        role = kwargs.pop("role")
-
-        songs = SongModel.get_many(pdb, ids=songs_ids, role=role)
-        colabs = UserModel.get_many(pdb, ids=colabs_ids)
-        playlist = super().create(
-            pdb,
-            creator_id=creator_id,
-            songs=songs,
-            colabs=colabs,
-            **kwargs,
-        )
-        return playlist
-
-    @classmethod
     def search(cls, pdb: Session, **kwargs):
         query: Query = kwargs.pop("query", None)
         colab = kwargs.pop("colab", None)
@@ -75,8 +57,6 @@ class PlaylistModel(templates.ResourceModel):
 
         if not role.can_see_blocked():
             join_conditions.append(SongModel.blocked == False)
-            # filters.append(cls.blocked == False)
-
         playlists = (
             pdb.query(cls)
             .options(contains_eager("songs"))

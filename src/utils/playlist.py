@@ -29,18 +29,21 @@ def retrieve_colabs_ids(colabs_ids: Optional[str] = Form(None)):
 
 
 def retrieve_playlist(
-    resource: schemas.ResourceBase = Depends(utils.resource.retrieve_resource),
-    songs_ids: List[int] = Depends(utils.song.retrieve_songs_ids),
-    colabs_ids: List[str] = Depends(retrieve_colabs_ids),
+    playlist_create_collector: schemas.PlaylistCreateCollector = Depends(
+        schemas.PlaylistCreateCollector.as_form
+    ),
+    pdb: Session = Depends(get_db),
+    uid: str = Depends(utils.user.retrieve_uid),
+    role: roles.Role = Depends(get_role),
 ):
-    return schemas.PlaylistPost(
-        songs_ids=songs_ids, colabs_ids=colabs_ids, **resource.dict()
+    return schemas.PlaylistCreate(
+        pdb, creator_id=uid, role=role, **playlist_create_collector.dict()
     )
 
 
 def get_playlist(
     playlist_id: int,
-    pdb=Depends(get_db),
+    pdb: Session = Depends(get_db),
     role: roles.Role = Depends(get_role),
     uid: str = Depends(utils.user.retrieve_uid),
 ):
@@ -56,13 +59,17 @@ def can_edit_playlist(playlist: models.PlaylistModel, role: roles.Role, uid: str
 
 
 def retrieve_playlist_update(
-    resource_update: schemas.ResourceUpdate = Depends(
-        utils.resource.retrieve_resource_update
+    playlist_update_collector: schemas.ResourceUpdateCollector = Depends(
+        schemas.ResourceUpdateCollector.as_form
     ),
     songs_ids: Optional[List[int]] = Depends(utils.song.retrieve_songs_ids_update),
     colabs_ids: Optional[List[str]] = Depends(retrieve_colabs_ids),
+    pdb: Session = Depends(get_db),
 ):
 
     return schemas.PlaylistUpdate(
-        songs_ids=songs_ids, colabs_ids=colabs_ids, **resource_update.dict()
+        pdb,
+        songs_ids=songs_ids,
+        colabs_ids=colabs_ids,
+        **playlist_update_collector.dict()
     )

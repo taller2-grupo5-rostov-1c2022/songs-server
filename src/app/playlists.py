@@ -49,14 +49,13 @@ def get_playlist_by_id(
 
 @router.post("/playlists/", response_model=schemas.PlaylistBase)
 def post_playlist(
-    playlist_info: schemas.PlaylistPost = Depends(utils.playlist.retrieve_playlist),
+    playlist_create: schemas.PlaylistCreate = Depends(utils.playlist.retrieve_playlist),
     role: roles.Role = Depends(get_role),
     pdb: Session = Depends(get_db),
 ):
     """Creates a playlist and returns its id. Songs_ids form is encoded like '["song_id_1", "song_id_2", ...]'.
     Colabs_ids form is encoded like '["colab_id_1", "colab_id_2", ...]'"""
-
-    playlist = models.PlaylistModel.create(pdb, **playlist_info.dict(), role=role)
+    playlist = models.PlaylistModel.create(pdb, **playlist_create.dict(), role=role)
 
     return playlist
 

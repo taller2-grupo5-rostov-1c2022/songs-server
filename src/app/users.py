@@ -44,7 +44,7 @@ def get_my_user(user: models.UserModel = Depends(utils.user.retrieve_user)):
 
 @router.post("/users/", response_model=schemas.User)
 def post_user(
-    user_info: schemas.UserPost = Depends(utils.user.retrieve_user_info),
+    user_info: schemas.UserCreate = Depends(utils.user.retrieve_user_info),
     img: UploadFile = None,
     bucket=Depends(get_bucket),
     auth=Depends(get_auth),

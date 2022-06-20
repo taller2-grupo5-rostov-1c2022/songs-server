@@ -57,18 +57,17 @@ def get_album(
 
 
 def retrieve_album_update(
-    resource_creator_update: schemas.ResourceCreatorUpdate = Depends(
-        utils.resource.retrieve_resource_creator_update
+    album_update_collector: schemas.AlbumUpdateCollector = Depends(
+        schemas.AlbumUpdateCollector.as_form
     ),
     album: models.AlbumModel = Depends(get_album),
-    songs_ids: Optional[List[int]] = Depends(utils.song.retrieve_songs_ids),
     role: roles.Role = Depends(get_role),
     pdb: Session = Depends(get_db),
     uid: str = Depends(utils.user.retrieve_uid),
 ):
-    validate_songs_for_album(album, songs_ids, uid, role, pdb)
-
-    return schemas.AlbumUpdate(**resource_creator_update.dict(), songs_ids=songs_ids)
+    return schemas.AlbumUpdate(
+        pdb, **album_update_collector.dict(), creator_id=uid, role=role, album=album
+    )
 
 
 def validate_songs_for_album(
@@ -95,14 +94,13 @@ def validate_songs_for_album(
 
 
 def retrieve_album(
-    resource_creator: schemas.ResourceCreatorBase = Depends(
-        utils.resource.retrieve_resource_creator
+    album_create_collector: schemas.AlbumCreateCollector = Depends(
+        schemas.AlbumCreateCollector.as_form
     ),
-    songs_ids: Optional[List[int]] = Depends(utils.song.retrieve_songs_ids),
     pdb: Session = Depends(get_db),
     uid: str = Depends(utils.user.retrieve_uid),
     role: roles.Role = Depends(get_role),
 ):
-    validate_songs_for_album(None, songs_ids, uid, role, pdb)
-
-    return schemas.AlbumPost(**resource_creator.dict(), songs_ids=songs_ids)
+    return schemas.AlbumCreate(
+        pdb, **album_create_collector.dict(), creator_id=uid, role=role
+    )

@@ -1,6 +1,5 @@
 from . import (
     user,
-    resource,
     artist,
     song,
     album,

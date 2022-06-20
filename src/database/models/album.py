@@ -27,24 +27,6 @@ class AlbumModel(templates.ResourceWithFile):
     )
 
     @classmethod
-    def create(cls, pdb: Session, *args, **kwargs):
-        creator_id = kwargs.pop("creator_id")
-        songs_ids = kwargs.pop("songs_ids")
-        role = kwargs.pop("role")
-
-        songs = []
-        for song_id in songs_ids:
-            song = SongModel.get(pdb, song_id, role=role)
-            songs.append(song)
-        album = super().create(
-            pdb,
-            creator_id=creator_id,
-            songs=songs,
-            **kwargs,
-        )
-        return album
-
-    @classmethod
     def search(cls, pdb: Session, **kwargs):
         query: Query = kwargs.pop("query", None)
         if query is None:

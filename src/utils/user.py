@@ -23,14 +23,14 @@ def retrieve_user_info(
     location: str = Form(...),
     interests: str = Form(...),
     pdb: Session = Depends(get_db),
-) -> schemas.UserPost:
+) -> schemas.UserCreate:
 
     user = models.UserModel.get(pdb, _id=uid, raise_if_not_found=False)
     if user is not None:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT, detail="User already exists"
         )
-    user_info = schemas.UserPost(
+    user_info = schemas.UserCreate(
         uid=uid, name=name, location=location, interests=interests
     )
     return user_info
