@@ -59,7 +59,7 @@ def post_user(
 
     if img:
         user = models.UserModel.create(
-            pdb, **user_info, wallet=wallet, pfp=img, bucket=bucket
+            pdb, **user_info, wallet=wallet, pfp=img.file, bucket=bucket
         )
         pfp_url = utils.user.pfp_url(user)
         auth.update_user(uid=user_info["id"], photo_url=pfp_url)
@@ -90,7 +90,7 @@ def put_user(
 
     if img:
         modified_user = user_to_modify.update(
-            pdb, **user_update.dict(exclude_none=True), pfp=img, bucket=bucket
+            pdb, **user_update.dict(exclude_none=True), pfp=img.file, bucket=bucket
         )
         pfp_url = utils.user.pfp_url(modified_user)
         modified_user.pfp = pfp_url
