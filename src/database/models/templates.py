@@ -65,7 +65,7 @@ class ResourceModel(CRUDMixin):
 
         name = kwargs.pop("name", None)
         role: roles.Role = kwargs.pop("role")
-        creator_id = kwargs.pop("creator", None)
+        creator_id = kwargs.pop("creator_id", None)
 
         if not role.can_see_blocked():
             query = query.filter(cls.blocked == False)

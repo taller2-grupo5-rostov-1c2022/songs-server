@@ -164,7 +164,9 @@ def test_cannot_delete_song_that_does_not_exist(client, custom_requests_mock):
 
 def test_get_my_songs_without_results(client, custom_requests_mock):
     post_user(client, "song_creator_id", "song_creator")
-    post_song(client, uid="song_creator_id", name="happy_song")
+    post_user(client, "another_creator_id", "another_creator")
+
+    post_song(client, uid="another_creator_id", name="happy_song")
 
     response_get = client.get(
         API_VERSION_PREFIX + "/my_songs/",
@@ -172,8 +174,7 @@ def test_get_my_songs_without_results(client, custom_requests_mock):
     )
 
     assert response_get.status_code == 200
-    assert len(response_get.json()) == 1
-    assert response_get.json()[0]["name"] == "happy_song"
+    assert len(response_get.json()) == 0
 
 
 def test_get_my_songs_should_retrieve_two_songs(client, custom_requests_mock):

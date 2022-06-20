@@ -34,7 +34,7 @@ def get_albums(
     albums = models.AlbumModel.search(
         pdb,
         role=role,
-        creator=creator,
+        creator_id=creator,
         artist=artist,
         genre=genre,
         name=name,
@@ -59,7 +59,7 @@ def get_my_albums(
 ):
 
     albums = models.AlbumModel.search(
-        pdb, role=roles.Role.admin(), creator=uid, page=page, size=size
+        pdb, role=roles.Role.admin(), creator_id=uid, page=page, size=size
     )
 
     for album in albums:

@@ -32,7 +32,7 @@ def get_songs(
     songs = models.SongModel.search(
         pdb,
         role=role,
-        creator=creator,
+        creator_id=creator,
         artist=artist,
         genre=genre,
         sub_level=sub_level,
