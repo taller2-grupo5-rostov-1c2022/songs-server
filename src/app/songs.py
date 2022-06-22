@@ -127,6 +127,7 @@ def delete_song(
 
 @router.get("/my_songs/", response_model=List[schemas.SongBase])
 def get_my_songs(
-    uid: str = Depends(utils.user.retrieve_uid), pdb: Session = Depends(get_db)
+    uid: str = Depends(utils.user.retrieve_uid), pdb: Session = Depends(get_db),
+    page: int = Query(0, ge=0), size: int = Query(50, ge=1, le=100)
 ):
-    return models.SongModel.search(pdb, creator_id=uid, role=roles.Role.admin())
+    return models.SongModel.search(pdb, creator_id=uid, role=roles.Role.admin(), page=page, size=size)

@@ -514,3 +514,125 @@ def test_get_songs_with_blocked_songs_second_page(client, custom_requests_mock):
     assert response_get.status_code == 200
     assert len(songs) == 1
     assert songs[0]["name"] == "song_3"
+
+
+def test_get_my_songs_first_page(client, custom_requests_mock):
+    utils.post_user(client, "user_id", "user_name")
+
+    utils.post_song(client, "user_id", "song_1")
+    utils.post_song(client, "user_id", "song_2")
+    utils.post_song(client, "user_id", "song_3")
+
+    response_get = client.get(
+        f"{API_VERSION_PREFIX}/my_songs/",
+        params={"page": 0, "size": 1},
+        headers={"api_key": "key", "uid": "user_id"},
+        with_pagination=True,
+    )
+
+    songs = response_get.json()
+    assert response_get.status_code == 200
+    assert len(songs) == 1
+    assert songs[0]["name"] == "song_1"
+
+
+def test_get_my_songs_second_page(client, custom_requests_mock):
+    utils.post_user(client, "user_id", "user_name")
+
+    utils.post_song(client, "user_id", "song_1")
+    utils.post_song(client, "user_id", "song_2")
+    utils.post_song(client, "user_id", "song_3")
+
+    response_get = client.get(
+        f"{API_VERSION_PREFIX}/my_songs/",
+        params={"page": 1, "size": 1},
+        headers={"api_key": "key", "uid": "user_id"},
+        with_pagination=True,
+    )
+
+    songs = response_get.json()
+    assert response_get.status_code == 200
+    assert len(songs) == 1
+    assert songs[0]["name"] == "song_2"
+
+
+def test_get_my_songs_with_own_blocked_songs_first_page(client, custom_requests_mock):
+    utils.post_user(client, "user_id", "user_name")
+
+    utils.post_song(client, "user_id", "song_1")
+    utils.post_song(client, "user_id", "song_2", blocked=True)
+    utils.post_song(client, "user_id", "song_3")
+
+    response_get = client.get(
+        f"{API_VERSION_PREFIX}/my_songs/",
+        params={"page": 0, "size": 1},
+        headers={"api_key": "key", "uid": "user_id"},
+        with_pagination=True,
+    )
+
+    songs = response_get.json()
+    assert response_get.status_code == 200
+    assert len(songs) == 1
+    assert songs[0]["name"] == "song_1"
+
+
+def test_get_my_songs_with_blocked_songs_second_page(client, custom_requests_mock):
+    utils.post_user(client, "user_id", "user_name")
+
+    utils.post_song(client, "user_id", "song_1")
+    utils.post_song(client, "user_id", "song_2", blocked=True)
+    utils.post_song(client, "user_id", "song_3")
+
+    response_get = client.get(
+        f"{API_VERSION_PREFIX}/my_songs/",
+        params={"page": 1, "size": 1},
+        headers={"api_key": "key", "uid": "user_id"},
+        with_pagination=True,
+    )
+
+    songs = response_get.json()
+    assert response_get.status_code == 200
+    assert len(songs) == 1
+    assert songs[0]["name"] == "song_2"
+
+
+def test_get_my_songs_with_blocked_songs_of_another_user_first_page(client, custom_requests_mock):
+    utils.post_user(client, "user_id", "user_name")
+    utils.post_user(client, "user_id_2", "user_name_2")
+
+    utils.post_song(client, "user_id", "song_1")
+    utils.post_song(client, "user_id_2", "song_2", blocked=True)
+    utils.post_song(client, "user_id", "song_3")
+
+    response_get = client.get(
+        f"{API_VERSION_PREFIX}/my_songs/",
+        params={"page": 0, "size": 1},
+        headers={"api_key": "key", "uid": "user_id"},
+        with_pagination=True,
+    )
+
+    songs = response_get.json()
+    assert response_get.status_code == 200
+    assert len(songs) == 1
+    assert songs[0]["name"] == "song_1"
+
+
+def test_get_my_songs_with_blocked_songs_of_another_user_second_page(client, custom_requests_mock):
+    utils.post_user(client, "user_id", "user_name")
+    utils.post_user(client, "user_id_2", "user_name_2")
+
+    utils.post_song(client, "user_id", "song_1")
+    utils.post_song(client, "user_id_2", "song_2", blocked=True)
+    utils.post_song(client, "user_id", "song_3")
+
+    response_get = client.get(
+        f"{API_VERSION_PREFIX}/my_songs/",
+        params={"page": 1, "size": 1},
+        headers={"api_key": "key", "uid": "user_id"},
+        with_pagination=True,
+    )
+
+    songs = response_get.json()
+    assert response_get.status_code == 200
+    assert len(songs) == 1
+    assert songs[0]["name"] == "song_3"
