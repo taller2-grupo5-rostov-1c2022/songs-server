@@ -14,6 +14,7 @@ from src.app import (
     subscriptions,
 )
 from src.middleware.utils import get_api_key
+from fastapi_pagination import add_pagination
 
 API_VERSION_PREFIX = "/api/v3"
 
@@ -33,3 +34,5 @@ app.include_router(reviews.router, prefix=API_VERSION_PREFIX)
 app.include_router(comments.router, prefix=API_VERSION_PREFIX)
 app.include_router(streamings.router, prefix=API_VERSION_PREFIX)
 app.include_router(subscriptions.router, prefix=API_VERSION_PREFIX)
+
+add_pagination(app)

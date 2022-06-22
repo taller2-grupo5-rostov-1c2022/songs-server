@@ -91,7 +91,7 @@ def test_get_reviews_with_many_reviews(client, custom_requests_mock):
 
     response_get = client.get(
         f"{API_VERSION_PREFIX}/albums/{album_id}/reviews/",
-        headers={"api_key": "key", "uid": "reviewer_id"},
+        headers={"api_key": "key", "uid": "nice_user_id"},
     )
     reviews = response_get.json()
 
@@ -353,7 +353,7 @@ def test_post_one_review_affects_album_score(client, custom_requests_mock):
 
     response_get = client.get(
         f"{API_VERSION_PREFIX}/albums/{album_id}",
-        headers={"api_key": "key", "uid": "song_creator_id", "role": "admin"},
+        headers={"api_key": "key", "uid": "reviewer_id"},
     )
     album = response_get.json()
     assert response_get.status_code == 200
@@ -371,7 +371,7 @@ def test_post_many_reviews_affects_score(client, custom_requests_mock):
 
     response_get = client.get(
         f"{API_VERSION_PREFIX}/albums/{album_id}",
-        headers={"api_key": "key", "uid": "song_creator_id", "role": "admin"},
+        headers={"api_key": "key", "uid": "creator_id", "role": "admin"},
     )
     album = response_get.json()
     assert response_get.status_code == 200

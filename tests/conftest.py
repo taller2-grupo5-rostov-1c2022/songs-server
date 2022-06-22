@@ -1,22 +1,29 @@
-import time
+import datetime
+
+import sqlalchemy as sa
 from fastapi import HTTPException
+from sqlalchemy.orm import sessionmaker
 
 from fastapi import status
 import requests
 import requests_mock
 import pytest
 from fastapi.testclient import TestClient
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
+
+from src.app.subscriptions import get_time_now
 from src.main import app, API_VERSION_PREFIX
-from src.postgres.database import get_db, Base
-from src.repositories.subscription_utils import CREATE_WALLET_ENDPOINT, DEPOSIT_ENDPOINT
+from src.database.access import get_db, Base
+from src.utils.subscription import CREATE_WALLET_ENDPOINT, DEPOSIT_ENDPOINT
 import json
 
 import os
 
 SQLALCHEMY_DATABASE_URL = os.environ.get("TEST_POSTGRES_URL")
+engine = sa.create_engine(SQLALCHEMY_DATABASE_URL)
+TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
+Base.metadata.drop_all(engine)
+Base.metadata.create_all(bind=engine)
 
 SUCCESSFUL_PAYMENT_RESPONSE = {
     "nonce": 2,
@@ -83,7 +90,7 @@ def api_matcher(request):
     return None
 
 
-@pytest.fixture
+@pytest.fixture(autouse=True)
 def custom_requests_mock():
     m = requests_mock.Mocker(real_http=True)
     m.start()
@@ -97,48 +104,162 @@ def custom_requests_mock():
         m.stop()
 
 
-@pytest.fixture(scope="session")
-def connect_to_database():
-    engine = create_engine(SQLALCHEMY_DATABASE_URL)
-    for x in range(10):
-        try:
-            print("Trying to connect to DB - " + str(x))
-            engine.connect()
-            break
-        except Exception:  # noqa: E722 # Want to catch all exceptions
-            time.sleep(1)
-            engine = create_engine(SQLALCHEMY_DATABASE_URL)
-    yield engine
+@pytest.fixture(autouse=True)
+def session():
+    connection = engine.connect()
+    transaction = connection.begin()
+    session = TestingSessionLocal(bind=connection)
+
+    # Begin a nested transaction (using SAVEPOINT).
+    nested = connection.begin_nested()
+
+    # If the application code calls session.commit, it will end the nested
+    # transaction. Need to start a new one when that happens.
+    @sa.event.listens_for(session, "after_transaction_end")
+    def end_savepoint(session, transaction):
+        nonlocal nested
+        if not nested.is_active:
+            nested = connection.begin_nested()
+
+    yield session
+
+    # Rollback the overall transaction, restoring the state before the test ran.
+    session.close()
+    transaction.rollback()
+    connection.close()
 
 
+def populate_albums(test_client, albums, **kwargs):
+    for album in albums:
+        album_by_id = test_client.get(
+            f"{API_VERSION_PREFIX}/albums/{album['id']}", **kwargs
+        ).json()
+        album["songs"] = album_by_id["songs"]
+
+    return albums
+
+
+def build_complete_response_for_albums(test_client, *args, **kwargs):
+    response = test_client.get(*args, **kwargs)
+    if response.status_code > 299:
+        return response
+
+    populated_albums = populate_albums(test_client, response.json(), **kwargs)
+    resp = requests.models.Response()
+    resp.status_code = response.status_code
+    resp._content = json.dumps(populated_albums, indent=2).encode("utf-8")
+    return resp
+
+
+def populate_playlists(test_client, playlists, **kwargs):
+    for playlist in playlists:
+        playlist_by_id = test_client.get(
+            f"{API_VERSION_PREFIX}/playlists/{playlist['id']}", **kwargs
+        ).json()
+        playlist["songs"] = playlist_by_id["songs"]
+        playlist["colabs"] = playlist_by_id["colabs"]
+    return playlists
+
+
+def build_complete_response_for_playlists(test_client, *args, **kwargs):
+    response = test_client.get(*args, **kwargs)
+    if response.status_code > 299:
+        return response
+
+    populated_playlists = populate_playlists(test_client, response.json(), **kwargs)
+    resp = requests.models.Response()
+    resp.status_code = response.status_code
+    resp._content = json.dumps(populated_playlists, indent=2).encode("utf-8")
+    return resp
+
+
+def match_wrappeable_album_endpoints(endpoint):
+    if endpoint == f"{API_VERSION_PREFIX}/albums/" or endpoint.startswith(
+        f"{API_VERSION_PREFIX}/albums/?"
+    ):
+        return True
+    if endpoint == f"{API_VERSION_PREFIX}/my_albums/":
+        return True
+    return False
+
+
+def match_wrappeable_playlist_endpoints(endpoint):
+    if endpoint == f"{API_VERSION_PREFIX}/playlists/" or endpoint.startswith(
+        f"{API_VERSION_PREFIX}/playlists/?"
+    ):
+        return True
+    if endpoint == f"{API_VERSION_PREFIX}/my_playlists/":
+        return True
+    return False
+
+
+def client_wrapper(test_client, *args, **kwargs):
+    with_pagination = kwargs.pop("with_pagination", False)
+    if with_pagination:
+        return test_client.get(*args, **kwargs)
+    else:
+        endpoint = args[0]
+        if match_wrappeable_album_endpoints(endpoint):
+            return build_complete_response_for_albums(test_client, *args, **kwargs)
+        elif match_wrappeable_playlist_endpoints(endpoint):
+            return build_complete_response_for_playlists(test_client, *args, **kwargs)
+        return test_client.get(*args, **kwargs)
+
+
+# Workaround for expecting GET /albums/, /playlists/, /my_albums/ and /my_playlists/
+# to also return the songs
+class ClientPaginationWrapper:
+    def __init__(self, test_client):
+        self.test_client = test_client
+
+    def __getattr__(self, item):
+        if item == "get":
+
+            def wrapper(*args, **kwargs):
+                return client_wrapper(self.test_client, *args, **kwargs)
+
+            return wrapper
+        return getattr(self.test_client, item)
+
+
+# For some reason, nested transactions don't work with playlists tests,
+# so I need to drop the tables and create them again in that module
 @pytest.fixture()
-def session(connect_to_database):
-
-    Base.metadata.drop_all(bind=connect_to_database)
-    Base.metadata.create_all(bind=connect_to_database)
-    testing_session_local = sessionmaker(
-        autocommit=False, autoflush=False, bind=connect_to_database
-    )
-
-    db = testing_session_local()
-
-    try:
-        yield db
-    finally:
-        db.close()
+def drop_tables():
+    Base.metadata.drop_all(bind=engine)
+    Base.metadata.create_all(bind=engine)
 
 
-@pytest.fixture()
+@pytest.fixture(autouse=True)
 def client(session):
 
     # Dependency override
 
     def override_get_db():
-        try:
-            yield session
-        finally:
-            session.close()
+        yield session
 
     app.dependency_overrides[get_db] = override_get_db
+    try:
+        yield ClientPaginationWrapper(TestClient(app))
+    finally:
+        del app.dependency_overrides[get_db]
 
-    yield TestClient(app)
+
+@pytest.fixture()
+def time_now_10_days_future():
+    def get_time_now_10_days_future():
+        return datetime.datetime.now() + datetime.timedelta(days=10)
+
+    app.dependency_overrides[get_time_now] = get_time_now_10_days_future
+    try:
+        yield
+    finally:
+        del app.dependency_overrides[get_time_now]
+
+
+@pytest.fixture()
+def time_now_40_days_future():
+    def get_time_now_40_days_future():
+        return datetime.datetime.now() + datetime.timedelta(days=40)
+
+    app.dependency_overrides[get_time_now] = get_time_now_40_days_future

@@ -35,7 +35,8 @@ def test_search_album_by_artist_exact_name_one_result(client, custom_requests_mo
     post_album(client, uid="user_id", name="my_album_name", songs_ids=[song_id])
 
     response = client.get(
-        f"{API_VERSION_PREFIX}/albums/?artist=artist_name", headers={"api_key": "key"}
+        f"{API_VERSION_PREFIX}/albums/?artist=artist_name",
+        headers={"api_key": "key", "uid": "user_id"},
     )
 
     assert response.status_code == 200
@@ -61,7 +62,8 @@ def test_search_album_by_artist_song_with_many_artists(client, custom_requests_m
     post_album(client, uid="user_id", name="another_album_name", songs_ids=[song_id_2])
 
     response = client.get(
-        f"{API_VERSION_PREFIX}/albums/?artist=artist_name_2", headers={"api_key": "key"}
+        f"{API_VERSION_PREFIX}/albums/?artist=artist_name_2",
+        headers={"api_key": "key", "uid": "user_id"},
     )
 
     assert response.status_code == 200
@@ -74,7 +76,8 @@ def test_search_album_by_artist_substring_one_result(client, custom_requests_moc
     post_album(client, uid="user_id", songs_ids=[song_id])
 
     response = client.get(
-        f"{API_VERSION_PREFIX}/albums/?artist=artist_na", headers={"api_key": "key"}
+        f"{API_VERSION_PREFIX}/albums/?artist=artist_na",
+        headers={"api_key": "key", "uid": "user_id"},
     )
 
     assert response.status_code == 200
@@ -89,7 +92,8 @@ def test_search_album_by_artist_case_insensitive_one_result(
     post_album(client, uid="user_id", songs_ids=[song_id])
 
     response = client.get(
-        f"{API_VERSION_PREFIX}/albums/?artist=ArTISt_nAME", headers={"api_key": "key"}
+        f"{API_VERSION_PREFIX}/albums/?artist=ArTISt_nAME",
+        headers={"api_key": "key", "uid": "user_id"},
     )
     assert response.status_code == 200
     assert len(response.json()) == 1
@@ -103,7 +107,8 @@ def test_search_album_by_artist_substring_case_insensitive_one_result(
     post_album(client, uid="user_id", songs_ids=[song_id])
 
     response = client.get(
-        f"{API_VERSION_PREFIX}/albums/?artist=ArTISt_Na", headers={"api_key": "key"}
+        f"{API_VERSION_PREFIX}/albums/?artist=ArTISt_Na",
+        headers={"api_key": "key", "uid": "user_id"},
     )
     assert response.status_code == 200
     assert len(response.json()) == 1
@@ -128,7 +133,8 @@ def test_search_album_by_artist_substring_case_insensitive_many_results(
     post_album(client, uid="user_id", name="third_album", songs_ids=[song_id_3])
 
     response = client.get(
-        f"{API_VERSION_PREFIX}/albums/?artist=ArTISt_na", headers={"api_key": "key"}
+        f"{API_VERSION_PREFIX}/albums/?artist=ArTISt_na",
+        headers={"api_key": "key", "uid": "user_id"},
     )
     assert response.status_code == 200
     assert len(response.json()) == 2
@@ -140,7 +146,8 @@ def test_search_album_by_genre_without_created_songs(client, custom_requests_moc
     post_user(client, "user_id", "user_name")
 
     response = client.get(
-        f"{API_VERSION_PREFIX}/albums/?genre=my_genre", headers={"api_key": "key"}
+        f"{API_VERSION_PREFIX}/albums/?genre=my_genre",
+        headers={"api_key": "key", "uid": "user_id"},
     )
     assert response.status_code == 200
     assert len(response.json()) == 0
@@ -152,7 +159,8 @@ def test_search_album_by_genre_without_results(client, custom_requests_mock):
     post_album(client, uid="user_id", genre="my_genre", songs_ids=[song_id])
 
     response = client.get(
-        f"{API_VERSION_PREFIX}/albums/?genre=another_genre", headers={"api_key": "key"}
+        f"{API_VERSION_PREFIX}/albums/?genre=another_genre",
+        headers={"api_key": "key", "uid": "user_id"},
     )
 
     assert response.status_code == 200
@@ -173,7 +181,8 @@ def test_search_album_by_genre_exact_name_one_result(client, custom_requests_moc
     )
 
     response = client.get(
-        f"{API_VERSION_PREFIX}/albums/?genre=my_album_genre", headers={"api_key": "key"}
+        f"{API_VERSION_PREFIX}/albums/?genre=my_album_genre",
+        headers={"api_key": "key", "uid": "user_id"},
     )
 
     assert response.status_code == 200
@@ -189,7 +198,8 @@ def test_search_album_by_genre_ignores_songs_genre(client, custom_requests_mock)
     )
 
     response = client.get(
-        f"{API_VERSION_PREFIX}/albums/?genre=my_song_genre", headers={"api_key": "key"}
+        f"{API_VERSION_PREFIX}/albums/?genre=my_song_genre",
+        headers={"api_key": "key", "uid": "user_id"},
     )
     assert response.status_code == 200
     assert len(response.json()) == 0
@@ -205,7 +215,8 @@ def test_search_album_by_genre_substring_one_result(client, custom_requests_mock
     )
 
     response = client.get(
-        f"{API_VERSION_PREFIX}/albums/?genre=genr", headers={"api_key": "key"}
+        f"{API_VERSION_PREFIX}/albums/?genre=genr",
+        headers={"api_key": "key", "uid": "user_id"},
     )
 
     assert response.status_code == 200
@@ -225,7 +236,8 @@ def test_search_album_by_genre_case_insensitive_one_result(
     )
 
     response = client.get(
-        f"{API_VERSION_PREFIX}/albums/?genre=My_Genre", headers={"api_key": "key"}
+        f"{API_VERSION_PREFIX}/albums/?genre=My_Genre",
+        headers={"api_key": "key", "uid": "user_id"},
     )
 
     assert response.status_code == 200
@@ -244,7 +256,8 @@ def test_search_album_by_genre_substring_case_insensitive_one_result(
     )
 
     response = client.get(
-        f"{API_VERSION_PREFIX}/albums/?genre=GEN", headers={"api_key": "key"}
+        f"{API_VERSION_PREFIX}/albums/?genre=GEN",
+        headers={"api_key": "key", "uid": "user_id"},
     )
 
     assert response.status_code == 200
@@ -260,7 +273,8 @@ def test_search_album_by_genre_substring_case_insensitive_many_results(
     post_album_with_song(client, uid="user_id", album_genre="foo")
 
     response = client.get(
-        f"{API_VERSION_PREFIX}/albums/?genre=GEN", headers={"api_key": "key"}
+        f"{API_VERSION_PREFIX}/albums/?genre=GEN",
+        headers={"api_key": "key", "uid": "user_id"},
     )
 
     assert response.status_code == 200
@@ -288,7 +302,7 @@ def test_search_album_multiple_queries(client, custom_requests_mock):
 
     response = client.get(
         f"{API_VERSION_PREFIX}/albums/?creator=user_id&genre=my_genre",
-        headers={"api_key": "key"},
+        headers={"api_key": "key", "uid": "user_id"},
     )
 
     assert response.status_code == 200
@@ -301,7 +315,7 @@ def test_search_album_by_name(client, custom_requests_mock):
 
     response = client.get(
         f"{API_VERSION_PREFIX}/albums/?name=ALBUM",
-        headers={"api_key": "key"},
+        headers={"api_key": "key", "uid": "album_creator_id"},
     )
 
     assert response.status_code == 200

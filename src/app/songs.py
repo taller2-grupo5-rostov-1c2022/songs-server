@@ -1,26 +1,18 @@
 import datetime
 
-from src import roles
-from src.constants import STORAGE_PATH, SUPPRESS_BLOB_ERRORS
-from src.postgres import schemas
+from src import roles, utils, schemas
+from src.constants import STORAGE_PATH
 from typing import List
 from fastapi import APIRouter
-from fastapi import Depends, File, HTTPException, UploadFile
+from fastapi import Depends, File, HTTPException, UploadFile, status, Query
+
 from src.firebase.access import get_bucket
 from sqlalchemy.orm import Session
-from src.postgres.database import get_db
-from src.postgres import models
-from src.repositories import user_utils, song_utils, album_utils
+from src.database.access import get_db
+from src.database import models
 from src.roles import get_role
 
 router = APIRouter(tags=["songs"])
-
-
-def create_song_artists_models(artists_names: List[str]):
-    artists = []
-    for artist_name in artists_names:
-        artists.append(models.ArtistModel(name=artist_name))
-    return artists
 
 
 @router.get("/songs/", response_model=List[schemas.SongBase])
@@ -32,15 +24,29 @@ def get_songs(
     sub_level: int = None,
     name: str = None,
     pdb: Session = Depends(get_db),
+    page: int = Query(0, ge=0),
+    size: int = Query(50, ge=1, le=100),
 ):
     """Returns all songs"""
 
-    return song_utils.get_songs(pdb, role, creator, artist, genre, sub_level, name)
+    songs = models.SongModel.search(
+        pdb,
+        role=role,
+        creator_id=creator,
+        artist=artist,
+        genre=genre,
+        sub_level=sub_level,
+        name=name,
+        page=page,
+        size=size,
+    )
+
+    return songs
 
 
 @router.get("/songs/{song_id}", response_model=schemas.SongGet)
 def get_song_by_id(
-    song: models.SongModel = Depends(song_utils.get_song),
+    song: models.SongModel = Depends(utils.song.get_song),
 ):
     """Returns a song by its id or 404 if not found"""
 
@@ -57,10 +63,10 @@ def get_song_by_id(
 
 @router.put("/songs/{song_id}")
 def update_song(
-    song: models.SongModel = Depends(song_utils.get_song),
-    uid: str = Depends(user_utils.retrieve_uid),
+    song: models.SongModel = Depends(utils.song.get_song),
+    uid: str = Depends(utils.user.retrieve_uid),
     role: roles.Role = Depends(get_role),
-    song_update: schemas.SongUpdate = Depends(song_utils.retrieve_song_update),
+    song_update: schemas.SongUpdate = Depends(utils.song.retrieve_song_update),
     file: UploadFile = None,
     pdb: Session = Depends(get_db),
     bucket=Depends(get_bucket),
@@ -73,104 +79,59 @@ def update_song(
             detail=f"User '{uid} attempted to edit song of user with ID {song.creator_id}",
         )
 
-    song_update = song_update.dict()
-
-    for song_attr in song_update:
-        if song_update[song_attr] is not None:
-            setattr(song, song_attr, song_update[song_attr])
-    if song_update["artists_names"] is not None:
-        song.artists = create_song_artists_models(song_update["artists_names"])
-
-    if song_update["blocked"] is not None:
-        if not role.can_block():
-            raise HTTPException(
-                status_code=403,
-                detail=f"User {uid} without permissions tried to block song {song.id}",
-            )
-        song.blocked = song_update["blocked"]
-
     if file is not None:
-        try:
-            blob = bucket.blob(f"songs/{song.id}")
-            blob.upload_from_file(file.file)
-            blob.make_public()
-            song.file_last_update = datetime.datetime.now()
-        except:  # noqa: W0707 # Want to catch all exceptions
-            if not SUPPRESS_BLOB_ERRORS:
-                raise HTTPException(
-                    status_code=507, detail=f"Files for Song '{song.id}' not found"
-                )
-
-    pdb.commit()
+        song.update(
+            pdb,
+            **song_update.dict(exclude_none=True),
+            role=role,
+            file=file,
+            bucket=bucket,
+        )
+    else:
+        song.update(pdb, **song_update.dict(exclude_none=True), role=role)
 
 
 @router.post("/songs/", response_model=schemas.SongBase)
 def post_song(
-    song_info: schemas.SongPost = Depends(album_utils.retrieve_song),
+    song_create: schemas.SongCreate = Depends(utils.song.retrieve_song),
     file: UploadFile = File(...),
     pdb: Session = Depends(get_db),
     bucket=Depends(get_bucket),
 ):
     """Creates a song and returns its id. Artists form is encoded like '["artist1", "artist2", ...]'"""
-
-    new_song = models.SongModel(
-        **song_info.dict(exclude={"artists_names"}),
-        artists=create_song_artists_models(song_info.artists_names),
-        file_last_update=datetime.datetime.now(),
+    new_song = models.SongModel.create(
+        pdb, **song_create.dict(), bucket=bucket, file=file.file
     )
-    pdb.add(new_song)
-    pdb.commit()
-
-    try:
-        blob = bucket.blob(f"songs/{new_song.id}")
-        blob.upload_from_file(file.file)
-        blob.make_public()
-    except:  # noqa: W0707 # Want to catch all exceptions
-        if not SUPPRESS_BLOB_ERRORS:
-            raise HTTPException(
-                status_code=507,
-                detail=f"Could not upload Files for new Song {new_song.id}",
-            )
-
-    # Changes to the db should not be committed if there is an error
-    # uploading the file
-    pdb.add(new_song)
-    pdb.commit()
 
     return new_song
 
 
 @router.delete("/songs/{song_id}")
 def delete_song(
-    song: models.SongModel = Depends(song_utils.get_song),
-    uid: str = Depends(user_utils.retrieve_uid),
+    song: models.SongModel = Depends(utils.song.get_song),
+    uid: str = Depends(utils.user.retrieve_uid),
     pdb: Session = Depends(get_db),
     bucket=Depends(get_bucket),
     role: roles.Role = Depends(get_role),
 ):
     """Deletes a song by its id"""
 
-    if uid != song.creator_id and not role.can_delete_everything():
+    if song.creator_id != uid and not role.can_delete_everything():
         raise HTTPException(
-            status_code=403,
-            detail=f"User with ID {uid} attempted to delete song of creator with ID {song.creator_id}",
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=f"User '{uid} attempted to delete song of user with ID {song.creator_id}",
         )
 
-    pdb.delete(song)
-
-    try:
-        bucket.blob(f"songs/{song.id}").delete()
-    except:  # noqa: W0707 # Want to catch all exceptions
-        if not SUPPRESS_BLOB_ERRORS:
-            raise HTTPException(
-                status_code=507, detail=f"Could not delete Song {song.id}"
-            )
-
-    pdb.commit()
+    song.delete(pdb, bucket=bucket, role=role)
 
 
 @router.get("/my_songs/", response_model=List[schemas.SongBase])
 def get_my_songs(
-    uid: str = Depends(user_utils.retrieve_uid), pdb: Session = Depends(get_db)
+    uid: str = Depends(utils.user.retrieve_uid),
+    pdb: Session = Depends(get_db),
+    page: int = Query(0, ge=0),
+    size: int = Query(50, ge=1, le=100),
 ):
-    return song_utils.get_songs(pdb, roles.Role.admin(), uid)
+    return models.SongModel.search(
+        pdb, creator_id=uid, role=roles.Role.admin(), page=page, size=size
+    )

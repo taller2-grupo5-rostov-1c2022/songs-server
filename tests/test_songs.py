@@ -2,7 +2,7 @@ import time
 
 from src.constants import STORAGE_PATH
 from tests import utils
-from tests.utils import post_song, post_user
+from tests.utils import post_song, post_user, post_album
 from tests.utils import API_VERSION_PREFIX
 from urllib.parse import urlparse
 from urllib.parse import parse_qs
@@ -164,7 +164,9 @@ def test_cannot_delete_song_that_does_not_exist(client, custom_requests_mock):
 
 def test_get_my_songs_without_results(client, custom_requests_mock):
     post_user(client, "song_creator_id", "song_creator")
-    post_song(client, uid="song_creator_id", name="happy_song")
+    post_user(client, "another_creator_id", "another_creator")
+
+    post_song(client, uid="another_creator_id", name="happy_song")
 
     response_get = client.get(
         API_VERSION_PREFIX + "/my_songs/",
@@ -172,8 +174,7 @@ def test_get_my_songs_without_results(client, custom_requests_mock):
     )
 
     assert response_get.status_code == 200
-    assert len(response_get.json()) == 1
-    assert response_get.json()[0]["name"] == "happy_song"
+    assert len(response_get.json()) == 0
 
 
 def test_get_my_songs_should_retrieve_two_songs(client, custom_requests_mock):
@@ -274,3 +275,20 @@ def test_admin_can_edit_song_of_another_user(client, custom_requests_mock):
     )
 
     assert response_put.status_code == 200
+
+
+def test_post_song_with_album(client, custom_requests_mock):
+    post_user(client, "song_creator_id", "song_creator")
+    album_id = post_album(client, uid="song_creator_id").json()["id"]
+
+    response = post_song(client, uid="song_creator_id", album_id=album_id)
+
+    assert response.status_code == 200
+
+    response = utils.get_song_by_id(
+        client, response.json()["id"], uid="song_creator_id"
+    )
+    song = response.json()
+
+    assert response.status_code == 200
+    assert song["album"]["id"] == album_id

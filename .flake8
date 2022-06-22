@@ -23,6 +23,7 @@ ignore =
     W0703, # Catching too general exception Exception (broad-except)
     E712, # comparison to True should be 'if cond is True:' or 'if cond:'
     E711, # comparison to None should be 'if cond is not None:'
+    F403 'from .album import *' used; unable to detect undefined names
 select =
     C, # McCabe complexity
     E, # pep8 errors

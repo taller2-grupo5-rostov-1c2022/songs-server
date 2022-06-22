@@ -210,7 +210,8 @@ def test_get_my_reviews(client, custom_requests_mock):
     post_user(client, "reviewer_id", "reviewer_name")
 
     album_id = post_album(client, "creator_id").json()["id"]
-    post_review(client, "reviewer_id", album_id)
+    response = post_review(client, "reviewer_id", album_id)
+    assert response.status_code == 200
 
     response = client.get(
         f"{API_VERSION_PREFIX}/users/reviewer_id/reviews",
@@ -304,8 +305,9 @@ def test_delete_user_does_not_delete_song(client, custom_requests_mock):
 
 
 def test_delete_user_does_not_delete_album(client, custom_requests_mock):
-
     post_user(client, "user_id", "user_name")
+    post_user(client, "another_user_id", "another_user_name")
+
     album_id = post_album(client, "user_id", "album_name").json()["id"]
 
     response = client.delete(
@@ -317,7 +319,7 @@ def test_delete_user_does_not_delete_album(client, custom_requests_mock):
 
     response = client.get(
         f"{API_VERSION_PREFIX}/albums/{album_id}",
-        headers={"api_key": "key", "uid": "user_id"},
+        headers={"api_key": "key", "uid": "another_user_id"},
     )
 
     assert response.status_code == 200
@@ -325,8 +327,9 @@ def test_delete_user_does_not_delete_album(client, custom_requests_mock):
 
 
 def test_delete_user_does_not_delete_playlist(client, custom_requests_mock):
-
     post_user(client, "user_id", "user_name")
+    post_user(client, "another_user_id", "another_user_name")
+
     playlist_id = post_playlist(client, "user_id", "playlist_name").json()["id"]
 
     response = client.delete(
@@ -338,7 +341,7 @@ def test_delete_user_does_not_delete_playlist(client, custom_requests_mock):
 
     response = client.get(
         f"{API_VERSION_PREFIX}/playlists/{playlist_id}",
-        headers={"api_key": "key", "uid": "user_id"},
+        headers={"api_key": "key", "uid": "another_user_id"},
     )
 
     assert response.status_code == 200
@@ -360,9 +363,8 @@ def test_delete_user_that_is_collaborator_of_playlist_does_not_delete_playlist(
 
     response = client.get(
         f"{API_VERSION_PREFIX}/playlists/{playlist_id}",
-        headers={"api_key": "key", "uid": "user_playlist_colab"},
+        headers={"api_key": "key", "uid": "user_playlist_owner"},
     )
-
     assert response.status_code == 200
 
 
@@ -380,8 +382,7 @@ def test_delete_user_that_is_owner_of_playlist_gives_ownership_to_another_user(
 
     response = client.get(
         f"{API_VERSION_PREFIX}/playlists/{playlist_id}",
-        headers={"api_key": "key", "uid": "user_playlist_owner"},
+        headers={"api_key": "key", "uid": "user_playlist_colab"},
     )
-
     assert response.status_code == 200
     assert response.json()["creator_id"] == "user_playlist_colab"
