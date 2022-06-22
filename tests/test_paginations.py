@@ -596,7 +596,9 @@ def test_get_my_songs_with_blocked_songs_second_page(client, custom_requests_moc
     assert songs[0]["name"] == "song_2"
 
 
-def test_get_my_songs_with_blocked_songs_of_another_user_first_page(client, custom_requests_mock):
+def test_get_my_songs_with_blocked_songs_of_another_user_first_page(
+    client, custom_requests_mock
+):
     utils.post_user(client, "user_id", "user_name")
     utils.post_user(client, "user_id_2", "user_name_2")
 
@@ -617,7 +619,9 @@ def test_get_my_songs_with_blocked_songs_of_another_user_first_page(client, cust
     assert songs[0]["name"] == "song_1"
 
 
-def test_get_my_songs_with_blocked_songs_of_another_user_second_page(client, custom_requests_mock):
+def test_get_my_songs_with_blocked_songs_of_another_user_second_page(
+    client, custom_requests_mock
+):
     utils.post_user(client, "user_id", "user_name")
     utils.post_user(client, "user_id_2", "user_name_2")
 
