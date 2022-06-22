@@ -73,8 +73,9 @@ def get_sub_price(sub_level: int):
 
 def _make_payment(user: models.UserModel, sub_level: int):
     payment_response = requests.post(
-        f"{DEPOSIT_ENDPOINT}/:{user.id}",
+        f"{DEPOSIT_ENDPOINT}/{user.id}",
         json={"amountInEthers": get_sub_price(sub_level)},
+        headers={"api_key": PAYMENTS_API_KEY},
     )
 
     if payment_response.status_code != status.HTTP_200_OK:
