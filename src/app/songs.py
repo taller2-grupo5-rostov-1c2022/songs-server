@@ -1,7 +1,4 @@
-import datetime
-
 from src import roles, utils, schemas
-from src.constants import STORAGE_PATH
 from typing import List
 from fastapi import APIRouter
 from fastapi import Depends, File, HTTPException, UploadFile, status, Query
@@ -47,16 +44,11 @@ def get_songs(
 @router.get("/songs/{song_id}", response_model=schemas.SongGet)
 def get_song_by_id(
     song: models.SongModel = Depends(utils.song.get_song),
+    bucket=Depends(get_bucket),
 ):
     """Returns a song by its id or 404 if not found"""
 
-    song.file = (
-        STORAGE_PATH
-        + "songs/"
-        + str(song.id)
-        + "?t="
-        + str(int(datetime.datetime.timestamp(song.file_last_update)))
-    )
+    song.file = song.url(bucket)
 
     return song
 

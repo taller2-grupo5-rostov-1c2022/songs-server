@@ -11,13 +11,13 @@ router = APIRouter(tags=["users"])
 
 
 @router.get("/users/", response_model=List[schemas.UserGet])
-def get_all_users(pdb: Session = Depends(get_db)):
+def get_all_users(pdb: Session = Depends(get_db), bucket=Depends(get_bucket)):
     """Returns all users"""
 
     users = models.UserModel.search(pdb)
 
     for user in users:
-        user.pfp = utils.user.pfp_url(user)
+        user.pfp = user.url(bucket)
 
     return users
 

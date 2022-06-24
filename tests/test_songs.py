@@ -33,8 +33,7 @@ def test_post_song(client, custom_requests_mock):
     assert song["artists"] == [{"name": "song_artist_name"}]
     assert song["genre"] == "song_genre"
     assert song["sub_level"] == 0
-    assert song["file"].startswith(STORAGE_PATH)
-    assert str(song["id"]) in song["file"]
+    assert song["file"].startswith("https://example.com")
     assert song["album"] is None
 
 

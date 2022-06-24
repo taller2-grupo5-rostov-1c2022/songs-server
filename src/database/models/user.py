@@ -9,6 +9,7 @@ from .song import SongModel
 from .album import AlbumModel
 from .crud_template import CRUDMixin
 from fastapi import HTTPException, status
+from google.cloud.storage.bucket import Bucket
 
 from ... import roles
 from ...constants import SUPPRESS_BLOB_ERRORS
@@ -85,6 +86,14 @@ class UserModel(CRUDMixin):
                     status_code=status.HTTP_507_INSUFFICIENT_STORAGE,
                     detail=f"Could not upload pfp for for User with id {self.id}: {e}",
                 )
+
+    def url(self, bucket: Bucket):
+        if self.pfp_last_update is not None:
+            return (
+                bucket.blob(f"pfp/{self.id}").public_url
+                + f"?t={str(int(datetime.datetime.timestamp(self.pfp_last_update)))}"
+            )
+        return None
 
     @classmethod
     def create(cls, pdb: Session, **kwargs):

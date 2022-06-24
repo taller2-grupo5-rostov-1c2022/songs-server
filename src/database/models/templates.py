@@ -1,6 +1,6 @@
 import datetime
 from typing import Optional
-
+from google.cloud.storage.bucket import Bucket
 from sqlalchemy import Boolean, Column, Integer, String, TIMESTAMP
 from typing.io import IO
 
@@ -134,6 +134,14 @@ class ResourceWithFile(ResourceCreatorModel):
                     status_code=status.HTTP_507_INSUFFICIENT_STORAGE,
                     detail=f"Could not delete file for for resource {self.__class__.name} with id {self.id}: {e}",
                 )
+
+    def url(self, bucket: Bucket):
+        if self.file_last_update is not None:
+            return (
+                bucket.blob(f"{self.__tablename__}/{self.id}").public_url
+                + f"?t={str(int(datetime.datetime.timestamp(self.file_last_update)))}"
+            )
+        return None
 
     @classmethod
     def create(cls, pdb: Session, **kwargs):
