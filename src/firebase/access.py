@@ -1,9 +1,10 @@
 import firebase_admin
 import json
-from src.constants import TESTING
+from src.constants import TESTING, ENVIRONTMENT
 from firebase_admin import credentials, storage, auth
 from src.mocks.firebase.bucket import bucket_mock
 from src.mocks.firebase.auth import auth_mock
+from google.cloud.storage.bucket import Bucket
 
 from dotenv import load_dotenv
 
@@ -11,6 +12,32 @@ load_dotenv()
 
 bucket = bucket_mock
 _auth = auth_mock
+
+
+class BucketMuxDemux:
+    def __int__(self, _bucket):
+        self._bucket = _bucket
+
+    def blob(
+        self,
+        blob_name,
+        chunk_size=None,
+        encryption_key=None,
+        kms_key_name=None,
+        generation=None,
+    ):
+        if ENVIRONTMENT == "dev":
+            folder_name, file_name = blob_name.split("/")
+            folder_name += "_dev"
+            blob_name = f"{folder_name}/{file_name}"
+
+        return self._bucket.blob(
+            blob_name, chunk_size, encryption_key, kms_key_name, generation
+        )
+
+    def __getattr__(self, item):
+        return getattr(self._bucket, item)
+
 
 if not TESTING:
     # Use a service account
@@ -24,7 +51,9 @@ if not TESTING:
         cred, {"storageBucket": "rostov-spotifiuby.appspot.com/"}
     )
 
-    bucket = storage.bucket("rostov-spotifiuby.appspot.com")
+    real_bucket = storage.bucket("rostov-spotifiuby.appspot.com")
+    bucket = BucketMuxDemux()
+    bucket._bucket = real_bucket
 
     _auth = auth
 

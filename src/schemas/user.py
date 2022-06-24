@@ -8,7 +8,14 @@ from .album import AlbumBase
 from .playlist import PlaylistBase
 
 
-__all__ = ["UserBase", "UserCreate", "UserUpdateCollector", "UserUpdate", "User"]
+__all__ = [
+    "UserBase",
+    "UserCreate",
+    "UserUpdateCollector",
+    "UserUpdate",
+    "UserGet",
+    "UserGetById",
+]
 
 
 class UserBase(BaseModel):
@@ -49,7 +56,13 @@ class UserUpdate(BaseModel):
     interests: Optional[str]
 
 
-class User(UserBase):
+class UserGet(UserBase):
+    pfp: Optional[HttpUrl] = None
+    location: str
+    interests: str
+
+
+class UserGetById(UserGet):
     songs: List[SongBase]
     albums: List[AlbumBase]
     my_playlists: List[PlaylistBase]
@@ -57,6 +70,3 @@ class User(UserBase):
     wallet: str
     sub_level: int
     sub_expires: Optional[datetime]
-    location: str
-    interests: str
-    pfp: Optional[HttpUrl] = None

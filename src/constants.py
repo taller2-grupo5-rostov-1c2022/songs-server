@@ -1,5 +1,6 @@
 import os
 
+ENVIRONTMENT = str(os.environ.get("ENVIRONMENT", "dev"))
 API_KEY = os.environ.get("API_KEY", "key")
 API_KEY_NAME = "api_key"
 PAYMENTS_API_KEY = os.environ.get("PAYMENTS_API_KEY", "key")

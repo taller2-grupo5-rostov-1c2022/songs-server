@@ -10,7 +10,7 @@ from src.database import models
 router = APIRouter(tags=["users"])
 
 
-@router.get("/users/", response_model=List[schemas.User])
+@router.get("/users/", response_model=List[schemas.UserGet])
 def get_all_users(pdb: Session = Depends(get_db)):
     """Returns all users"""
 
@@ -22,7 +22,7 @@ def get_all_users(pdb: Session = Depends(get_db)):
     return users
 
 
-@router.get("/users/{uid}", response_model=schemas.User)
+@router.get("/users/{uid}", response_model=schemas.UserGetById)
 def get_user_by_id(uid: str, pdb: Session = Depends(get_db)):
     """Returns a user by its id or 404 if not found"""
 
@@ -33,7 +33,7 @@ def get_user_by_id(uid: str, pdb: Session = Depends(get_db)):
     return user
 
 
-@router.get("/my_user/", response_model=schemas.User)
+@router.get("/my_user/", response_model=schemas.UserGetById)
 def get_my_user(user: models.UserModel = Depends(utils.user.retrieve_user)):
     """Returns own user"""
 
@@ -42,7 +42,7 @@ def get_my_user(user: models.UserModel = Depends(utils.user.retrieve_user)):
     return user
 
 
-@router.post("/users/", response_model=schemas.User)
+@router.post("/users/", response_model=schemas.UserGetById)
 def post_user(
     user_info: schemas.UserCreate = Depends(utils.user.retrieve_user_info),
     img: UploadFile = None,
@@ -71,7 +71,7 @@ def post_user(
     return user
 
 
-@router.put("/users/{uid_to_modify}", response_model=schemas.User)
+@router.put("/users/{uid_to_modify}", response_model=schemas.UserGetById)
 def put_user(
     uid: str = Depends(utils.user.retrieve_uid),
     user_to_modify: models.UserModel = Depends(utils.user.retrieve_user_to_modify),

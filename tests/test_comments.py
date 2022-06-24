@@ -508,3 +508,41 @@ def test_comment_of_deleted_user_gets_deleted(client, custom_requests_mock):
 
     assert response_get.status_code == 200
     assert len(comments) == 0
+
+
+def test_delete_album_with_comments(client, custom_requests_mock):
+    utils.post_user(client, "creator_id", "creator_name")
+    utils.post_user(client, "listener_id", "listener_name")
+
+    album_id = utils.post_album(client, uid="creator_id", name="album_name").json()[
+        "id"
+    ]
+    comment_id = utils.post_comment(
+        client,
+        uid="creator_id",
+        album_id=album_id,
+        text="creator_comment",
+        parent_id=None,
+    ).json()["id"]
+    utils.post_comment(
+        client,
+        uid="listener_id",
+        album_id=album_id,
+        text="listener_comment",
+        parent_id=comment_id,
+    )
+
+    response_delete = client.delete(
+        f"{API_VERSION_PREFIX}/albums/{album_id}",
+        headers={"uid": "creator_id", "api_key": "key"},
+    )
+    assert response_delete.status_code == 200
+
+    response_get = client.get(
+        f"{API_VERSION_PREFIX}/users/comments/",
+        headers={"uid": "listener_id", "api_key": "key"},
+    )
+    comments = response_get.json()
+
+    assert response_get.status_code == 200
+    assert len(comments) == 0

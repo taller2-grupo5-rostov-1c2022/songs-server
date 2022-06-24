@@ -406,3 +406,17 @@ def test_user_with_two_reviews_in_different_albums_edits_one_review(
     assert len(reviews) == 1
     assert reviews[0]["text"] == "I'm trying to change a review"
     assert reviews[0]["score"] == 3
+
+
+def test_delete_album_deletes_reviews(client, custom_requests_mock):
+    post_user(client, uid="creator_id", user_name="creator_name")
+    post_user(client, uid="reviewer_id", user_name="reviewer_name")
+
+    album_id = post_album(client, uid="creator_id").json()["id"]
+    post_review(client, "reviewer_id", album_id, "bad song", 2)
+
+    response_delete = client.delete(
+        f"{API_VERSION_PREFIX}/albums/{album_id}",
+        headers={"api_key": "key", "uid": "creator_id"},
+    )
+    assert response_delete.status_code == 200

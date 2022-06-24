@@ -17,8 +17,12 @@ class AlbumModel(templates.ResourceWithFile):
 
     songs = relationship("SongModel", back_populates="album")
 
-    reviews = relationship("ReviewModel", back_populates="album")
-    comments = relationship("CommentModel", back_populates="album")
+    reviews = relationship(
+        "ReviewModel", back_populates="album", cascade="all, delete-orphan"
+    )
+    comments = relationship(
+        "CommentModel", back_populates="album", cascade="all, delete-orphan"
+    )
 
     favorited_by = relationship(
         "UserModel",
