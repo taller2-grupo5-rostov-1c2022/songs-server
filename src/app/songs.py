@@ -84,7 +84,7 @@ def update_song(
             pdb,
             **song_update.dict(exclude_none=True),
             role=role,
-            file=file,
+            file=file.file,
             bucket=bucket,
         )
     else:
