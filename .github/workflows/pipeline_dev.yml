@@ -107,6 +107,7 @@ jobs:
         env:
           HD_API_KEY: ${{secrets.DEV_API_KEY}}
           HD_POSTGRES_URL: ${{secrets.DEV_POSTGRES_URL}}
+          HD_ENVIRONMENT: ${{secrets.DEV_ENVIRONMENT}}
           AGORA_APP_ID: ${{secrets.AGORA_APP_ID}}
           AGORA_APP_CERT: ${{secrets.AGORA_APP_CERT}}
         with:

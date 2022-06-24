@@ -12,7 +12,7 @@ class CommentModel(CRUDMixin):
     __tablename__ = "comments"
 
     id = Column(Integer, primary_key=True, index=True)
-    text = Column(String, nullable=True, index=True)
+    text = Column(String, nullable=True)
     created_at = Column(TIMESTAMP, nullable=False)
 
     commenter = relationship("UserModel", back_populates="comments")

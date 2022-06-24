@@ -41,7 +41,7 @@ def as_form(cls: Type[BaseModel]) -> Type[BaseModel]:
             )
             return Depends(field.type_.as_form)
         else:
-            return Form(None) if not field.required else Form(...)
+            return Form(field.default) if not field.required else Form(...)
 
     new_params = [
         inspect.Parameter(
