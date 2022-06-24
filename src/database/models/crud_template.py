@@ -43,14 +43,13 @@ class CRUDMixin(Base):
     def search(cls, pdb: Session, **kwargs):
         """Search for records."""
         query: Query = kwargs.pop("query", None)
+        do_pagination = kwargs.pop("do_pagination", True)
+
         if query is None:
             query = pdb.query(cls)
-
-        page = kwargs.pop("page", None)
-        if page is not None:
-            size = kwargs.pop("size")
-            query = query.limit(size).offset(page * size)
-        return query.all()
+        if not do_pagination:
+            return query.all()
+        return paginate(query.all())
 
     def update(self, pdb: Session, **kwargs):
         """Update specific fields of a record."""

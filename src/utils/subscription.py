@@ -95,7 +95,7 @@ def subscribe(user: models.UserModel, sub_level: int, pdb: Session) -> models.Us
 
 
 def revoke_subscription(pdb: Session, now: datetime.datetime):
-    users = models.UserModel.search(pdb, expiration_date=now)
+    users = models.UserModel.search(pdb, expiration_date=now, do_pagination=False)
 
     for user in users:
         user.update(

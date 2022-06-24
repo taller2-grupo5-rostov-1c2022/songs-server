@@ -1,15 +1,16 @@
 from src import roles, utils, schemas
 from src.database.access import get_db
-from typing import List
 from fastapi import APIRouter, status, HTTPException
 from fastapi import Depends
 from sqlalchemy.orm import Session
 from src.database import models
+from fastapi_pagination import Page
+
 
 router = APIRouter(tags=["favorites"])
 
 
-@router.get("/users/{uid}/favorites/songs/", response_model=List[schemas.SongBase])
+@router.get("/users/{uid}/favorites/songs/", response_model=Page[schemas.SongBase])
 def get_favorite_songs(
     user: models.UserModel = Depends(utils.user.retrieve_user),
     role: roles.Role = Depends(roles.get_role),
@@ -44,18 +45,12 @@ def remove_song_from_favorites(
     user.remove_favorite_song(pdb, song=song)
 
 
-@router.get("/users/{uid}/favorites/albums/", response_model=List[schemas.AlbumGet])
+@router.get("/users/{uid}/favorites/albums/", response_model=Page[schemas.AlbumGet])
 def get_favorite_albums(
     user: models.UserModel = Depends(utils.user.retrieve_user),
     role: roles.Role = Depends(roles.get_role),
-    pdb: Session = Depends(get_db),
 ):
     favorite_albums = user.get_favorite_albums(role=role)
-
-    for album in favorite_albums:
-        album.cover = utils.album.cover_url(album)
-        album.score = utils.album.calculate_score(pdb, album)
-        album.scores_amount = utils.album.calculate_scores_amount(pdb, album)
 
     return favorite_albums
 
@@ -88,7 +83,7 @@ def remove_album_from_favorites(
 
 
 @router.get(
-    "/users/{uid}/favorites/playlists/", response_model=List[schemas.PlaylistBase]
+    "/users/{uid}/favorites/playlists/", response_model=Page[schemas.PlaylistBase]
 )
 def get_favorite_playlists(
     user: models.UserModel = Depends(utils.user.retrieve_user),

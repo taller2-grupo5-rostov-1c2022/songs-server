@@ -1,4 +1,7 @@
 from typing import Optional, List
+
+from pydantic.fields import Field
+
 from .resource import (
     ResourceBase,
     ResourceUpdate,
@@ -33,9 +36,12 @@ class AlbumBase(ResourceBase):
 
 
 class Album(AlbumBase):
-    cover: str
+    file_url: str = Field(alias="cover")
     score: float
     scores_amount: int
+
+    class Config:
+        allow_population_by_field_name = True
 
 
 class AlbumGet(Album):

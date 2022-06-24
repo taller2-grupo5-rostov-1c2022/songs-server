@@ -1,6 +1,6 @@
-import datetime
+from datetime import datetime
 
-from sqlalchemy import Column, Integer, String, TIMESTAMP, DateTime
+from sqlalchemy import Column, Integer, String, DateTime
 from sqlalchemy.orm import relationship, Session, contains_eager
 from typing.io import IO
 
@@ -9,7 +9,7 @@ from .song import SongModel
 from .album import AlbumModel
 from .crud_template import CRUDMixin
 from fastapi import HTTPException, status
-from google.cloud.storage.bucket import Bucket
+from fastapi_pagination import paginate
 
 from ... import roles
 from ...constants import SUPPRESS_BLOB_ERRORS
@@ -26,7 +26,7 @@ class UserModel(CRUDMixin):
     wallet = Column(String, nullable=True, index=True)
     location = Column(String, nullable=False, index=True)
     interests = Column(String, nullable=False, index=True)
-    pfp_last_update = Column(TIMESTAMP, nullable=True)
+    pfp_url = Column(String, nullable=True)
 
     songs = relationship("SongModel", back_populates="creator")
     albums = relationship("AlbumModel", back_populates="creator")
@@ -67,7 +67,8 @@ class UserModel(CRUDMixin):
             blob = bucket.blob(f"pfp/{self.id}")
             blob.upload_from_file(pfp)
             blob.make_public()
-            self.pfp_last_update = datetime.datetime.now()
+            timestamp = f"?t={str(int(datetime.timestamp(datetime.now())))}"
+            self.pfp_url = blob.public_url + timestamp
         except Exception as e:
             if not SUPPRESS_BLOB_ERRORS:
                 self.expire(pdb)
@@ -86,14 +87,6 @@ class UserModel(CRUDMixin):
                     status_code=status.HTTP_507_INSUFFICIENT_STORAGE,
                     detail=f"Could not upload pfp for for User with id {self.id}: {e}",
                 )
-
-    def url(self, bucket: Bucket):
-        if self.pfp_last_update is not None:
-            return (
-                bucket.blob(f"pfp/{self.id}").public_url
-                + f"?t={str(int(datetime.datetime.timestamp(self.pfp_last_update)))}"
-            )
-        return None
 
     @classmethod
     def create(cls, pdb: Session, **kwargs):
@@ -125,14 +118,13 @@ class UserModel(CRUDMixin):
         pfp = kwargs.pop("pfp", None)
         if pfp is not None:
             bucket = kwargs.pop("bucket")
-            self.pfp_last_update = datetime.datetime.now()
             self.upload_pfp(pdb, pfp, bucket)
         return super().update(pdb, **kwargs)
 
     def delete(self, pdb: Session, **kwargs):
         bucket = kwargs.pop("bucket")
 
-        if self.pfp_last_update is not None:
+        if self.pfp_url is not None:
             self.delete_pfp(bucket)
         return super().delete(pdb, **kwargs)
 
@@ -143,7 +135,7 @@ class UserModel(CRUDMixin):
         if not role.can_see_blocked():
             filters.append(SongModel.blocked == False)
 
-        return self.favorite_songs.filter(*filters, **kwargs).all()
+        return paginate(self.favorite_songs.filter(*filters, **kwargs).all())
 
     def add_favorite_song(self, pdb: Session, **kwargs):
         song = kwargs.pop("song")
@@ -165,7 +157,7 @@ class UserModel(CRUDMixin):
             filters.append(AlbumModel.blocked == False)
             join_conditions.append(SongModel.blocked == False)
 
-        albums = (
+        albums = paginate(
             self.favorite_albums.options(contains_eager("songs"))
             .join(SongModel.album.and_(*join_conditions), full=True)
             .filter(*filters)
@@ -194,7 +186,7 @@ class UserModel(CRUDMixin):
         if not role.can_see_blocked():
             filters.append(PlaylistModel.blocked == False)
             join_conditions.append(SongModel.blocked == False)
-        return (
+        return paginate(
             self.favorite_playlists.options(contains_eager("songs"))
             .join(PlaylistModel.songs.and_(*join_conditions), isouter=True)
             .filter(*filters, **kwargs)

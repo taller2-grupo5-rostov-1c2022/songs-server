@@ -1,12 +1,13 @@
 from sqlalchemy import Column, ForeignKey, String
 from sqlalchemy.orm import relationship, Session, contains_eager
 from sqlalchemy.sql import and_
-
+from fastapi_pagination import paginate
 from . import templates, tables
 from .artist import ArtistModel
 from .song import SongModel
 from sqlalchemy.orm.query import Query
 from fastapi import HTTPException, status
+from sqlalchemy.sql import func
 
 
 class AlbumModel(templates.ResourceWithFile):
@@ -37,17 +38,29 @@ class AlbumModel(templates.ResourceWithFile):
             query = pdb.query(cls)
 
         artist_name = kwargs.pop("artist", None)
+        if artist_name is not None:
+            query = (
+                query.options(contains_eager("songs"))
+                .join(SongModel, full=True)
+                .filter(
+                    SongModel.artists.any(
+                        func.lower(ArtistModel.name).contains(artist_name.lower())
+                    )
+                )
+            )
 
         albums = super().search(pdb, query=query, **kwargs)
+        """
         if artist_name is not None:
             albums_filtered = []
-            for album in albums:
+            for album in albums.items:
                 for song in album.songs:
                     for artist in song.artists:
                         if artist_name.lower() in artist.name.lower():
                             albums_filtered.append(album)
                             break
-            albums = albums_filtered
+            albums = paginate(albums_filtered)
+        """
         return albums
 
     @classmethod
@@ -83,6 +96,21 @@ class AlbumModel(templates.ResourceWithFile):
                 status_code=status.HTTP_404_NOT_FOUND, detail="Album not found"
             )
         return album
+
+    @property
+    def score(self):
+        if self.scores_amount == 0:
+            return 0
+        return (
+            sum([review.score for review in self.reviews if review.score is not None])
+            / self.scores_amount
+        )
+
+    @property
+    def scores_amount(self):
+        return len(
+            [self.reviews for review in self.reviews if review.score is not None]
+        )
 
     def update(self, pdb: Session, **kwargs):
         songs_ids = kwargs.pop("songs_ids", None)

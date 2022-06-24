@@ -6,6 +6,7 @@ from typing import List
 from sqlalchemy.orm import Session
 from src.database.access import get_db
 from src.database import models
+from fastapi_pagination import Page
 
 router = APIRouter(tags=["comments"])
 
@@ -61,7 +62,7 @@ def delete_album_comment(
     comment.soft_delete(pdb)
 
 
-@router.get("/users/comments/", response_model=List[schemas.CommentGet])
+@router.get("/users/comments/", response_model=Page[schemas.CommentGet])
 def get_user_comments(
     uid: models.UserModel = Depends(utils.user.retrieve_uid),
     pdb: Session = Depends(get_db),

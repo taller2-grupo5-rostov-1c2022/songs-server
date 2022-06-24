@@ -1,34 +1,32 @@
 from src import roles, utils, schemas
 from src.database.access import get_db
-from typing import List, Optional
+from typing import Optional
 from fastapi import APIRouter
 from fastapi import Depends, HTTPException, UploadFile
 from sqlalchemy.orm import Session
 from src.firebase.access import get_bucket, get_auth
 from src.database import models
+from fastapi_pagination import Page
 
 router = APIRouter(tags=["users"])
 
 
-@router.get("/users/", response_model=List[schemas.UserGet])
-def get_all_users(pdb: Session = Depends(get_db), bucket=Depends(get_bucket)):
+@router.get("/users/", response_model=Page[schemas.UserGet])
+def get_all_users(pdb: Session = Depends(get_db)):
     """Returns all users"""
 
     users = models.UserModel.search(pdb)
-
-    for user in users:
-        user.pfp = user.url(bucket)
 
     return users
 
 
 @router.get("/users/{uid}", response_model=schemas.UserGetById)
-def get_user_by_id(uid: str, pdb: Session = Depends(get_db)):
+def get_user_by_id(
+    uid: str, pdb: Session = Depends(get_db)
+):
     """Returns a user by its id or 404 if not found"""
 
     user = models.UserModel.get(pdb, _id=uid)
-
-    user.pfp = utils.user.pfp_url(user)
 
     return user
 
@@ -36,8 +34,6 @@ def get_user_by_id(uid: str, pdb: Session = Depends(get_db)):
 @router.get("/my_user/", response_model=schemas.UserGetById)
 def get_my_user(user: models.UserModel = Depends(utils.user.retrieve_user)):
     """Returns own user"""
-
-    user.pfp = utils.user.pfp_url(user)
 
     return user
 
@@ -61,9 +57,7 @@ def post_user(
         user = models.UserModel.create(
             pdb, **user_info, wallet=wallet, pfp=img.file, bucket=bucket
         )
-        pfp_url = utils.user.pfp_url(user)
-        auth.update_user(uid=user_info["id"], photo_url=pfp_url)
-        user.pfp = pfp_url
+        auth.update_user(uid=user_info["id"], photo_url=user.pfp_url)
     else:
         user = models.UserModel.create(pdb, **user_info, wallet=wallet)
 
@@ -92,9 +86,7 @@ def put_user(
         modified_user = user_to_modify.update(
             pdb, **user_update.dict(exclude_none=True), pfp=img.file, bucket=bucket
         )
-        pfp_url = utils.user.pfp_url(modified_user)
-        modified_user.pfp = pfp_url
-        auth.update_user(uid=uid, photo_url=pfp_url)
+        auth.update_user(uid=uid, photo_url=modified_user.pfp_url)
     else:
         modified_user = user_to_modify.update(
             pdb, **user_update.dict(exclude_none=True)

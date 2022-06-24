@@ -139,12 +139,9 @@ def populate_albums(test_client, albums, **kwargs):
     return albums
 
 
-def build_complete_response_for_albums(test_client, *args, **kwargs):
-    response = test_client.get(*args, **kwargs)
-    if response.status_code > 299:
-        return response
-
-    populated_albums = populate_albums(test_client, response.json(), **kwargs)
+def build_complete_response_for_albums(test_client, response, **kwargs):
+    albums = response.json()
+    populated_albums = populate_albums(test_client, albums, **kwargs)
     resp = requests.models.Response()
     resp.status_code = response.status_code
     resp._content = json.dumps(populated_albums, indent=2).encode("utf-8")
@@ -161,12 +158,12 @@ def populate_playlists(test_client, playlists, **kwargs):
     return playlists
 
 
-def build_complete_response_for_playlists(test_client, *args, **kwargs):
-    response = test_client.get(*args, **kwargs)
+def build_complete_response_for_playlists(test_client, response, **kwargs):
     if response.status_code > 299:
         return response
 
-    populated_playlists = populate_playlists(test_client, response.json(), **kwargs)
+    playlists = response.json()
+    populated_playlists = populate_playlists(test_client, playlists, **kwargs)
     resp = requests.models.Response()
     resp.status_code = response.status_code
     resp._content = json.dumps(populated_playlists, indent=2).encode("utf-8")
@@ -199,11 +196,25 @@ def client_wrapper(test_client, *args, **kwargs):
         return test_client.get(*args, **kwargs)
     else:
         endpoint = args[0]
+        response = test_client.get(*args, **kwargs)
+        if response.status_code > 299:
+            return response
+
+        if response.status_code < 299 and "items" in response.json():
+            items = response.json()["items"]
+            resp = requests.models.Response()
+            resp.status_code = response.status_code
+            resp._content = json.dumps(items, indent=2).encode("utf-8")
+            response = resp
+
         if match_wrappeable_album_endpoints(endpoint):
-            return build_complete_response_for_albums(test_client, *args, **kwargs)
+            return build_complete_response_for_albums(test_client, response, **kwargs)
         elif match_wrappeable_playlist_endpoints(endpoint):
-            return build_complete_response_for_playlists(test_client, *args, **kwargs)
-        return test_client.get(*args, **kwargs)
+            return build_complete_response_for_playlists(
+                test_client, response, **kwargs
+            )
+
+        return response
 
 
 # Workaround for expecting GET /albums/, /playlists/, /my_albums/ and /my_playlists/

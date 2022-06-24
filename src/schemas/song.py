@@ -1,5 +1,8 @@
 from pydantic import BaseModel
 from typing import Optional, List
+
+from pydantic.fields import Field
+
 from .resource import (
     ResourceBase,
     ResourceUpdate,
@@ -43,7 +46,10 @@ class SongGet(SongBase):
     from .album import AlbumBase
 
     album: Optional[AlbumBase] = None
-    file: str
+    file_url: str = Field(..., alias="file")
+
+    class Config:
+        allow_population_by_field_name = True
 
 
 @as_form
@@ -102,7 +108,7 @@ class SongCreate(ResourceCreate):
 class SongResponse(BaseModel):
     success: bool
     id: str
-    file: Optional[str]
+    file: Optional[str] = Field(..., alias="file_url")
 
 
 @as_form

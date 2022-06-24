@@ -3,6 +3,7 @@ from sqlalchemy.orm import relationship, Session
 from .crud_template import CRUDMixin
 from fastapi import HTTPException, status
 from .user import UserModel
+from fastapi_pagination import paginate
 
 
 class ReviewModel(CRUDMixin):
@@ -37,4 +38,4 @@ class ReviewModel(CRUDMixin):
     @classmethod
     def get_by_reviewer(cls, pdb: Session, reviewer: UserModel):
         reviews = pdb.query(cls).filter(cls.reviewer == reviewer)
-        return reviews.all()
+        return paginate(reviews.all())

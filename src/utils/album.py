@@ -1,50 +1,12 @@
 from src.database import models
 from fastapi import HTTPException, Depends, status
 from .. import roles, utils
-import datetime
-from src.constants import STORAGE_PATH
 from src import schemas
 from src.database.access import get_db
 from typing import List, Optional
 from sqlalchemy.orm import Session
 
 from ..roles import get_role
-
-
-def cover_url(album: models.AlbumModel):
-    return (
-        STORAGE_PATH
-        + "covers/"
-        + str(album.id)
-        + "?t="
-        + str(int(datetime.datetime.timestamp(album.file_last_update)))
-    )
-
-
-def calculate_scores_amount(pdb, album: models.AlbumModel):
-    scores_amount = (
-        pdb.query(models.AlbumModel)
-        .join(models.ReviewModel.album)
-        .filter(models.AlbumModel.id == album.id, models.ReviewModel.score != None)
-        .count()
-    )
-    return scores_amount
-
-
-def calculate_score(pdb, album: models.AlbumModel):
-    scores_amount = calculate_scores_amount(pdb, album)
-    if scores_amount == 0:
-        return 0
-
-    reviews = (
-        pdb.query(models.ReviewModel.score)
-        .join(models.ReviewModel.album)
-        .filter(models.AlbumModel.id == album.id, models.ReviewModel.score != None)
-        .all()
-    )
-    sum_scores = sum(review.score for review in reviews)
-
-    return round(sum_scores / scores_amount, 1)
 
 
 def get_album(

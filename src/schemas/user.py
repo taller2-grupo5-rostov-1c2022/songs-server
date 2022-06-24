@@ -1,4 +1,5 @@
 from pydantic import BaseModel
+from pydantic.fields import Field
 from pydantic.networks import HttpUrl
 from pydantic.utils import GetterDict
 from typing import Optional, List, Any
@@ -57,9 +58,12 @@ class UserUpdate(BaseModel):
 
 
 class UserGet(UserBase):
-    pfp: Optional[HttpUrl] = None
+    pfp_url: Optional[HttpUrl] = Field(None, alias="pfp")
     location: str
     interests: str
+
+    class Config:
+        allow_population_by_field_name = True
 
 
 class UserGetById(UserGet):

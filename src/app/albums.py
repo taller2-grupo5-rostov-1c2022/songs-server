@@ -1,5 +1,3 @@
-from typing import List
-
 from fastapi import APIRouter
 from fastapi import Depends, File, HTTPException, UploadFile, Query
 
@@ -10,12 +8,13 @@ from src.database import models
 from src import roles, utils
 from src.roles import get_role
 from src.schemas import Album, AlbumCreate, AlbumGet, AlbumUpdate
+from fastapi_pagination import Page
 
 
 router = APIRouter(tags=["albums"])
 
 
-@router.get("/albums/", response_model=List[Album])
+@router.get("/albums/", response_model=Page[Album])
 def get_albums(
     creator: str = None,
     role: roles.Role = Depends(get_role),
@@ -23,8 +22,6 @@ def get_albums(
     genre: str = None,
     name: str = None,
     pdb: Session = Depends(get_db),
-    page: int = Query(0, ge=0),
-    size: int = Query(50, ge=1, le=100),
 ):
     """Returns all Albums"""
 
@@ -35,19 +32,12 @@ def get_albums(
         artist=artist,
         genre=genre,
         name=name,
-        page=page,
-        size=size,
     )
-
-    for album in albums:
-        album.cover = utils.album.cover_url(album)
-        album.score = utils.album.calculate_score(pdb, album)
-        album.scores_amount = utils.album.calculate_scores_amount(pdb, album)
 
     return albums
 
 
-@router.get("/my_albums/", response_model=List[Album])
+@router.get("/my_albums/", response_model=Page[Album])
 def get_my_albums(
     uid: str = Depends(utils.user.retrieve_uid),
     pdb: Session = Depends(get_db),
@@ -59,24 +49,14 @@ def get_my_albums(
         pdb, role=roles.Role.admin(), creator_id=uid, page=page, size=size
     )
 
-    for album in albums:
-        album.cover = utils.album.cover_url(album)
-        album.score = utils.album.calculate_score(pdb, album)
-        album.scores_amount = utils.album.calculate_scores_amount(pdb, album)
-
     return albums
 
 
 @router.get("/albums/{album_id}", response_model=AlbumGet)
 def get_album_by_id(
     album: models.AlbumModel = Depends(utils.album.get_album),
-    pdb: Session = Depends(get_db),
 ):
     """Returns an album by its id or 404 if not found"""
-
-    album.cover = utils.album.cover_url(album)
-    album.score = utils.album.calculate_score(pdb, album)
-    album.scores_amount = utils.album.calculate_scores_amount(pdb, album)
 
     return album
 
@@ -94,9 +74,6 @@ def post_album(
         pdb, **album_create.dict(), role=role, file=cover.file, bucket=bucket
     )
 
-    album.score = utils.album.calculate_score(pdb, album)
-    album.scores_amount = utils.album.calculate_scores_amount(pdb, album)
-    album.cover = utils.album.cover_url(album)
     return album
 
 

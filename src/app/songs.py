@@ -1,5 +1,4 @@
 from src import roles, utils, schemas
-from typing import List
 from fastapi import APIRouter
 from fastapi import Depends, File, HTTPException, UploadFile, status, Query
 
@@ -8,11 +7,12 @@ from sqlalchemy.orm import Session
 from src.database.access import get_db
 from src.database import models
 from src.roles import get_role
+from fastapi_pagination import Page
 
 router = APIRouter(tags=["songs"])
 
 
-@router.get("/songs/", response_model=List[schemas.SongBase])
+@router.get("/songs/", response_model=Page[schemas.SongBase])
 def get_songs(
     creator: str = None,
     role: roles.Role = Depends(get_role),
@@ -21,8 +21,6 @@ def get_songs(
     sub_level: int = None,
     name: str = None,
     pdb: Session = Depends(get_db),
-    page: int = Query(0, ge=0),
-    size: int = Query(50, ge=1, le=100),
 ):
     """Returns all songs"""
 
@@ -34,8 +32,6 @@ def get_songs(
         genre=genre,
         sub_level=sub_level,
         name=name,
-        page=page,
-        size=size,
     )
 
     return songs
@@ -44,11 +40,8 @@ def get_songs(
 @router.get("/songs/{song_id}", response_model=schemas.SongGet)
 def get_song_by_id(
     song: models.SongModel = Depends(utils.song.get_song),
-    bucket=Depends(get_bucket),
 ):
     """Returns a song by its id or 404 if not found"""
-
-    song.file = song.url(bucket)
 
     return song
 
@@ -117,7 +110,7 @@ def delete_song(
     song.delete(pdb, bucket=bucket, role=role)
 
 
-@router.get("/my_songs/", response_model=List[schemas.SongBase])
+@router.get("/my_songs/", response_model=Page[schemas.SongBase])
 def get_my_songs(
     uid: str = Depends(utils.user.retrieve_uid),
     pdb: Session = Depends(get_db),

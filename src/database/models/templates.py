@@ -1,9 +1,8 @@
 import datetime
 from typing import Optional
 from google.cloud.storage.bucket import Bucket
-from sqlalchemy import Boolean, Column, Integer, String, TIMESTAMP
+from sqlalchemy import Boolean, Column, Integer, String
 from typing.io import IO
-
 from src import roles
 from src.constants import SUPPRESS_BLOB_ERRORS
 from src.database.models.crud_template import CRUDMixin
@@ -108,13 +107,17 @@ class ResourceCreatorModel(ResourceModel):
 class ResourceWithFile(ResourceCreatorModel):
     __abstract__ = True
 
-    file_last_update = Column(TIMESTAMP, nullable=False)
+    file_url = Column(String, nullable=True)
 
     def upload_file(self, pdb: Session, file: IO, bucket):
         try:
             blob = bucket.blob(f"{self.__tablename__}/{self.id}")
             blob.upload_from_file(file)
             blob.make_public()
+            timestamp = (
+                f"?t={str(int(datetime.datetime.timestamp(datetime.datetime.now())))}"
+            )
+            self.file_url = blob.public_url + timestamp
 
         except Exception as e:
             if not SUPPRESS_BLOB_ERRORS:
@@ -135,24 +138,13 @@ class ResourceWithFile(ResourceCreatorModel):
                     detail=f"Could not delete file for for resource {self.__class__.name} with id {self.id}: {e}",
                 )
 
-    def url(self, bucket: Bucket):
-        if self.file_last_update is not None:
-            return (
-                bucket.blob(f"{self.__tablename__}/{self.id}").public_url
-                + f"?t={str(int(datetime.datetime.timestamp(self.file_last_update)))}"
-            )
-        return None
-
     @classmethod
     def create(cls, pdb: Session, **kwargs):
-        file_last_update = datetime.datetime.now()
         bucket = kwargs.pop("bucket")
         file = kwargs.pop("file")
         commit = kwargs.pop("commit", True)
 
-        resource = super().create(
-            pdb, file_last_update=file_last_update, commit=False, **kwargs
-        )
+        resource = super().create(pdb, commit=False, **kwargs)
         resource.upload_file(pdb, file, bucket)
         resource.save(pdb, commit=commit)
         return resource
@@ -161,7 +153,6 @@ class ResourceWithFile(ResourceCreatorModel):
         file: Optional[IO] = kwargs.pop("file", None)
         if file is not None:
             bucket = kwargs.pop("bucket")
-            self.file_last_update = datetime.datetime.now()
             self.upload_file(pdb, file, bucket)
         return super().update(pdb, **kwargs)
 

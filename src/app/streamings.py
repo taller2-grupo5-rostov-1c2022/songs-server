@@ -2,16 +2,17 @@ from src.firebase.access import get_bucket
 from src.database.access import get_db
 from fastapi import APIRouter, UploadFile, File, Form
 from fastapi import Depends, HTTPException
-from typing import List, Optional
+from typing import Optional
 from sqlalchemy.orm import Session
 from src.database import models
 from src import roles, utils, schemas
 from src.roles import get_role
+from fastapi_pagination import Page
 
 router = APIRouter(tags=["streamings"])
 
 
-@router.get("/streamings/", response_model=List[schemas.StreamingBase])
+@router.get("/streamings/", response_model=Page[schemas.StreamingBase])
 def get_streamings(
     pdb: Session = Depends(get_db),
 ):

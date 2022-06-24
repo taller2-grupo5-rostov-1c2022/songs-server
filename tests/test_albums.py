@@ -108,8 +108,7 @@ def test_post_album_with_song(client, custom_requests_mock):
     )
     assert response_get.json()["songs"][0]["name"] == "song_name"
     assert len(response_get.json()["songs"]) == 1
-    assert response_get.json()["cover"].startswith(STORAGE_PATH)
-    assert str(response_post_album.json()["id"]) in response_get.json()["cover"]
+    assert response_get.json()["cover"].startswith("https://example.com")
 
 
 def test_post_album_associates_song_to_such_album(client, custom_requests_mock):

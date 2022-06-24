@@ -1,10 +1,7 @@
-import datetime
-
 from fastapi import Header, Depends, Form, HTTPException, status
 from sqlalchemy.orm import Session
 
 from src import schemas
-from src.constants import STORAGE_PATH
 from src.database import models
 from src.database.access import get_db
 
@@ -49,17 +46,6 @@ def retrieve_user_to_modify(uid_to_modify: str, pdb: Session = Depends(get_db)):
     user_to_modify = models.UserModel.get(pdb, _id=uid_to_modify)
 
     return user_to_modify
-
-
-def pfp_url(user: models.UserModel):
-    if user.pfp_last_update is not None:
-        return (
-            STORAGE_PATH
-            + "pfp/"
-            + str(user.id)
-            + "?t="
-            + str(int(datetime.datetime.timestamp(user.pfp_last_update)))
-        )
 
 
 def give_ownership_of_playlists_to_colabs(user: models.UserModel):

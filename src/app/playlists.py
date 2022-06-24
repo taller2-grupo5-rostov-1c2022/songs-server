@@ -1,15 +1,15 @@
 from src import roles, utils, schemas
 from fastapi import Depends, HTTPException, status, APIRouter, Query
-from typing import List
 from sqlalchemy.orm import Session
 from src.database.access import get_db
 from src.database import models
 from src.roles import get_role
+from fastapi_pagination import Page
 
 router = APIRouter(tags=["playlists"])
 
 
-@router.get("/playlists/", response_model=List[schemas.PlaylistBase])
+@router.get("/playlists/", response_model=Page[schemas.PlaylistBase])
 def get_playlists(
     colab: str = None,
     role: roles.Role = Depends(get_role),
@@ -24,7 +24,7 @@ def get_playlists(
     )
 
 
-@router.get("/my_playlists/", response_model=List[schemas.PlaylistBase])
+@router.get("/my_playlists/", response_model=Page[schemas.PlaylistBase])
 def get_my_playlists(
     uid: str = Depends(utils.user.retrieve_uid),
     pdb: Session = Depends(get_db),
@@ -34,7 +34,6 @@ def get_my_playlists(
     playlists = models.PlaylistModel.search(
         pdb, colab=uid, role=roles.Role.admin(), page=page, size=size
     )
-    playlists = [p for p in playlists if p is not None]
     return playlists
 
 

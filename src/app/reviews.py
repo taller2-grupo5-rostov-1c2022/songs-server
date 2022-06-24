@@ -2,9 +2,9 @@ from src import utils, schemas
 from src.database.access import get_db
 from fastapi import APIRouter
 from fastapi import Depends, HTTPException
-from typing import List
 from sqlalchemy.orm import Session
 from src.database import models
+from fastapi_pagination import Page, paginate
 
 router = APIRouter(tags=["reviews"])
 
@@ -37,11 +37,11 @@ def post_review(
     return review
 
 
-@router.get("/albums/{album_id}/reviews/", response_model=List[schemas.ReviewGet])
+@router.get("/albums/{album_id}/reviews/", response_model=Page[schemas.ReviewGet])
 def get_reviews(
     album: models.AlbumModel = Depends(utils.album.get_album),
 ):
-    return album.reviews
+    return paginate(album.reviews)
 
 
 @router.get("/albums/{album_id}/my_review/", response_model=schemas.ReviewBase)
@@ -66,7 +66,7 @@ def delete_review(
     review.delete(pdb)
 
 
-@router.get("/users/{uid}/reviews/", response_model=List[schemas.ReviewMyReviews])
+@router.get("/users/{uid}/reviews/", response_model=Page[schemas.ReviewMyReviews])
 def get_reviews_of_user(
     user: models.UserModel = Depends(utils.user.retrieve_user),
     pdb: Session = Depends(get_db),

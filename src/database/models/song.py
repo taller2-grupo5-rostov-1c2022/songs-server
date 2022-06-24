@@ -14,8 +14,6 @@ class SongModel(templates.ResourceWithFile):
 
     sub_level = Column(Integer, nullable=False)
 
-    file_last_update = Column(TIMESTAMP, nullable=False)
-
     artists = relationship(
         "ArtistModel",
         secondary=tables.song_artist_association_table,

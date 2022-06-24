@@ -10,12 +10,12 @@ def test_get_albums_first_page(client, custom_requests_mock):
 
     response_get = client.get(
         f"{API_VERSION_PREFIX}/albums/",
-        params={"page": 0, "size": 1},
+        params={"page": 1, "size": 1},
         headers={"api_key": "key", "uid": "user_id"},
         with_pagination=True,
     )
 
-    albums = response_get.json()
+    albums = response_get.json()["items"]
     assert response_get.status_code == 200
     assert len(albums) == 1
     assert albums[0]["name"] == "album_1"
@@ -29,12 +29,12 @@ def test_get_albums_second_page(client, custom_requests_mock):
 
     response_get = client.get(
         f"{API_VERSION_PREFIX}/albums/",
-        params={"page": 1, "size": 1},
+        params={"page": 2, "size": 1},
         headers={"api_key": "key", "uid": "user_id"},
         with_pagination=True,
     )
 
-    albums = response_get.json()
+    albums = response_get.json()["items"]
     assert response_get.status_code == 200
     assert len(albums) == 1
     assert albums[0]["name"] == "album_2"
@@ -48,12 +48,12 @@ def test_get_albums_page_bigger_than_total(client, custom_requests_mock):
 
     response_get = client.get(
         f"{API_VERSION_PREFIX}/albums/",
-        params={"page": 2, "size": 1},
+        params={"page": 3, "size": 1},
         headers={"api_key": "key", "uid": "user_id"},
         with_pagination=True,
     )
 
-    albums = response_get.json()
+    albums = response_get.json()["items"]
     assert response_get.status_code == 200
     assert len(albums) == 0
 
@@ -66,12 +66,12 @@ def test_get_albums_size_bigger_than_total(client, custom_requests_mock):
 
     response_get = client.get(
         f"{API_VERSION_PREFIX}/albums/",
-        params={"page": 0, "size": 2},
+        params={"page": 1, "size": 2},
         headers={"api_key": "key", "uid": "user_id"},
         with_pagination=True,
     )
 
-    albums = response_get.json()
+    albums = response_get.json()["items"]
     assert response_get.status_code == 200
     assert len(albums) == 2
     assert albums[0]["name"] == "album_1"
@@ -90,12 +90,12 @@ def test_get_albums_with_songs_first_page(client, custom_requests_mock):
 
     response_get = client.get(
         f"{API_VERSION_PREFIX}/albums/",
-        params={"page": 0, "size": 1},
+        params={"page": 1, "size": 1},
         headers={"api_key": "key", "uid": "user_id"},
         with_pagination=True,
     )
 
-    albums = response_get.json()
+    albums = response_get.json()["items"]
     assert response_get.status_code == 200
     assert len(albums) == 1
     assert albums[0]["name"] == "album_1"
@@ -113,12 +113,12 @@ def test_get_albums_with_songs_second_page(client, custom_requests_mock):
 
     response_get = client.get(
         f"{API_VERSION_PREFIX}/albums/",
-        params={"page": 1, "size": 1},
+        params={"page": 2, "size": 1},
         headers={"api_key": "key", "uid": "user_id"},
         with_pagination=True,
     )
 
-    albums = response_get.json()
+    albums = response_get.json()["items"]
     assert response_get.status_code == 200
     assert len(albums) == 1
     assert albums[0]["name"] == "album_2"
@@ -132,12 +132,12 @@ def test_get_my_albums_first_page(client, custom_requests_mock):
 
     response_get = client.get(
         f"{API_VERSION_PREFIX}/my_albums/",
-        params={"page": 0, "size": 1},
+        params={"page": 1, "size": 1},
         headers={"api_key": "key", "uid": "user_id"},
         with_pagination=True,
     )
 
-    albums = response_get.json()
+    albums = response_get.json()["items"]
     assert response_get.status_code == 200
     assert len(albums) == 1
     assert albums[0]["name"] == "album_1"
@@ -151,12 +151,12 @@ def test_get_my_albums_second_page(client, custom_requests_mock):
 
     response_get = client.get(
         f"{API_VERSION_PREFIX}/my_albums/",
-        params={"page": 1, "size": 1},
+        params={"page": 2, "size": 1},
         headers={"api_key": "key", "uid": "user_id"},
         with_pagination=True,
     )
 
-    albums = response_get.json()
+    albums = response_get.json()["items"]
     assert response_get.status_code == 200
     assert len(albums) == 1
     assert albums[0]["name"] == "album_2"
@@ -170,12 +170,12 @@ def test_get_playlists_first_page(client, custom_requests_mock):
 
     response_get = client.get(
         f"{API_VERSION_PREFIX}/playlists/",
-        params={"page": 0, "size": 1},
+        params={"page": 1, "size": 1},
         headers={"api_key": "key", "uid": "user_id"},
         with_pagination=True,
     )
 
-    playlists = response_get.json()
+    playlists = response_get.json()["items"]
     assert response_get.status_code == 200
     assert len(playlists) == 1
     assert playlists[0]["name"] == "playlist_1"
@@ -189,12 +189,12 @@ def test_get_playlists_second_page(client, custom_requests_mock):
 
     response_get = client.get(
         f"{API_VERSION_PREFIX}/playlists/",
-        params={"page": 1, "size": 1},
+        params={"page": 2, "size": 1},
         headers={"api_key": "key", "uid": "user_id"},
         with_pagination=True,
     )
 
-    playlists = response_get.json()
+    playlists = response_get.json()["items"]
     assert response_get.status_code == 200
     assert len(playlists) == 1
     assert playlists[0]["name"] == "playlist_2"
@@ -208,12 +208,12 @@ def test_get_my_playlists_first_page(client, custom_requests_mock):
 
     response_get = client.get(
         f"{API_VERSION_PREFIX}/my_playlists/",
-        params={"page": 0, "size": 1},
+        params={"page": 1, "size": 1},
         headers={"api_key": "key", "uid": "user_id"},
         with_pagination=True,
     )
 
-    playlists = response_get.json()
+    playlists = response_get.json()["items"]
     assert response_get.status_code == 200
     assert len(playlists) == 1
     assert playlists[0]["name"] == "playlist_1"
@@ -227,15 +227,15 @@ def test_get_my_playlists_second_page(client, custom_requests_mock):
 
     response_get = client.get(
         f"{API_VERSION_PREFIX}/my_playlists/",
-        params={"page": 0, "size": 1},
+        params={"page": 2, "size": 1},
         headers={"api_key": "key", "uid": "user_id"},
         with_pagination=True,
     )
 
-    playlists = response_get.json()
+    playlists = response_get.json()["items"]
     assert response_get.status_code == 200
     assert len(playlists) == 1
-    assert playlists[0]["name"] == "playlist_1"
+    assert playlists[0]["name"] == "playlist_2"
 
 
 def test_get_playlists_with_songs_first_page(client, custom_requests_mock):
@@ -252,12 +252,12 @@ def test_get_playlists_with_songs_first_page(client, custom_requests_mock):
 
     response_get = client.get(
         f"{API_VERSION_PREFIX}/playlists/",
-        params={"page": 0, "size": 1},
+        params={"page": 1, "size": 1},
         headers={"api_key": "key", "uid": "user_id"},
         with_pagination=True,
     )
 
-    playlists = response_get.json()
+    playlists = response_get.json()["items"]
     assert response_get.status_code == 200
     assert len(playlists) == 1
     assert playlists[0]["name"] == "playlist_1"
@@ -277,12 +277,12 @@ def test_get_playlists_with_songs_second_page(client, custom_requests_mock):
 
     response_get = client.get(
         f"{API_VERSION_PREFIX}/playlists/",
-        params={"page": 1, "size": 1},
+        params={"page": 2, "size": 1},
         headers={"api_key": "key", "uid": "user_id"},
         with_pagination=True,
     )
 
-    playlists = response_get.json()
+    playlists = response_get.json()["items"]
     assert response_get.status_code == 200
     assert len(playlists) == 1
     assert playlists[0]["name"] == "playlist_2"
@@ -296,12 +296,12 @@ def test_get_songs_first_page(client, custom_requests_mock):
 
     response_get = client.get(
         f"{API_VERSION_PREFIX}/songs/",
-        params={"page": 0, "size": 1},
+        params={"page": 1, "size": 1},
         headers={"api_key": "key", "uid": "user_id"},
         with_pagination=True,
     )
 
-    songs = response_get.json()
+    songs = response_get.json()["items"]
     assert response_get.status_code == 200
     assert len(songs) == 1
     assert songs[0]["name"] == "song_1"
@@ -315,12 +315,12 @@ def test_get_songs_second_page(client, custom_requests_mock):
 
     response_get = client.get(
         f"{API_VERSION_PREFIX}/songs/",
-        params={"page": 1, "size": 1},
+        params={"page": 2, "size": 1},
         headers={"api_key": "key", "uid": "user_id"},
         with_pagination=True,
     )
 
-    songs = response_get.json()
+    songs = response_get.json()["items"]
     assert response_get.status_code == 200
     assert len(songs) == 1
     assert songs[0]["name"] == "song_2"
@@ -335,12 +335,12 @@ def test_get_songs_filtered_by_name_first_page(client, custom_requests_mock):
 
     response_get = client.get(
         f"{API_VERSION_PREFIX}/songs/",
-        params={"page": 0, "size": 1, "name": "song"},
+        params={"page": 1, "size": 1, "name": "song"},
         headers={"api_key": "key", "uid": "user_id"},
         with_pagination=True,
     )
 
-    songs = response_get.json()
+    songs = response_get.json()["items"]
     assert response_get.status_code == 200
     assert len(songs) == 1
     assert songs[0]["name"] == "song_1"
@@ -355,12 +355,12 @@ def test_get_songs_filtered_by_name_second_page(client, custom_requests_mock):
 
     response_get = client.get(
         f"{API_VERSION_PREFIX}/songs/",
-        params={"page": 1, "size": 1, "name": "song"},
+        params={"page": 2, "size": 1, "name": "song"},
         headers={"api_key": "key", "uid": "user_id"},
         with_pagination=True,
     )
 
-    songs = response_get.json()
+    songs = response_get.json()["items"]
     assert response_get.status_code == 200
     assert len(songs) == 1
     assert songs[0]["name"] == "song_2"
@@ -384,12 +384,12 @@ def test_get_albums_filtered_by_artist_first_page(client, custom_requests_mock):
 
     response_get = client.get(
         f"{API_VERSION_PREFIX}/albums/",
-        params={"page": 0, "size": 1, "artist": "artist_1"},
+        params={"page": 1, "size": 1, "artist": "artist_1"},
         headers={"api_key": "key", "uid": "user_id"},
         with_pagination=True,
     )
 
-    albums = response_get.json()
+    albums = response_get.json()["items"]
     assert response_get.status_code == 200
     assert len(albums) == 1
     assert albums[0]["name"] == "album_1"
@@ -413,12 +413,12 @@ def test_get_albums_filtered_by_artist_second_page(client, custom_requests_mock)
 
     response_get = client.get(
         f"{API_VERSION_PREFIX}/albums/",
-        params={"page": 1, "size": 1, "artist": "artist_1"},
+        params={"page": 2, "size": 1, "artist": "artist_1"},
         headers={"api_key": "key", "uid": "user_id"},
         with_pagination=True,
     )
 
-    albums = response_get.json()
+    albums = response_get.json()["items"]
     assert response_get.status_code == 200
     assert len(albums) == 1
     assert albums[0]["name"] == "album_2"
@@ -439,12 +439,12 @@ def test_get_playlists_filtered_by_colab_first_page(client, custom_requests_mock
 
     response_get = client.get(
         f"{API_VERSION_PREFIX}/playlists/",
-        params={"page": 0, "size": 1, "colab": "user_playlist_colab"},
+        params={"page": 1, "size": 1, "colab": "user_playlist_colab"},
         headers={"api_key": "key", "uid": "user_playlist_owner"},
         with_pagination=True,
     )
 
-    playlists = response_get.json()
+    playlists = response_get.json()["items"]
     assert response_get.status_code == 200
     assert len(playlists) == 1
     assert playlists[0]["name"] == "playlist_2"
@@ -465,12 +465,11 @@ def test_get_playlists_filtered_by_colab_second_page(client, custom_requests_moc
 
     response_get = client.get(
         f"{API_VERSION_PREFIX}/playlists/",
-        params={"page": 1, "size": 1, "colab": "user_playlist_colab"},
+        params={"page": 2, "size": 1, "colab": "user_playlist_colab"},
         headers={"api_key": "key", "uid": "user_playlist_owner"},
         with_pagination=True,
     )
-
-    playlists = response_get.json()
+    playlists = response_get.json()["items"]
     assert response_get.status_code == 200
     assert len(playlists) == 1
     assert playlists[0]["name"] == "playlist_3"
@@ -485,12 +484,12 @@ def test_get_songs_with_blocked_songs_first_page(client, custom_requests_mock):
 
     response_get = client.get(
         f"{API_VERSION_PREFIX}/songs/",
-        params={"page": 0, "size": 1},
+        params={"page": 1, "size": 1},
         headers={"api_key": "key", "uid": "user_id"},
         with_pagination=True,
     )
 
-    songs = response_get.json()
+    songs = response_get.json()["items"]
     assert response_get.status_code == 200
     assert len(songs) == 1
     assert songs[0]["name"] == "song_1"
@@ -505,12 +504,12 @@ def test_get_songs_with_blocked_songs_second_page(client, custom_requests_mock):
 
     response_get = client.get(
         f"{API_VERSION_PREFIX}/songs/",
-        params={"page": 1, "size": 1},
+        params={"page": 2, "size": 1},
         headers={"api_key": "key", "uid": "user_id"},
         with_pagination=True,
     )
 
-    songs = response_get.json()
+    songs = response_get.json()["items"]
     assert response_get.status_code == 200
     assert len(songs) == 1
     assert songs[0]["name"] == "song_3"
@@ -525,12 +524,12 @@ def test_get_my_songs_first_page(client, custom_requests_mock):
 
     response_get = client.get(
         f"{API_VERSION_PREFIX}/my_songs/",
-        params={"page": 0, "size": 1},
+        params={"page": 1, "size": 1},
         headers={"api_key": "key", "uid": "user_id"},
         with_pagination=True,
     )
 
-    songs = response_get.json()
+    songs = response_get.json()["items"]
     assert response_get.status_code == 200
     assert len(songs) == 1
     assert songs[0]["name"] == "song_1"
@@ -545,12 +544,12 @@ def test_get_my_songs_second_page(client, custom_requests_mock):
 
     response_get = client.get(
         f"{API_VERSION_PREFIX}/my_songs/",
-        params={"page": 1, "size": 1},
+        params={"page": 2, "size": 1},
         headers={"api_key": "key", "uid": "user_id"},
         with_pagination=True,
     )
 
-    songs = response_get.json()
+    songs = response_get.json()["items"]
     assert response_get.status_code == 200
     assert len(songs) == 1
     assert songs[0]["name"] == "song_2"
@@ -565,12 +564,12 @@ def test_get_my_songs_with_own_blocked_songs_first_page(client, custom_requests_
 
     response_get = client.get(
         f"{API_VERSION_PREFIX}/my_songs/",
-        params={"page": 0, "size": 1},
+        params={"page": 1, "size": 1},
         headers={"api_key": "key", "uid": "user_id"},
         with_pagination=True,
     )
 
-    songs = response_get.json()
+    songs = response_get.json()["items"]
     assert response_get.status_code == 200
     assert len(songs) == 1
     assert songs[0]["name"] == "song_1"
@@ -585,12 +584,12 @@ def test_get_my_songs_with_blocked_songs_second_page(client, custom_requests_moc
 
     response_get = client.get(
         f"{API_VERSION_PREFIX}/my_songs/",
-        params={"page": 1, "size": 1},
+        params={"page": 2, "size": 1},
         headers={"api_key": "key", "uid": "user_id"},
         with_pagination=True,
     )
 
-    songs = response_get.json()
+    songs = response_get.json()["items"]
     assert response_get.status_code == 200
     assert len(songs) == 1
     assert songs[0]["name"] == "song_2"
@@ -608,12 +607,12 @@ def test_get_my_songs_with_blocked_songs_of_another_user_first_page(
 
     response_get = client.get(
         f"{API_VERSION_PREFIX}/my_songs/",
-        params={"page": 0, "size": 1},
+        params={"page": 1, "size": 1},
         headers={"api_key": "key", "uid": "user_id"},
         with_pagination=True,
     )
 
-    songs = response_get.json()
+    songs = response_get.json()["items"]
     assert response_get.status_code == 200
     assert len(songs) == 1
     assert songs[0]["name"] == "song_1"
@@ -631,12 +630,12 @@ def test_get_my_songs_with_blocked_songs_of_another_user_second_page(
 
     response_get = client.get(
         f"{API_VERSION_PREFIX}/my_songs/",
-        params={"page": 1, "size": 1},
+        params={"page": 2, "size": 1},
         headers={"api_key": "key", "uid": "user_id"},
         with_pagination=True,
     )
 
-    songs = response_get.json()
+    songs = response_get.json()["items"]
     assert response_get.status_code == 200
     assert len(songs) == 1
     assert songs[0]["name"] == "song_3"
