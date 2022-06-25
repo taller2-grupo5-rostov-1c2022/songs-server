@@ -34,9 +34,7 @@ def retrieve_user_info(
 
 
 def retrieve_user_update(
-    name: str = Form(None),
-    location: str = Form(None),
-    interests: str = Form(None),
+    name: str = Form(None), location: str = Form(None), interests: str = Form(None)
 ):
     user_update = schemas.UserUpdate(name=name, location=location, interests=interests)
     return user_update

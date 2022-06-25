@@ -1,7 +1,4 @@
-from fastapi import (
-    FastAPI,
-    Depends,
-)
+from fastapi import FastAPI, Depends
 from src.app import (
     songs,
     albums,

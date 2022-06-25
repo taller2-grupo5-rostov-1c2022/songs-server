@@ -42,10 +42,7 @@ def create_wallet(uid: str):
     )
 
     if response.status_code != status.HTTP_200_OK:
-        raise HTTPException(
-            status_code=response.status_code,
-            detail=response.text,
-        )
+        raise HTTPException(status_code=response.status_code, detail=response.text)
     return response.json()["address"]
 
 
@@ -66,8 +63,7 @@ def get_sub_price(sub_level: int):
             return subscription["price"]
 
     raise HTTPException(
-        status_code=status.HTTP_400_BAD_REQUEST,
-        detail="Invalid subscription level",
+        status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid subscription level"
     )
 
 
@@ -80,8 +76,7 @@ def _make_payment(user: models.UserModel, sub_level: int):
 
     if payment_response.status_code != status.HTTP_200_OK:
         raise HTTPException(
-            status_code=payment_response.status_code,
-            detail=payment_response.text,
+            status_code=payment_response.status_code, detail=payment_response.text
         )
 
 

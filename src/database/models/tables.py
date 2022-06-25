@@ -62,14 +62,8 @@ album_favorites_association_table = Table(
 playlist_favorite_association_table = Table(
     "playlist_favorite_association",
     Base.metadata,
+    Column("user_id", ForeignKey("users.id", onupdate="CASCADE"), primary_key=True),
     Column(
-        "user_id",
-        ForeignKey("users.id", onupdate="CASCADE"),
-        primary_key=True,
-    ),
-    Column(
-        "playlist_id",
-        ForeignKey("playlists.id", onupdate="CASCADE"),
-        primary_key=True,
+        "playlist_id", ForeignKey("playlists.id", onupdate="CASCADE"), primary_key=True
     ),
 )

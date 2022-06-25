@@ -12,10 +12,7 @@ from ... import roles
 class PlaylistModel(templates.ResourceModel):
     __tablename__ = "playlists"
 
-    songs = relationship(
-        "SongModel",
-        secondary=tables.song_playlist_association_table,
-    )
+    songs = relationship("SongModel", secondary=tables.song_playlist_association_table)
 
     colabs = relationship(
         "UserModel",

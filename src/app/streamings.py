@@ -45,10 +45,7 @@ def post_streaming(
     if user.streaming:
         raise HTTPException(status_code=403, detail="You already have a streaming")
 
-    (
-        artist_token,
-        listener_token,
-    ) = utils.streaming.build_streaming_tokens(user.id)
+    (artist_token, listener_token) = utils.streaming.build_streaming_tokens(user.id)
 
     if img is not None:
         models.StreamingModel.create(

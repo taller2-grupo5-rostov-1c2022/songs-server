@@ -100,10 +100,7 @@ def get_favorite_playlists(
     return user.get_favorite_playlists(role=role, offset=offset, limit=limit)
 
 
-@router.post(
-    "/users/{uid}/favorites/playlists/",
-    response_model=schemas.PlaylistBase,
-)
+@router.post("/users/{uid}/favorites/playlists/", response_model=schemas.PlaylistBase)
 def add_playlist_to_favorites(
     playlist: models.PlaylistModel = Depends(utils.playlist.get_playlist),
     user: models.UserModel = Depends(utils.user.retrieve_user),
