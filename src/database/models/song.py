@@ -8,6 +8,8 @@ from . import templates, tables
 from .artist import ArtistModel
 from sqlalchemy.orm.query import Query
 
+from ...schemas.pagination import CustomPage
+
 
 class SongModel(templates.ResourceWithFile):
     __tablename__ = "songs"
@@ -46,8 +48,10 @@ class SongModel(templates.ResourceWithFile):
         if sub_level is not None:
             query = query.filter(cls.sub_level == sub_level)
         if artist is not None:
-            query = query.join(cls.artists).filter(
-                ArtistModel.name.ilike(f"%{artist}%")
+            query = (
+                query.distinct()
+                .join(cls.artists)
+                .filter(ArtistModel.name.ilike(f"%{artist}%"))
             )
 
         return super().search(pdb, query=query, **kwargs)

@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from src.database.access import Base
 from fastapi import HTTPException, status
 from sqlalchemy.orm.query import Query
-from fastapi_pagination.ext.sqlalchemy import _to_dict
+from fastapi_pagination.ext.sqlalchemy import _to_dict, paginate, paginate_query
 
 from src.schemas.pagination import CustomPage
 
@@ -47,6 +47,7 @@ class CRUDMixin(Base):
     def search(cls, pdb: Session, **kwargs):
         """Search for records."""
         query: Query = kwargs.pop("query", None)
+
         do_pagination = kwargs.pop("do_pagination", True)
         if query is None:
             query = pdb.query(cls)
@@ -60,13 +61,10 @@ class CRUDMixin(Base):
         total = query.count()
         limit = kwargs.pop("limit")
         offset = kwargs.pop("offset")
-        query = query.order_by(cls.id)
-        if offset is not None:
-            query = query.filter(cls.id > offset)
-
-        query = query.limit(limit)
-
-        items = [_to_dict(item) for item in query.all()]
+        if offset is None:
+            items = query.order_by(cls.id).limit(limit).all()
+        else:
+            items = query.order_by(cls.id).filter(cls.id > offset).limit(limit).all()
         offset = items[-1].id if items else None
 
         page = CustomPage(items=items, total=total, limit=limit, offset=offset)

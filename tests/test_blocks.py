@@ -315,10 +315,6 @@ def test_artist_get_my_albums_returns_blocked_albums(client, custom_requests_moc
         f"{API_VERSION_PREFIX}/my_albums/",
         headers={"uid": "artist_id", "role": "artist", "api_key": "key"},
     )
-    response_2 = client.get(
-        f"{API_VERSION_PREFIX}/my_albums/",
-        headers={"uid": "artist_id", "role": "admin", "api_key": "key"},
-    )
 
     assert response.status_code == 200
     assert len(response.json()) == 2
