@@ -661,3 +661,148 @@ def test_get_my_songs_with_blocked_songs_of_another_user_second_page(
     assert response_get.status_code == 200
     assert len(songs) == 1
     assert songs[0]["name"] == "song_3"
+
+
+def test_get_albums_filtered_by_artist_name_second_page(
+    client, custom_requests_mock, drop_tables
+):
+    utils.post_user(client, "user_id", "user_name")
+
+    song_id_1 = utils.post_song(client, "user_id", "song_1", artists=["artist"]).json()[
+        "id"
+    ]
+    song_id_2 = utils.post_song(client, "user_id", "song_2", artists=["artist"]).json()[
+        "id"
+    ]
+
+    utils.post_album(client, "user_id", "album_1", songs_ids=[song_id_1])
+    utils.post_album(client, "user_id", "album_2", songs_ids=[song_id_2])
+
+    response_get = client.get(
+        f"{API_VERSION_PREFIX}/albums/",
+        params={"artist": "artist", "offset": 1, "limit": 1},
+        headers={"api_key": "key", "uid": "user_id"},
+        with_pagination=True,
+    )
+
+    albums = response_get.json()["items"]
+    assert response_get.status_code == 200
+    assert len(albums) == 1
+    assert albums[0]["name"] == "album_2"
+
+
+def test_get_comments_of_album_first_page(client, custom_requests_mock, drop_tables):
+    utils.post_user(client, "user_id", "user_name")
+
+    album_id_1 = utils.post_album(client, "user_id", "album_1").json()["id"]
+
+    comment_id = utils.post_comment(client, "user_id", album_id_1, "comment_1").json()[
+        "id"
+    ]
+    utils.post_comment(client, "user_id", album_id_1, "child_comment", comment_id)
+    utils.post_comment(client, "user_id", album_id_1, "comment_2")
+
+    response_get = client.get(
+        f"{API_VERSION_PREFIX}/albums/{album_id_1}/comments/",
+        params={"offset": 0, "limit": 1},
+        headers={"api_key": "key", "uid": "user_id"},
+        with_pagination=True,
+    )
+
+    comments = response_get.json()["items"]
+    assert response_get.status_code == 200
+    assert len(comments) == 1
+    assert comments[0]["text"] == "comment_1"
+
+
+def test_get_comments_of_album_second_page(client, custom_requests_mock, drop_tables):
+    utils.post_user(client, "user_id", "user_name")
+
+    album_id_1 = utils.post_album(client, "user_id", "album_1").json()["id"]
+
+    comment_id = utils.post_comment(client, "user_id", album_id_1, "comment_1").json()[
+        "id"
+    ]
+    utils.post_comment(client, "user_id", album_id_1, "child_comment", comment_id)
+    utils.post_comment(client, "user_id", album_id_1, "comment_2")
+
+    response_get = client.get(
+        f"{API_VERSION_PREFIX}/albums/{album_id_1}/comments/",
+        params={"offset": 1, "limit": 1},
+        headers={"api_key": "key", "uid": "user_id"},
+        with_pagination=True,
+    )
+
+    comments = response_get.json()["items"]
+    assert response_get.status_code == 200
+    assert len(comments) == 1
+    assert comments[0]["text"] == "comment_2"
+
+
+def test_get_comments_of_album_bigger_limit(client, custom_requests_mock, drop_tables):
+    utils.post_user(client, "user_id", "user_name")
+
+    album_id_1 = utils.post_album(client, "user_id", "album_1").json()["id"]
+
+    comment_id = utils.post_comment(client, "user_id", album_id_1, "comment_1").json()[
+        "id"
+    ]
+    utils.post_comment(client, "user_id", album_id_1, "child_comment", comment_id)
+    utils.post_comment(client, "user_id", album_id_1, "comment_2")
+
+    response_get = client.get(
+        f"{API_VERSION_PREFIX}/albums/{album_id_1}/comments/",
+        params={"offset": 0, "limit": 2},
+        headers={"api_key": "key", "uid": "user_id"},
+        with_pagination=True,
+    )
+
+    comments = response_get.json()["items"]
+    assert response_get.status_code == 200
+    assert len(comments) == 2
+    assert comments[0]["text"] == "comment_1"
+    assert comments[1]["text"] == "comment_2"
+
+
+def test_get_reviews_of_album_first_page(client, custom_requests_mock, drop_tables):
+    utils.post_user(client, "user_id_1", "user_name")
+    utils.post_user(client, "user_id_2", "user_name")
+
+    album_id_1 = utils.post_album(client, "user_id_1", "album_1").json()["id"]
+
+    utils.post_review(client, "user_id_1", album_id_1, "review_1")
+    utils.post_review(client, "user_id_2", album_id_1, "review_2")
+
+    response_get = client.get(
+        f"{API_VERSION_PREFIX}/albums/{album_id_1}/reviews/",
+        params={"offset": None, "limit": 1},
+        headers={"api_key": "key", "uid": "user_id_1"},
+        with_pagination=True,
+    )
+
+    reviews = response_get.json()["items"]
+    assert response_get.status_code == 200
+    assert len(reviews) == 1
+    assert reviews[0]["text"] == "review_1"
+
+
+def test_get_reviews_of_album_second_page(client, custom_requests_mock, drop_tables):
+    utils.post_user(client, "user_id_1", "user_name")
+    utils.post_user(client, "user_id_2", "user_name")
+
+    album_id_1 = utils.post_album(client, "user_id_1", "album_1").json()["id"]
+
+    utils.post_review(client, "user_id_1", album_id_1, "review_1")
+    utils.post_review(client, "user_id_2", album_id_1, "review_2")
+
+    response_get = client.get(
+        f"{API_VERSION_PREFIX}/albums/{album_id_1}/reviews/",
+        params={"offset": "user_id_1", "limit": 1},
+        headers={"api_key": "key", "uid": "user_id_1"},
+        with_pagination=True,
+    )
+
+    reviews = response_get.json()["items"]
+    assert response_get.status_code == 200
+    assert len(reviews) == 1
+    assert reviews[0]["text"] == "review_2"

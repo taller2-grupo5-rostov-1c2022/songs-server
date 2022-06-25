@@ -56,9 +56,10 @@ class CommentModel(CRUDMixin):
         limit = kwargs.pop("limit")
         offset = kwargs.pop("offset")
         total = query.count()
-        query.order_by(cls.id).filter(cls.id > offset).limit(limit)
+        items = query.order_by(cls.id).filter(cls.id > offset).limit(limit).all()
 
-        items = query.all()
+        offset = items[-1].id if items else None
+
         return CustomPage(items=items, limit=limit, offset=offset, total=total)
 
     @classmethod

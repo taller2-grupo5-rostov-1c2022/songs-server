@@ -17,7 +17,7 @@ if TESTING:
     )
 else:
     print("PROD DB")
-    POSTGRES_URL = os.environ.get("DEV_POSTGRES_URL", "")
+    POSTGRES_URL = os.environ.get("POSTGRES_URL", "")
 
 engine = create_engine(POSTGRES_URL)
 

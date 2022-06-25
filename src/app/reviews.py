@@ -42,7 +42,7 @@ def post_review(
 def get_reviews(
     album: models.AlbumModel = Depends(utils.album.get_album),
     limit: int = Query(50, ge=1, le=100),
-    offset: int = Query(0, ge=0),
+    offset: str = Query(None),
     pdb: Session = Depends(get_db),
 ):
     return album.get_reviews(pdb, limit, offset)

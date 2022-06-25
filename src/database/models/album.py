@@ -1,7 +1,8 @@
+from typing import Optional
+
 from sqlalchemy import Column, ForeignKey, String
 from sqlalchemy.orm import relationship, Session, contains_eager
 from sqlalchemy.sql import and_
-from fastapi_pagination import paginate
 from . import templates, tables
 from .artist import ArtistModel
 from .song import SongModel
@@ -115,15 +116,23 @@ class AlbumModel(templates.ResourceWithFile):
             self.songs = songs
         return super().update(pdb, **kwargs)
 
-    def get_reviews(self, pdb: Session, limit: int, offset: int):
+    def get_reviews(self, pdb: Session, limit: int, offset: Optional[str]):
         from .review import ReviewModel
+        from .user import UserModel
 
-        paginated_query = (
+        query = (
             pdb.query(ReviewModel)
+            .join(UserModel.reviews)
             .filter(ReviewModel.album_id == self.id)
-            .offset(offset)
-            .limit(limit)
+            .order_by(UserModel.id)
         )
-        items = paginated_query.all()
-        total = paginated_query.count()
+
+        if offset is None:
+            items = query.limit(limit).all()
+        else:
+            items = query.filter(UserModel.id > offset).limit(limit).all()
+        offset = items[-1].reviewer_id if len(items) > 0 else None
+
+        total = query.count()
+
         return CustomPage(items=items, limit=limit, total=total, offset=offset)
