@@ -4,35 +4,36 @@ from sqlalchemy.orm import Session
 from src.database.access import get_db
 from src.database import models
 from src.roles import get_role
-from fastapi_pagination import Page
+
+from src.schemas.pagination import CustomPage
 
 router = APIRouter(tags=["playlists"])
 
 
-@router.get("/playlists/", response_model=Page[schemas.PlaylistBase])
+@router.get("/playlists/", response_model=CustomPage[schemas.PlaylistBase])
 def get_playlists(
     colab: str = None,
     role: roles.Role = Depends(get_role),
     pdb: Session = Depends(get_db),
-    page: int = Query(0, ge=0),
-    size: int = Query(50, ge=1, le=100),
+    limit: int = Query(50, ge=1, le=100),
+    offset: int = Query(0, ge=0),
 ):
     """Returns playlists either filtered by colab or all playlists"""
 
     return models.PlaylistModel.search(
-        pdb, role=role, colab=colab, page=page, size=size
+        pdb, role=role, colab=colab, limit=limit, offset=offset
     )
 
 
-@router.get("/my_playlists/", response_model=Page[schemas.PlaylistBase])
+@router.get("/my_playlists/", response_model=CustomPage[schemas.PlaylistBase])
 def get_my_playlists(
     uid: str = Depends(utils.user.retrieve_uid),
     pdb: Session = Depends(get_db),
-    page: int = Query(0, ge=0),
-    size: int = Query(50, ge=1, le=100),
+    limit: int = Query(50, ge=1, le=100),
+    offset: int = Query(0, ge=0),
 ):
     playlists = models.PlaylistModel.search(
-        pdb, colab=uid, role=roles.Role.admin(), page=page, size=size
+        pdb, colab=uid, role=roles.Role.admin(), limit=limit, offset=offset
     )
     return playlists
 

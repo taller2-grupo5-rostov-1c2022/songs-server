@@ -7,12 +7,13 @@ from sqlalchemy.orm import Session
 from src.database.access import get_db
 from src.database import models
 from src.roles import get_role
-from fastapi_pagination import Page
+
+from src.schemas.pagination import CustomPage
 
 router = APIRouter(tags=["songs"])
 
 
-@router.get("/songs/", response_model=Page[schemas.SongBase])
+@router.get("/songs/", response_model=CustomPage[schemas.SongBase])
 def get_songs(
     creator: str = None,
     role: roles.Role = Depends(get_role),
@@ -21,6 +22,8 @@ def get_songs(
     sub_level: int = None,
     name: str = None,
     pdb: Session = Depends(get_db),
+    offset: int = Query(0, ge=0),
+    limit: int = Query(50, ge=1, le=100),
 ):
     """Returns all songs"""
 
@@ -32,8 +35,9 @@ def get_songs(
         genre=genre,
         sub_level=sub_level,
         name=name,
+        limit=limit,
+        offset=offset,
     )
-
     return songs
 
 
@@ -110,13 +114,13 @@ def delete_song(
     song.delete(pdb, bucket=bucket, role=role)
 
 
-@router.get("/my_songs/", response_model=Page[schemas.SongBase])
+@router.get("/my_songs/", response_model=CustomPage[schemas.SongBase])
 def get_my_songs(
     uid: str = Depends(utils.user.retrieve_uid),
     pdb: Session = Depends(get_db),
-    page: int = Query(0, ge=0),
-    size: int = Query(50, ge=1, le=100),
+    offset: int = Query(0, ge=0),
+    limit: int = Query(50, ge=1, le=100),
 ):
     return models.SongModel.search(
-        pdb, creator_id=uid, role=roles.Role.admin(), page=page, size=size
+        pdb, creator_id=uid, role=roles.Role.admin(), limit=limit, offset=offset
     )

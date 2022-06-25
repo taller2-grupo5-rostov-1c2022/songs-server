@@ -219,7 +219,6 @@ def test_get_my_reviews(client, custom_requests_mock):
     )
     reviews = response.json()
     assert response.status_code == 200
-
     assert len(reviews) == 1
     assert reviews[0]["text"] == "review text"
     assert reviews[0]["score"] == 5

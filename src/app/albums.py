@@ -5,16 +5,16 @@ from src.firebase.access import get_bucket
 from sqlalchemy.orm import Session
 from src.database.access import get_db
 from src.database import models
-from src import roles, utils
+from src import roles, utils, schemas
 from src.roles import get_role
-from src.schemas import Album, AlbumCreate, AlbumGet, AlbumUpdate
-from fastapi_pagination import Page
+from src.schemas import AlbumCreate, AlbumGet, AlbumUpdate
 
+from src.schemas.pagination import CustomPage
 
 router = APIRouter(tags=["albums"])
 
 
-@router.get("/albums/", response_model=Page[Album])
+@router.get("/albums/", response_model=CustomPage[schemas.AlbumBase])
 def get_albums(
     creator: str = None,
     role: roles.Role = Depends(get_role),
@@ -22,9 +22,10 @@ def get_albums(
     genre: str = None,
     name: str = None,
     pdb: Session = Depends(get_db),
+    limit: int = Query(50, ge=1, le=100),
+    offset: int = Query(0, ge=0),
 ):
     """Returns all Albums"""
-
     albums = models.AlbumModel.search(
         pdb,
         role=role,
@@ -32,21 +33,23 @@ def get_albums(
         artist=artist,
         genre=genre,
         name=name,
+        limit=limit,
+        offset=offset,
     )
 
     return albums
 
 
-@router.get("/my_albums/", response_model=Page[Album])
+@router.get("/my_albums/", response_model=CustomPage[schemas.AlbumBase])
 def get_my_albums(
     uid: str = Depends(utils.user.retrieve_uid),
     pdb: Session = Depends(get_db),
-    page: int = Query(0, ge=0),
-    size: int = Query(50, ge=1, le=100),
+    limit: int = Query(50, ge=1, le=100),
+    offset: int = Query(0, ge=0),
 ):
 
     albums = models.AlbumModel.search(
-        pdb, role=roles.Role.admin(), creator_id=uid, page=page, size=size
+        pdb, role=roles.Role.admin(), creator_id=uid, limit=limit, offset=offset
     )
 
     return albums

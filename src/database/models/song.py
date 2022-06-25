@@ -3,7 +3,7 @@ from typing import List
 from fastapi import HTTPException
 
 from sqlalchemy import Column, ForeignKey, Integer, String, TIMESTAMP
-from sqlalchemy.orm import relationship, Session
+from sqlalchemy.orm import relationship, Session, contains_eager, joinedload
 from . import templates, tables
 from .artist import ArtistModel
 from sqlalchemy.orm.query import Query
@@ -18,6 +18,7 @@ class SongModel(templates.ResourceWithFile):
         "ArtistModel",
         secondary=tables.song_artist_association_table,
         back_populates="songs",
+        lazy="joined",
     )
 
     album = relationship("AlbumModel", back_populates="songs", lazy="joined")

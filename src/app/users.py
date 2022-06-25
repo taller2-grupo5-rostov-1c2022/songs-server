@@ -2,28 +2,31 @@ from src import roles, utils, schemas
 from src.database.access import get_db
 from typing import Optional
 from fastapi import APIRouter
-from fastapi import Depends, HTTPException, UploadFile
+from fastapi import Depends, HTTPException, UploadFile, Query
 from sqlalchemy.orm import Session
 from src.firebase.access import get_bucket, get_auth
 from src.database import models
-from fastapi_pagination import Page
+
+from src.schemas.pagination import CustomPage
 
 router = APIRouter(tags=["users"])
 
 
-@router.get("/users/", response_model=Page[schemas.UserGet])
-def get_all_users(pdb: Session = Depends(get_db)):
+@router.get("/users/", response_model=CustomPage[schemas.UserGet])
+def get_all_users(
+    pdb: Session = Depends(get_db),
+    limit: int = Query(50, ge=1, le=100),
+    offset: Optional[str] = Query(None),
+):
     """Returns all users"""
 
-    users = models.UserModel.search(pdb)
+    users = models.UserModel.search(pdb, limit=limit, offset=offset)
 
     return users
 
 
 @router.get("/users/{uid}", response_model=schemas.UserGetById)
-def get_user_by_id(
-    uid: str, pdb: Session = Depends(get_db)
-):
+def get_user_by_id(uid: str, pdb: Session = Depends(get_db)):
     """Returns a user by its id or 404 if not found"""
 
     user = models.UserModel.get(pdb, _id=uid)

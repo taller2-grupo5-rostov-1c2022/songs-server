@@ -1,9 +1,13 @@
 from sqlalchemy import Column, ForeignKey, Integer, String
 from sqlalchemy.orm import relationship, Session
+
+from . import AlbumModel
 from .crud_template import CRUDMixin
 from fastapi import HTTPException, status
 from .user import UserModel
 from fastapi_pagination import paginate
+
+from ...schemas.pagination import CustomPage
 
 
 class ReviewModel(CRUDMixin):
@@ -36,6 +40,18 @@ class ReviewModel(CRUDMixin):
         return review
 
     @classmethod
-    def get_by_reviewer(cls, pdb: Session, reviewer: UserModel):
-        reviews = pdb.query(cls).filter(cls.reviewer == reviewer)
-        return paginate(reviews.all())
+    def get_by_reviewer(
+        cls, pdb: Session, reviewer: UserModel, limit: int, offset: int
+    ):
+        query = (
+            pdb.query(cls)
+            .filter(cls.reviewer == reviewer)
+            .join(AlbumModel.reviews)
+            .order_by(AlbumModel.id)
+            .filter(AlbumModel.id > offset)
+            .limit(limit)
+        )
+
+        items = query.all()
+        total = query.count()
+        return CustomPage(items=items, total=total, offset=offset, limit=limit)

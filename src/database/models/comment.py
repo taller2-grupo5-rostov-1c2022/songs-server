@@ -6,6 +6,7 @@ from .crud_template import CRUDMixin
 from .user import UserModel
 from .album import AlbumModel
 from ... import roles
+from ...schemas.pagination import CustomPage
 
 
 class CommentModel(CRUDMixin):
@@ -49,15 +50,16 @@ class CommentModel(CRUDMixin):
         return comment
 
     @classmethod
-    def get_roots_by_album(cls, pdb: Session, album: AlbumModel):
-        return (
-            pdb.query(cls)
-            .filter(
-                cls.album_id == album.id,
-                cls.parent_id == None,
-            )
-            .all()
-        )
+    def get_roots_by_album(cls, pdb: Session, album: AlbumModel, **kwargs):
+        query = pdb.query(cls).filter(cls.album_id == album.id, cls.parent_id == None)
+
+        limit = kwargs.pop("limit")
+        offset = kwargs.pop("offset")
+        total = query.count()
+        query.order_by(cls.id).filter(cls.id > offset).limit(limit)
+
+        items = query.all()
+        return CustomPage(items=items, limit=limit, offset=offset, total=total)
 
     @classmethod
     def search(cls, pdb: Session, **kwargs):

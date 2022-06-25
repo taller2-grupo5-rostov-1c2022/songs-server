@@ -1,24 +1,29 @@
 from src.firebase.access import get_bucket
 from src.database.access import get_db
 from fastapi import APIRouter, UploadFile, File, Form
-from fastapi import Depends, HTTPException
+from fastapi import Depends, HTTPException, Query
 from typing import Optional
 from sqlalchemy.orm import Session
 from src.database import models
 from src import roles, utils, schemas
 from src.roles import get_role
-from fastapi_pagination import Page
+
+from src.schemas.pagination import CustomPage
 
 router = APIRouter(tags=["streamings"])
 
 
-@router.get("/streamings/", response_model=Page[schemas.StreamingBase])
+@router.get("/streamings/", response_model=CustomPage[schemas.StreamingBase])
 def get_streamings(
     pdb: Session = Depends(get_db),
+    limit: int = Query(50, ge=1, le=100),
+    offset: int = Query(0, ge=0),
 ):
     """Get all active streamings"""
 
-    return models.StreamingModel.search(pdb)
+    return models.StreamingModel.search(
+        pdb, limit=limit, offset=offset, do_pagination=False
+    )
 
 
 @router.post("/streamings/")

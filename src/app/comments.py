@@ -2,21 +2,28 @@ from src import utils
 from src import schemas
 from fastapi import APIRouter
 from fastapi import Depends, HTTPException
-from typing import List
 from sqlalchemy.orm import Session
 from src.database.access import get_db
 from src.database import models
-from fastapi_pagination import Page
+from fastapi import Query
+
+from src.schemas.pagination import CustomPage
 
 router = APIRouter(tags=["comments"])
 
 
-@router.get("/albums/{album_id}/comments/", response_model=List[schemas.CommentGet])
+@router.get(
+    "/albums/{album_id}/comments/", response_model=CustomPage[schemas.CommentGet]
+)
 def get_album_comments(
     album: models.AlbumModel = Depends(utils.album.get_album),
     pdb: Session = Depends(get_db),
+    limit: int = Query(50, ge=1, le=100),
+    offset: int = Query(0, ge=0),
 ):
-    return models.CommentModel.get_roots_by_album(pdb, album)
+    return models.CommentModel.get_roots_by_album(
+        pdb, album, limit=limit, offset=offset
+    )
 
 
 @router.post("/albums/{album_id}/comments/", response_model=schemas.CommentGet)
@@ -62,10 +69,12 @@ def delete_album_comment(
     comment.soft_delete(pdb)
 
 
-@router.get("/users/comments/", response_model=Page[schemas.CommentGet])
+@router.get("/users/comments/", response_model=CustomPage[schemas.CommentGet])
 def get_user_comments(
     uid: models.UserModel = Depends(utils.user.retrieve_uid),
     pdb: Session = Depends(get_db),
+    limit: int = Query(50, ge=1, le=100),
+    offset: int = Query(0, ge=0),
 ):
 
-    return models.CommentModel.search(pdb, commenter_id=uid)
+    return models.CommentModel.search(pdb, commenter_id=uid, limit=limit, offset=offset)

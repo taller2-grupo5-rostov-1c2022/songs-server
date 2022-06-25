@@ -1,8 +1,12 @@
+from contextvars import ContextVar
+
 from sqlalchemy.orm import Session
 from src.database.access import Base
 from fastapi import HTTPException, status
 from sqlalchemy.orm.query import Query
-from fastapi_pagination import paginate
+from fastapi_pagination.ext.sqlalchemy import _to_dict
+
+from src.schemas.pagination import CustomPage
 
 
 class CRUDMixin(Base):
@@ -44,12 +48,29 @@ class CRUDMixin(Base):
         """Search for records."""
         query: Query = kwargs.pop("query", None)
         do_pagination = kwargs.pop("do_pagination", True)
-
         if query is None:
             query = pdb.query(cls)
         if not do_pagination:
-            return query.all()
-        return paginate(query.all())
+            total = query.count()
+            items = query.all()
+            offset = 0
+            limit = total
+            return CustomPage(items, offset, limit, total)
+
+        total = query.count()
+        limit = kwargs.pop("limit")
+        offset = kwargs.pop("offset")
+        query = query.order_by(cls.id)
+        if offset is not None:
+            query = query.filter(cls.id > offset)
+
+        query = query.limit(limit)
+
+        items = [_to_dict(item) for item in query.all()]
+        offset = items[-1].id if items else None
+
+        page = CustomPage(items=items, total=total, limit=limit, offset=offset)
+        return page
 
     def update(self, pdb: Session, **kwargs):
         """Update specific fields of a record."""

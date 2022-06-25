@@ -9,6 +9,8 @@ from sqlalchemy.orm.query import Query
 from fastapi import HTTPException, status
 from sqlalchemy.sql import func
 
+from ...schemas.pagination import CustomPage
+
 
 class AlbumModel(templates.ResourceWithFile):
     __tablename__ = "albums"
@@ -50,17 +52,6 @@ class AlbumModel(templates.ResourceWithFile):
             )
 
         albums = super().search(pdb, query=query, **kwargs)
-        """
-        if artist_name is not None:
-            albums_filtered = []
-            for album in albums.items:
-                for song in album.songs:
-                    for artist in song.artists:
-                        if artist_name.lower() in artist.name.lower():
-                            albums_filtered.append(album)
-                            break
-            albums = paginate(albums_filtered)
-        """
         return albums
 
     @classmethod
@@ -123,3 +114,16 @@ class AlbumModel(templates.ResourceWithFile):
                 songs.append(song)
             self.songs = songs
         return super().update(pdb, **kwargs)
+
+    def get_reviews(self, pdb: Session, limit: int, offset: int):
+        from .review import ReviewModel
+
+        paginated_query = (
+            pdb.query(ReviewModel)
+            .filter(ReviewModel.album_id == self.id)
+            .offset(offset)
+            .limit(limit)
+        )
+        items = paginated_query.all()
+        total = paginated_query.count()
+        return CustomPage(items=items, limit=limit, total=total, offset=offset)

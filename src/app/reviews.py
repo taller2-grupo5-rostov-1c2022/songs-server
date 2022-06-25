@@ -1,10 +1,11 @@
 from src import utils, schemas
 from src.database.access import get_db
 from fastapi import APIRouter
-from fastapi import Depends, HTTPException
+from fastapi import Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from src.database import models
-from fastapi_pagination import Page, paginate
+
+from src.schemas.pagination import CustomPage
 
 router = APIRouter(tags=["reviews"])
 
@@ -37,11 +38,14 @@ def post_review(
     return review
 
 
-@router.get("/albums/{album_id}/reviews/", response_model=Page[schemas.ReviewGet])
+@router.get("/albums/{album_id}/reviews/", response_model=CustomPage[schemas.ReviewGet])
 def get_reviews(
     album: models.AlbumModel = Depends(utils.album.get_album),
+    limit: int = Query(50, ge=1, le=100),
+    offset: int = Query(0, ge=0),
+    pdb: Session = Depends(get_db),
 ):
-    return paginate(album.reviews)
+    return album.get_reviews(pdb, limit, offset)
 
 
 @router.get("/albums/{album_id}/my_review/", response_model=schemas.ReviewBase)
@@ -66,9 +70,11 @@ def delete_review(
     review.delete(pdb)
 
 
-@router.get("/users/{uid}/reviews/", response_model=Page[schemas.ReviewMyReviews])
+@router.get("/users/{uid}/reviews/", response_model=CustomPage[schemas.ReviewMyReviews])
 def get_reviews_of_user(
     user: models.UserModel = Depends(utils.user.retrieve_user),
     pdb: Session = Depends(get_db),
+    offset: int = Query(0, ge=0),
+    limit: int = Query(50, ge=1, le=100),
 ):
-    return models.ReviewModel.get_by_reviewer(pdb, user)
+    return models.ReviewModel.get_by_reviewer(pdb, user, limit, offset)

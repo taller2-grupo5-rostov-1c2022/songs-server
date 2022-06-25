@@ -234,78 +234,6 @@ def test_get_favorite_albums_with_one_favorite_album(client, custom_requests_moc
     assert albums[0]["scores_amount"] == 0
 
 
-def test_get_favorite_albums_with_one_favorite_album_with_one_song(
-    client, custom_requests_mock
-):
-    utils.post_user(client, "user_id", "user_name")
-    song_id = utils.post_song(client, name="song_name", uid="user_id").json()["id"]
-    album_id = utils.post_album(
-        client, name="album_name", uid="user_id", songs_ids=[song_id]
-    ).json()["id"]
-
-    response_post = utils.add_album_to_favorites(
-        client, uid="user_id", album_id=album_id
-    )
-    assert response_post.status_code == 200
-
-    response_get = utils.get_favorite_albums(client, uid="user_id")
-    albums = response_get.json()
-    assert response_get.status_code == 200
-    assert len(albums) == 1
-    assert albums[0]["name"] == "album_name"
-    assert len(albums[0]["songs"]) == 1
-    assert albums[0]["songs"][0]["name"] == "song_name"
-
-
-def test_get_favorite_albums_with_one_favorite_album_with_blocked_song_returns_empty_album(
-    client, custom_requests_mock
-):
-    utils.post_user(client, "user_id", "user_name")
-    song_id = utils.post_song(client, name="song_name", uid="user_id").json()["id"]
-    album_id = utils.post_album(
-        client, name="album_name", uid="user_id", songs_ids=[song_id]
-    ).json()["id"]
-
-    response_post = utils.add_album_to_favorites(
-        client, uid="user_id", album_id=album_id
-    )
-    assert response_post.status_code == 200
-
-    utils.block_song(client, song_id=song_id)
-
-    response_get = utils.get_favorite_albums(client, uid="user_id")
-    albums = response_get.json()
-    assert response_get.status_code == 200
-    assert len(albums) == 1
-    assert albums[0]["name"] == "album_name"
-    assert len(albums[0]["songs"]) == 0
-
-
-def test_get_favorite_albums_with_blocked_and_non_blocked_song_returns_album_with_non_blocked_song(
-    client, custom_requests_mock
-):
-    utils.post_user(client, "user_id", "user_name")
-    song_id_1 = utils.post_song(client, name="song_1", uid="user_id").json()["id"]
-    song_id_2 = utils.post_song(client, name="song_2", uid="user_id").json()["id"]
-    album_id = utils.post_album(
-        client, name="album_name", uid="user_id", songs_ids=[song_id_1, song_id_2]
-    ).json()["id"]
-
-    response_post = utils.add_album_to_favorites(
-        client, uid="user_id", album_id=album_id
-    )
-    assert response_post.status_code == 200
-
-    utils.block_song(client, song_id=song_id_1)
-
-    response_get = utils.get_favorite_albums(client, uid="user_id")
-    albums = response_get.json()
-    assert response_get.status_code == 200
-    assert len(albums) == 1
-    assert len(albums[0]["songs"]) == 1
-    assert albums[0]["songs"][0]["name"] == "song_2"
-
-
 def test_get_favorite_albums_with_two_albums_returns_only_favorite_albums(
     client, custom_requests_mock
 ):
@@ -325,29 +253,6 @@ def test_get_favorite_albums_with_two_albums_returns_only_favorite_albums(
     assert response_get.status_code == 200
     assert len(albums) == 1
     assert albums[0]["name"] == "album_1"
-
-
-def test_get_favorite_albums_with_two_albums_returns_only_favorite_albums_with_one_song(
-    client, custom_requests_mock
-):
-    utils.post_user(client, "user_id", "user_name")
-    song_id = utils.post_song(client, name="song_name", uid="user_id").json()["id"]
-    album_id_1 = utils.post_album(
-        client, name="album_1", uid="user_id", songs_ids=[song_id]
-    ).json()["id"]
-    utils.post_album(client, name="album_2", uid="user_id", songs_ids=[])
-
-    response_post = utils.add_album_to_favorites(
-        client, uid="user_id", album_id=album_id_1
-    )
-    assert response_post.status_code == 200
-
-    response_get = utils.get_favorite_albums(client, uid="user_id")
-    albums = response_get.json()
-    assert response_get.status_code == 200
-    assert len(albums) == 1
-    assert len(albums[0]["songs"]) == 1
-    assert albums[0]["songs"][0]["name"] == "song_name"
 
 
 def test_get_favorite_albums_does_not_return_blocked_albums(
