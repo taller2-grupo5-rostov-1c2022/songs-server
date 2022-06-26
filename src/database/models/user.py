@@ -30,7 +30,9 @@ class UserModel(CRUDMixin):
 
     songs = relationship("SongModel", back_populates="creator")
     albums = relationship("AlbumModel", back_populates="creator")
-    comments = relationship("CommentModel", back_populates="commenter")
+    comments = relationship(
+        "CommentModel", back_populates="commenter", cascade="all, delete-orphan"
+    )
 
     my_playlists = relationship("PlaylistModel", back_populates="creator")
     other_playlists = relationship(
@@ -39,7 +41,9 @@ class UserModel(CRUDMixin):
         back_populates="colabs",
     )
 
-    reviews = relationship("ReviewModel", back_populates="reviewer")
+    reviews = relationship(
+        "ReviewModel", back_populates="reviewer", cascade="all, delete-orphan"
+    )
 
     favorite_songs = relationship(
         "SongModel",
@@ -60,7 +64,12 @@ class UserModel(CRUDMixin):
         back_populates="favorited_by",
     )
 
-    streaming = relationship("StreamingModel", back_populates="artist", uselist=False)
+    streaming = relationship(
+        "StreamingModel",
+        back_populates="artist",
+        uselist=False,
+        cascade="all, delete-orphan",
+    )
 
     def upload_pfp(self, pdb: Session, pfp: IO, bucket):
         try:
@@ -85,7 +94,7 @@ class UserModel(CRUDMixin):
             if not SUPPRESS_BLOB_ERRORS:
                 raise HTTPException(
                     status_code=status.HTTP_507_INSUFFICIENT_STORAGE,
-                    detail=f"Could not upload pfp for for User with id {self.id}: {e}",
+                    detail=f"Could not delete pfp for for User with id {self.id}: {e}",
                 )
 
     @classmethod
