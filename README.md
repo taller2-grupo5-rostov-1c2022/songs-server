@@ -1,9 +1,7 @@
 [![Pipeline](https://github.com/taller2-grupo5-rostov-1c2022/songs-server/actions/workflows/pipeline.yml/badge.svg?branch=master)](https://github.com/taller2-grupo5-rostov-1c2022/songs-server/actions/workflows/pipeline.yml)
 [![codecov](https://codecov.io/gh/taller2-grupo5-rostov-1c2022/songs-server/branch/master/graph/badge.svg?token=LJIu1T1HQr)](https://codecov.io/gh/taller2-grupo5-rostov-1c2022/songs-server)
-[![](https://img.shields.io/badge/license-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 [![](https://img.shields.io/badge/python-3.6-blue.svg)](https://www.python.org/downloads/)
 [![](https://img.shields.io/badge/docs-fastapi-blue.svg)](https://fastapi.tiangolo.com/)
-![](https://img.shields.io/badge/version-0.1-blue.svg)
 
 # Spotifiuby Songs Server
 
