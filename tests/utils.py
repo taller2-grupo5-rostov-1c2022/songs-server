@@ -267,7 +267,9 @@ def post_review(
 
 
 def add_song_to_favorites(client, uid, song_id):
-    return post(client, f"/users/{uid}/favorites/songs/?song_id={song_id}", uid=uid, data={})
+    return post(
+        client, f"/users/{uid}/favorites/songs/?song_id={song_id}", uid=uid, data={}
+    )
 
 
 def get_favorite_songs(client, uid, role="listener"):
@@ -311,11 +313,19 @@ def add_song_to_album(client, uid: str, song_id: int, album_id: int):
 
 def block_album(client, id: int):
     post_user(client, "__blocker__id__", user_name="__blocker__name__")
-    return put(client, f"/albums/{id}", data={"blocked": True}, uid="__blocker__id__", role="admin")
+    return put(
+        client,
+        f"/albums/{id}",
+        data={"blocked": True},
+        uid="__blocker__id__",
+        role="admin",
+    )
 
 
 def remove_album_from_favorites(client, uid, album_id):
-    return delete(client, f"/users/{uid}/favorites/albums/?album_id={album_id}", uid=uid)
+    return delete(
+        client, f"/users/{uid}/favorites/albums/?album_id={album_id}", uid=uid
+    )
 
 
 def get_favorite_playlists(client, uid, role="listener"):
@@ -323,7 +333,13 @@ def get_favorite_playlists(client, uid, role="listener"):
 
 
 def add_playlist_to_favorites(client, uid, playlist_id, role="listener"):
-    return post(client, f"/users/{uid}/favorites/playlists/?playlist_id={playlist_id}", uid=uid, role=role, data={})
+    return post(
+        client,
+        f"/users/{uid}/favorites/playlists/?playlist_id={playlist_id}",
+        uid=uid,
+        role=role,
+        data={},
+    )
 
 
 def block_playlist(client, playlist_id: int):
@@ -575,11 +591,13 @@ def search_albums(
         if value is not None:
             endpoint = add_query(endpoint, f"{search_term}={value}")
 
-    return get(client, endpoint, uid=uid, role=role, unwrap=unwrap, offset=offset, limit=limit)
+    return get(
+        client, endpoint, uid=uid, role=role, unwrap=unwrap, offset=offset, limit=limit
+    )
 
 
 def get_my_albums(client, uid: str, role: str = "listener", unwrap=False):
-    return get(client, f"/my_albums/", uid, role, unwrap)
+    return get(client, "/my_albums/", uid, role, unwrap)
 
 
 def put_album(
@@ -621,7 +639,7 @@ def get_my_songs(
     offset: Optional[int] = None,
     limit: Optional[int] = None,
 ):
-    return get(client, f"/my_songs/", uid, role, unwrap, offset=offset, limit=limit)
+    return get(client, "/my_songs/", uid, role, unwrap, offset=offset, limit=limit)
 
 
 def search_songs(
@@ -648,7 +666,9 @@ def search_songs(
         if value is not None:
             endpoint = add_query(endpoint, f"{search_term}={value}")
 
-    return get(client, endpoint, uid=uid, role=role, unwrap=unwrap, offset=offset, limit=limit)
+    return get(
+        client, endpoint, uid=uid, role=role, unwrap=unwrap, offset=offset, limit=limit
+    )
 
 
 def put_song(
@@ -698,7 +718,7 @@ def get_my_playlists(
     role: str = "listener",
     unwrap=False,
 ):
-    return get(client, f"/my_playlists/", uid, role, unwrap)
+    return get(client, "/my_playlists/", uid, role, unwrap)
 
 
 def search_playlists(
@@ -718,7 +738,9 @@ def search_playlists(
     ):
         if value is not None:
             endpoint = add_query(endpoint, f"{search_term}={value}")
-    return get(client, endpoint, uid=uid, role=role, unwrap=unwrap, offset=offset, limit=limit)
+    return get(
+        client, endpoint, uid=uid, role=role, unwrap=unwrap, offset=offset, limit=limit
+    )
 
 
 def put_playlist(
@@ -801,7 +823,9 @@ def post_users(client: Type[TestClient], *users_ids):
 
 
 def get_uid_or_create(client):
-    users = client.get(f"{API_VERSION_PREFIX}/users", headers={"api_key": "key"}).json()["items"]
+    users = client.get(
+        f"{API_VERSION_PREFIX}/users", headers={"api_key": "key"}
+    ).json()["items"]
     if len(users) == 0:
         uid = "__user_id__"
         post_user(client, uid)
@@ -819,7 +843,9 @@ def get_album_comments(
     offset: Optional[int] = None,
     limit: Optional[int] = None,
 ):
-    return get(client, f"/albums/{album_id}/comments/", uid, role, unwrap, offset, limit)
+    return get(
+        client, f"/albums/{album_id}/comments/", uid, role, unwrap, offset, limit
+    )
 
 
 def post_comment(
@@ -850,7 +876,7 @@ def get_user_comments(
     role: str = "listener",
     unwrap=False,
 ):
-    return get(client, f"/users/comments/", uid, role, unwrap)
+    return get(client, "/users/comments/", uid, role, unwrap)
 
 
 def put_comment(
@@ -930,7 +956,7 @@ def get_users(
     offset: Optional[int] = None,
     limit: Optional[int] = None,
 ):
-    return get(client, f"/users/", uid, role, unwrap, offset, limit)
+    return get(client, "/users/", uid, role, unwrap, offset, limit)
 
 
 def get_user_reviews(
@@ -961,4 +987,4 @@ def get_streamings(
     offset: Optional[int] = None,
     limit: Optional[int] = None,
 ):
-    return get(client, f"/streamings/", uid, role, unwrap, offset, limit)
+    return get(client, "/streamings/", uid, role, unwrap, offset, limit)

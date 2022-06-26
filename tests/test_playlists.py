@@ -301,9 +301,7 @@ def test_get_my_playlists_returns_playlists_in_which_i_am_colab(
 def test_get_playlists_by_colab(client, custom_requests_mock, drop_tables):
     wrap_post_playlist(client)
 
-    response_get = utils.search_playlists(
-        client, colab="user_playlist_colab"
-    )
+    response_get = utils.search_playlists(client, colab="user_playlist_colab")
     playlists = response_get.json()
 
     assert response_get.status_code == 200

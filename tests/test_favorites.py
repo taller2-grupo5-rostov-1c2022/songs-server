@@ -4,17 +4,17 @@ from tests.utils import API_VERSION_PREFIX
 
 def test_get_favorite_songs_with_zero_favorite_songs(client, custom_requests_mock):
     utils.post_user(client, "user_id")
-    
+
     response_get = utils.get_favorite_songs(client, "user_id")
     songs = response_get.json()
-    
+
     assert response_get.status_code == 200
     assert len(songs) == 0
 
 
 def test_get_favorite_songs_with_one_favorite_songs(client, custom_requests_mock):
     utils.post_user(client, "user_id")
-    
+
     song_id = utils.post_song(client)
     response_post = utils.add_song_to_favorites(client, uid="user_id", song_id=song_id)
     assert response_post.status_code == 200
@@ -233,9 +233,7 @@ def test_get_favorite_albums_with_two_albums_returns_only_favorite_albums(
     client, custom_requests_mock
 ):
     utils.post_user(client, "user_id")
-    album_id_1 = utils.post_album(
-        client, name="album_1", uid="user_id", songs_ids=[]
-    )
+    album_id_1 = utils.post_album(client, name="album_1", uid="user_id", songs_ids=[])
     utils.post_album(client, name="album_2", uid="user_id", songs_ids=[])
 
     response_post = utils.add_album_to_favorites(
@@ -281,9 +279,7 @@ def test_get_favorite_albums_does_not_return_blocked_albums(
 
 def test_remove_album_from_favorites(client, custom_requests_mock):
     utils.post_user(client, "user_id")
-    album_id = utils.post_album(
-        client, name="album_name", uid="user_id", songs_ids=[]
-    )
+    album_id = utils.post_album(client, name="album_name", uid="user_id", songs_ids=[])
 
     utils.add_album_to_favorites(client, uid="user_id", album_id=album_id)
 
@@ -302,9 +298,7 @@ def test_remove_album_from_favorites_album_not_in_favorites(
     client, custom_requests_mock
 ):
     utils.post_user(client, "user_id")
-    album_id = utils.post_album(
-        client, name="album_name", uid="user_id", songs_ids=[]
-    )
+    album_id = utils.post_album(client, name="album_name", uid="user_id", songs_ids=[])
 
     response_delete = utils.remove_album_from_favorites(
         client, uid="user_id", album_id=album_id

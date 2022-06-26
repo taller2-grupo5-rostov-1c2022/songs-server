@@ -140,9 +140,7 @@ def test_user_with_free_subscription_cannot_get_premium_song(
     post_user(client, "creator_id", "creator_name")
     post_user_with_sub_level(client, "user_id", "user_name", 0)
 
-    song_id = utils.post_song(
-        client, uid="creator_id", name="song_name", sub_level=1
-    )
+    song_id = utils.post_song(client, uid="creator_id", name="song_name", sub_level=1)
 
     response_get = utils.get_song(client, song_id)
 
@@ -153,9 +151,7 @@ def test_user_with_free_subscription_cannot_get_pro_song(client, custom_requests
     post_user(client, "creator_id", "creator_name")
     post_user_with_sub_level(client, "user_id", "user_name", 0)
 
-    song_id = utils.post_song(
-        client, uid="creator_id", name="song_name", sub_level=2
-    )
+    song_id = utils.post_song(client, uid="creator_id", name="song_name", sub_level=2)
 
     response_get = utils.get_song(client, song_id)
 
@@ -166,9 +162,7 @@ def test_user_with_premium_can_get_premium_song(client, custom_requests_mock):
     post_user(client, "creator_id", "creator_name")
     post_user_with_sub_level(client, "user_id", "user_name", 1)
 
-    song_id = utils.post_song(
-        client, uid="creator_id", name="song_name", sub_level=1
-    )
+    song_id = utils.post_song(client, uid="creator_id", name="song_name", sub_level=1)
 
     response_get = utils.get_song(client, song_id, uid="user_id")
 
@@ -179,12 +173,9 @@ def test_user_with_premium_can_get_free_song(client, custom_requests_mock):
     post_user(client, "creator_id", "creator_name")
     post_user_with_sub_level(client, "user_id", "user_name", 1)
 
-    song_id = utils.post_song(
-        client, uid="creator_id", name="song_name", sub_level=0
-    )
+    song_id = utils.post_song(client, uid="creator_id", name="song_name", sub_level=0)
 
     response_get = utils.get_song(client, song_id)
-
 
     assert response_get.status_code == 200
 
@@ -194,9 +185,7 @@ def test_user_with_pro_can_get_premium_song(client, custom_requests_mock):
     response = post_user_with_sub_level(client, "user_id", "user_name", 2)
     assert response.status_code == 200
 
-    song_id = utils.post_song(
-        client, uid="creator_id", name="song_name", sub_level=1
-    )
+    song_id = utils.post_song(client, uid="creator_id", name="song_name", sub_level=1)
 
     response_get = utils.get_song(client, song_id, uid="user_id")
 
@@ -207,9 +196,7 @@ def test_user_with_pro_can_get_free_song(client, custom_requests_mock):
     post_user(client, "creator_id", "creator_name")
     post_user_with_sub_level(client, "user_id", "user_name", 2)
 
-    song_id = utils.post_song(
-        client, uid="creator_id", name="song_name", sub_level=0
-    )
+    song_id = utils.post_song(client, uid="creator_id", name="song_name", sub_level=0)
 
     response_get = utils.get_song(client, song_id)
 
@@ -222,9 +209,7 @@ def test_admin_can_get_premium_song_even_without_subscription(
     post_user(client, "creator_id", "creator_name")
     post_user_with_sub_level(client, "user_id", "user_name", 0)
 
-    song_id = utils.post_song(
-        client, uid="creator_id", name="song_name", sub_level=1
-    )
+    song_id = utils.post_song(client, uid="creator_id", name="song_name", sub_level=1)
 
     response_get = utils.get_song(client, song_id, role="admin")
 
@@ -238,9 +223,7 @@ def test_user_with_expired_subscription_gets_its_subscription_revoked(
     post_user(client, "creator_id", "creator_name")
     post_user(client, "admin_id", "admin_name")
 
-    song_id = utils.post_song(
-        client, uid="creator_id", name="song_name", sub_level=1
-    )
+    song_id = utils.post_song(client, uid="creator_id", name="song_name", sub_level=1)
 
     response = client.post(
         f"{API_VERSION_PREFIX}/subscriptions/revoke/",
@@ -259,9 +242,7 @@ def test_user_without_expired_subscription_does_not_get_its_subscription_revoked
     post_user(client, "creator_id", "creator_name")
     post_user(client, "admin_id", "admin_name")
 
-    song_id = utils.post_song(
-        client, uid="creator_id", name="song_name", sub_level=1
-    )
+    song_id = utils.post_song(client, uid="creator_id", name="song_name", sub_level=1)
 
     response = client.post(
         f"{API_VERSION_PREFIX}/subscriptions/revoke/",
@@ -283,9 +264,7 @@ def test_revoke_user_expired_and_other_user_not_expired(
     post_user(client, "creator_id", "creator_name")
     post_user(client, "admin_id", "admin_name")
 
-    song_id = utils.post_song(
-        client, uid="creator_id", name="song_name", sub_level=1
-    )
+    song_id = utils.post_song(client, uid="creator_id", name="song_name", sub_level=1)
 
     response = client.post(
         f"{API_VERSION_PREFIX}/subscriptions/revoke/",

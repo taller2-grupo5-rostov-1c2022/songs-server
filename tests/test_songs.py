@@ -130,9 +130,7 @@ def test_get_my_songs_without_results(client, custom_requests_mock):
 
     post_song(client, uid="another_creator_id", name="happy_song")
 
-    response_get = utils.get_my_songs(
-        client, uid="song_creator_id"
-    )
+    response_get = utils.get_my_songs(client, uid="song_creator_id")
     songs = response_get.json()
 
     assert response_get.status_code == 200
@@ -144,9 +142,7 @@ def test_get_my_songs_should_retrieve_two_songs(client, custom_requests_mock):
     post_song(client, uid="song_creator_id", name="happy_song")
     post_song(client, uid="song_creator_id", name="sad_song")
 
-    response_get = utils.get_my_songs(
-        client, uid="song_creator_id"
-    )
+    response_get = utils.get_my_songs(client, uid="song_creator_id")
 
     body_songs = response_get.json()
 

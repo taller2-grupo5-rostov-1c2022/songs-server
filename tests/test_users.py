@@ -135,9 +135,7 @@ def test_cannot_update_info_of_another_user(client, custom_requests_mock):
 def test_delete_user(client, custom_requests_mock):
     post_user(client, "user_id")
 
-    response_delete = utils.delete_user(
-        client, "user_id"
-    )
+    response_delete = utils.delete_user(client, "user_id")
 
     assert response_delete.status_code == 200
 
@@ -209,9 +207,7 @@ def test_get_my_reviews(client, custom_requests_mock):
     response_post = post_review(client, album_id, "reviewer_id")
     assert response_post.status_code == 200
 
-    response_get = utils.get_user_reviews(
-        client, "reviewer_id"
-    )
+    response_get = utils.get_user_reviews(client, "reviewer_id")
     reviews = response_get.json()
 
     assert response_get.status_code == 200
@@ -232,9 +228,7 @@ def test_get_my_reviews_should_not_return_reviews_of_another_user(
     album_id = post_album(client, "creator_id")
     post_review(client, album_id, "first_reviewer_id")
 
-    response_get = utils.get_user_reviews(
-        client, "second_reviewer_id"
-    )
+    response_get = utils.get_user_reviews(client, "second_reviewer_id")
 
     reviews = response_get.json()
     assert response_get.status_code == 200
@@ -286,9 +280,7 @@ def test_delete_user_does_not_delete_song(client, custom_requests_mock):
     post_user(client, "user_id")
     song_id = post_song(client, "user_id")
 
-    response_delete = utils.delete_user(
-        client, "user_id"
-    )
+    response_delete = utils.delete_user(client, "user_id")
     assert response_delete.status_code == 200
 
     response = utils.get_song(client, song_id)
@@ -304,14 +296,10 @@ def test_delete_user_does_not_delete_album(client, custom_requests_mock):
 
     album_id = post_album(client, "user_id", "album_name")
 
-    response = utils.delete_user(
-        client, "user_id"
-    )
+    response = utils.delete_user(client, "user_id")
     assert response.status_code == 200
 
-    response = utils.get_album(
-        client, album_id
-    )
+    response = utils.get_album(client, album_id)
     album = response.json()
 
     assert response.status_code == 200
@@ -322,15 +310,11 @@ def test_delete_user_does_not_delete_playlist(client, custom_requests_mock):
     post_user(client, "user_id")
     playlist_id = post_playlist(client, "user_id", "playlist_name")
 
-    response_delete = utils.delete_user(
-        client, "user_id"
-    )
+    response_delete = utils.delete_user(client, "user_id")
 
     assert response_delete.status_code == 200
 
-    response_get = utils.get_playlist(
-        client, playlist_id
-    )
+    response_get = utils.get_playlist(client, playlist_id)
     playlist = response_get.json()
 
     assert response_get.status_code == 200
@@ -342,9 +326,7 @@ def test_delete_user_that_is_collaborator_of_playlist_does_not_delete_playlist(
 ):
     playlist_id = wrap_post_playlist(client)
 
-    response_delete = utils.delete_user(
-        client, "user_playlist_colab"
-    )
+    response_delete = utils.delete_user(client, "user_playlist_colab")
 
     assert response_delete.status_code == 200
 
@@ -357,15 +339,11 @@ def test_delete_user_that_is_owner_of_playlist_gives_ownership_to_another_user(
 ):
     playlist_id = wrap_post_playlist(client)
 
-    response_delete = utils.delete_user(
-        client, "user_playlist_owner"
-    )
+    response_delete = utils.delete_user(client, "user_playlist_owner")
 
     assert response_delete.status_code == 200
 
-    response_get = utils.get_playlist(
-        client, playlist_id, uid="user_playlist_colab"
-    )
+    response_get = utils.get_playlist(client, playlist_id, uid="user_playlist_colab")
     playlist = response_get.json()
 
     assert response_get.status_code == 200
