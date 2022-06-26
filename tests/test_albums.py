@@ -30,11 +30,9 @@ def test_get_album_by_invalid_id(client, custom_requests_mock):
 
 
 def test_get_album_of_user_without_albums(client, custom_requests_mock):
-    post_user(client, "album_creator_id", "album_creator_name")
-    response = client.get(
-        API_VERSION_PREFIX + "/my_albums/",
-        headers={"uid": "album_creator_id", "api_key": "key"},
-    )
+    post_user(client, "album_creator_id")
+    response = utils.get_my_albums(client, "album_creator_id")
+
     assert response.status_code == 200
     assert len(response.json()) == 0
 
@@ -51,7 +49,6 @@ def test_get_my_albums(client, custom_requests_mock):
     assert albums[0]["name"] == "album_name"
     assert albums[0]["description"] == "album_desc"
     assert albums[0]["genre"] == "album_genre"
-    assert albums[0]["songs"] == []
     assert len(albums) == 1
 
 

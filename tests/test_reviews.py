@@ -4,7 +4,6 @@ from tests.utils import (
     post_user,
     post_song,
     post_album,
-    post_playlist,
     block_song,
     post_review,
 )
@@ -13,12 +12,11 @@ from tests.utils import (
 def test_post_review(client, custom_requests_mock):
     post_user(client, "creator_id", user_name="creator_name")
     post_user(client, "reviewer_id", user_name="reviewer_name")
-    album_id = post_album(client, uid="creator_id").json()["id"]
 
-    response_post = client.post(
-        f"{API_VERSION_PREFIX}/albums/{album_id}/reviews/",
-        json={"text": "this is a review", "score": 4},
-        headers={"api_key": "key", "uid": "reviewer_id"},
+    album_id = post_album(client)
+
+    response_post = utils.post_review(
+        client, album_id, "reviewer_id", "this is a review", 4
     )
     review = response_post.json()
 
@@ -29,13 +27,10 @@ def test_post_review(client, custom_requests_mock):
 
 
 def test_get_reviews_with_zero_reviews(client, custom_requests_mock):
-    post_user(client, "creator_id", user_name="creator_name")
-    post_user(client, "reviewer_id", user_name="reviewer_name")
-    album_id = post_album(client, uid="creator_id").json()["id"]
+    album_id = post_album(client)
 
-    response_get = client.get(
-        f"{API_VERSION_PREFIX}/albums/{album_id}/reviews/",
-        headers={"api_key": "key", "uid": "reviewer_id"},
+    response_get = utils.get_reviews_of_album(
+        client, album_id
     )
     reviews = response_get.json()
 
@@ -46,7 +41,7 @@ def test_get_reviews_with_zero_reviews(client, custom_requests_mock):
 def test_get_reviews_with_one_review(client, custom_requests_mock):
     post_user(client, "creator_id", user_name="creator_name")
     post_user(client, "reviewer_id", user_name="reviewer_name")
-    album_id = post_album(client, uid="creator_id").json()["id"]
+    album_id = post_album(client, uid="creator_id")
 
     response_post = post_review(
         client,
@@ -58,9 +53,8 @@ def test_get_reviews_with_one_review(client, custom_requests_mock):
 
     assert response_post.status_code == 200
 
-    response_get = client.get(
-        f"{API_VERSION_PREFIX}/albums/{album_id}/reviews/",
-        headers={"api_key": "key", "uid": "reviewer_id"},
+    response_get = utils.get_reviews_of_album(
+        client, album_id
     )
     reviews = response_get.json()
 
@@ -76,7 +70,7 @@ def test_get_reviews_with_many_reviews(client, custom_requests_mock):
     post_user(client, "bad_user_id", user_name="bad_reviewer_name")
     post_user(client, "nice_user_id", user_name="nice_reviewer_name")
 
-    album_id = post_album(client, uid="creator_id").json()["id"]
+    album_id = post_album(client, uid="creator_id")
 
     post_review(
         client,
@@ -89,9 +83,8 @@ def test_get_reviews_with_many_reviews(client, custom_requests_mock):
         client, uid="nice_user_id", album_id=album_id, text="I love this album", score=5
     )
 
-    response_get = client.get(
-        f"{API_VERSION_PREFIX}/albums/{album_id}/reviews/",
-        headers={"api_key": "key", "uid": "nice_user_id"},
+    response_get = utils.get_reviews_of_album(
+        client, album_id
     )
     reviews = response_get.json()
 
@@ -107,7 +100,7 @@ def test_user_cannot_post_more_than_one_review(client, custom_requests_mock):
     post_user(client, "creator_id", user_name="creator_name")
     post_user(client, "reviewer_id", user_name="reviewer_name")
 
-    album_id = post_album(client, uid="creator_id").json()["id"]
+    album_id = post_album(client, uid="creator_id")
 
     response_post = post_review(client, uid="reviewer_id", album_id=album_id)
     assert response_post.status_code == 200
@@ -122,7 +115,7 @@ def test_post_review_without_text(client, custom_requests_mock):
     post_user(client, "creator_id", user_name="creator_name")
     post_user(client, "reviewer_id", user_name="reviewer_name")
 
-    album_id = post_album(client, uid="creator_id").json()["id"]
+    album_id = post_album(client, uid="creator_id")
     response_post = post_review(
         client, uid="reviewer_id", album_id=album_id, text=None, score=5
     )
@@ -137,7 +130,7 @@ def test_post_review_without_score(client, custom_requests_mock):
     post_user(client, "creator_id", user_name="creator_name")
     post_user(client, "reviewer_id", user_name="reviewer_name")
 
-    album_id = post_album(client, uid="creator_id").json()["id"]
+    album_id = post_album(client, uid="creator_id")
     response_post = post_review(
         client, uid="reviewer_id", album_id=album_id, text="my text", score=None
     )
@@ -152,7 +145,7 @@ def test_post_review_without_text_or_score_should_fail(client, custom_requests_m
     post_user(client, "creator_id", user_name="creator_name")
     post_user(client, "reviewer_id", user_name="reviewer_name")
 
-    album_id = post_album(client, uid="creator_id").json()["id"]
+    album_id = post_album(client, uid="creator_id")
     response_post = post_review(
         client, uid="reviewer_id", album_id=album_id, text=None, score=None
     )
@@ -164,16 +157,15 @@ def test_post_review_does_not_affect_another_album(client, custom_requests_mock)
     post_user(client, "creator_id", user_name="creator_name")
     post_user(client, "reviewer_id", user_name="reviewer_name")
 
-    album_id_1 = post_album(client, uid="creator_id").json()["id"]
-    album_id_2 = post_album(client, uid="creator_id").json()["id"]
+    album_id_1 = post_album(client, uid="creator_id")
+    album_id_2 = post_album(client, uid="creator_id")
 
     post_review(client, uid="reviewer_id", album_id=album_id_1, text="text", score=3)
 
-    response_get = client.get(
-        f"{API_VERSION_PREFIX}/albums/{album_id_2}/reviews/",
-        json={"text": "updated text", "score": 5},
-        headers={"api_key": "key", "uid": "reviewer_id"},
+    response_get = utils.get_reviews_of_album(
+        client, album_id_2
     )
+
     reviews = response_get.json()
     assert response_get.status_code == 200
     assert len(reviews) == 0
@@ -183,7 +175,7 @@ def test_edit_review_without_review_should_fail(client, custom_requests_mock):
     post_user(client, "creator_id", user_name="creator_name")
     post_user(client, "reviewer_id", user_name="reviewer_name")
 
-    album_id = post_album(client, uid="creator_id").json()["id"]
+    album_id = post_album(client, uid="creator_id")
 
     response_put = client.put(
         f"{API_VERSION_PREFIX}/albums/{album_id}/reviews/",
@@ -197,21 +189,18 @@ def test_edit_review_in_album_with_one_review(client, custom_requests_mock):
     post_user(client, "creator_id", user_name="creator_name")
     post_user(client, "reviewer_id", user_name="reviewer_name")
 
-    album_id = post_album(client, uid="creator_id").json()["id"]
+    album_id = post_album(client, uid="creator_id")
     post_review(
         client, uid="reviewer_id", album_id=album_id, text="original text", score=2
     )
 
-    response_put = client.put(
-        f"{API_VERSION_PREFIX}/albums/{album_id}/reviews/",
-        json={"text": "updated text", "score": 5},
-        headers={"api_key": "key", "uid": "reviewer_id"},
+    response_put = utils.put_review_of_album(
+        client, album_id, text="updated text", uid="reviewer_id", score=5
     )
     assert response_put.status_code == 200
 
-    response_get = client.get(
-        f"{API_VERSION_PREFIX}/albums/{album_id}/reviews/",
-        headers={"api_key": "key", "uid": "reviewer_id"},
+    response_get = utils.get_reviews_of_album(
+        client, album_id
     )
     reviews = response_get.json()
     assert response_get.status_code == 200
@@ -225,7 +214,7 @@ def test_edit_review_in_album_with_many_reviews(client, custom_requests_mock):
     post_user(client, "first_reviewer_id", user_name="first_reviewer_name")
     post_user(client, "second_reviewer_id", user_name="second_reviewer_name")
 
-    album_id = post_album(client, uid="creator_id").json()["id"]
+    album_id = post_album(client, uid="creator_id")
     post_review(
         client, uid="first_reviewer_id", album_id=album_id, text="awful album", score=2
     )
@@ -257,7 +246,7 @@ def test_cannot_edit_review_of_another_user(client, custom_requests_mock):
     post_user(client, "first_reviewer_id", user_name="first_reviewer_name")
     post_user(client, "second_reviewer_id", user_name="second_reviewer_name")
 
-    album_id = post_album(client, uid="creator_id").json()["id"]
+    album_id = post_album(client, uid="creator_id")
     post_review(
         client,
         uid="first_reviewer_id",
@@ -289,7 +278,7 @@ def test_delete_review_in_album_with_zero_reviews_should_fail(
     post_user(client, "creator_id", user_name="creator_name")
     post_user(client, "reviewer_id", user_name="reviewer_name")
 
-    album_id = post_album(client, uid="creator_id").json()["id"]
+    album_id = post_album(client, uid="creator_id")
 
     response_delete = client.delete(
         f"{API_VERSION_PREFIX}/albums/{album_id}/reviews/",
@@ -302,20 +291,18 @@ def test_delete_review_in_album_with_review(client, custom_requests_mock):
     post_user(client, "creator_id", user_name="creator_name")
     post_user(client, "reviewer_id", user_name="reviewer_name")
 
-    album_id = post_album(client, uid="creator_id").json()["id"]
+    album_id = post_album(client, uid="creator_id")
     post_review(
         client, uid="reviewer_id", album_id=album_id, text="original text", score=2
     )
 
-    response_delete = client.delete(
-        f"{API_VERSION_PREFIX}/albums/{album_id}/reviews/",
-        headers={"api_key": "key", "uid": "reviewer_id"},
+    response_delete = utils.delete_review_of_album(
+        client, uid="reviewer_id", album_id=album_id
     )
     assert response_delete.status_code == 200
 
-    response_get = client.get(
-        f"{API_VERSION_PREFIX}/albums/{album_id}/reviews/",
-        headers={"api_key": "key", "uid": "reviewer_id"},
+    response_get = utils.get_reviews_of_album(
+        client, album_id
     )
     reviews = response_get.json()
     assert response_get.status_code == 200
@@ -330,8 +317,8 @@ def test_post_review_in_album_with_blocked_songs_should_not_remove_songs(
     post_user(client, "creator_id", user_name="creator_name")
     post_user(client, "reviewer_id", user_name="reviewer_name")
 
-    song_id = post_song(client, uid="creator_id", name="happy_song").json()["id"]
-    album_id = post_album(client, uid="creator_id", songs_ids=[song_id]).json()["id"]
+    song_id = post_song(client, uid="creator_id", name="happy_song")
+    album_id = post_album(client, uid="creator_id", songs_ids=[song_id])
 
     block_song(client, song_id)
 
@@ -340,7 +327,7 @@ def test_post_review_in_album_with_blocked_songs_should_not_remove_songs(
     )
     assert response_post.status_code == 200
 
-    response_get = utils.get_song_by_id(client, song_id, role="admin")
+    response_get = utils.get_song(client, song_id, role="admin")
     assert response_get.status_code == 200
 
 
@@ -348,13 +335,10 @@ def test_post_one_review_affects_album_score(client, custom_requests_mock):
     post_user(client, "creator_id", user_name="creator_name")
     post_user(client, "reviewer_id", user_name="reviewer_name")
 
-    album_id = post_album(client, uid="creator_id").json()["id"]
-    post_review(client, "reviewer_id", album_id, "bad song", 2)
+    album_id = post_album(client, uid="creator_id")
+    post_review(client, album_id, "reviewer_id", "bad song", 2)
 
-    response_get = client.get(
-        f"{API_VERSION_PREFIX}/albums/{album_id}",
-        headers={"api_key": "key", "uid": "reviewer_id"},
-    )
+    response_get = utils.get_album(client, album_id)
     album = response_get.json()
     assert response_get.status_code == 200
     assert album["score"] == 2
@@ -365,14 +349,11 @@ def test_post_many_reviews_affects_score(client, custom_requests_mock):
     post_user(client, "first_reviewer_id", user_name="first_reviewer_name")
     post_user(client, "second_reviewer_id", user_name="second_reviewer_name")
 
-    album_id = post_album(client, uid="creator_id").json()["id"]
-    post_review(client, "first_reviewer_id", album_id, "bad song", 2)
-    post_review(client, "second_reviewer_id", album_id, "good song", 5)
+    album_id = post_album(client, uid="creator_id")
+    post_review(client, album_id, "first_reviewer_id", "bad song", 2)
+    post_review(client, album_id, "second_reviewer_id", "good song", 5)
 
-    response_get = client.get(
-        f"{API_VERSION_PREFIX}/albums/{album_id}",
-        headers={"api_key": "key", "uid": "creator_id", "role": "admin"},
-    )
+    response_get = utils.get_album(client, album_id)
     album = response_get.json()
     assert response_get.status_code == 200
     assert album["score"] == 3.5
@@ -384,23 +365,26 @@ def test_user_with_two_reviews_in_different_albums_edits_one_review(
     post_user(client, "creator_id", user_name="creator_name")
     post_user(client, "reviewer_id", user_name="reviewer_name")
 
-    album_id_1 = post_album(client, uid="creator_id").json()["id"]
-    album_id_2 = post_album(client, uid="creator_id").json()["id"]
+    album_id_1 = post_album(client, uid="creator_id")
+    album_id_2 = post_album(client, uid="creator_id")
 
-    post_review(client, "reviewer_id", album_id_1, "bad song", 2)
-    post_review(client, "reviewer_id", album_id_2, "good song", 5)
+    post_review(client, album_id_1, "reviewer_id", "bad song", 2)
+    post_review(client, album_id_2, "reviewer_id", "good song", 5)
 
-    response_put = client.put(
-        f"{API_VERSION_PREFIX}/albums/{album_id_2}/reviews/",
-        json={"text": "I'm trying to change a review", "score": 3},
-        headers={"api_key": "key", "uid": "reviewer_id"},
+    response_put = utils.put_review_of_album(
+        client,
+        album_id_2,
+        "I'm trying to change a review",
+        3,
+        "reviewer_id",
     )
+
     assert response_put.status_code == 200
 
-    response_get = client.get(
-        f"{API_VERSION_PREFIX}/albums/{album_id_2}/reviews/",
-        headers={"api_key": "key", "uid": "reviewer_id"},
+    response_get = utils.get_reviews_of_album(
+        client, album_id_2, uid="reviewer_id"
     )
+
     reviews = response_get.json()
     assert response_get.status_code == 200
     assert len(reviews) == 1
@@ -412,11 +396,11 @@ def test_delete_album_deletes_reviews(client, custom_requests_mock):
     post_user(client, "creator_id", user_name="creator_name")
     post_user(client, "reviewer_id", user_name="reviewer_name")
 
-    album_id = post_album(client, uid="creator_id").json()["id"]
-    post_review(client, "reviewer_id", album_id, "bad song", 2)
+    album_id = post_album(client, uid="creator_id")
+    post_review(client, album_id, "reviewer_id", "bad song", 2)
 
-    response_delete = client.delete(
-        f"{API_VERSION_PREFIX}/albums/{album_id}",
-        headers={"api_key": "key", "uid": "creator_id"},
+    response_delete = utils.delete_album(
+        client, album_id, "creator_id"
     )
+
     assert response_delete.status_code == 200

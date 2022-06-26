@@ -129,110 +129,6 @@ def session():
     connection.close()
 
 
-def populate_albums(test_client, albums, **kwargs):
-    for album in albums:
-        album_by_id = test_client.get(
-            f"{API_VERSION_PREFIX}/albums/{album['id']}", **kwargs
-        ).json()
-        album["songs"] = album_by_id["songs"]
-
-    return albums
-
-
-def build_complete_response_for_albums(test_client, response, **kwargs):
-    albums = response.json()
-    populated_albums = populate_albums(test_client, albums, **kwargs)
-    resp = requests.models.Response()
-    resp.status_code = response.status_code
-    resp._content = json.dumps(populated_albums, indent=2).encode("utf-8")
-    return resp
-
-
-def populate_playlists(test_client, playlists, **kwargs):
-    for playlist in playlists:
-        playlist_by_id = test_client.get(
-            f"{API_VERSION_PREFIX}/playlists/{playlist['id']}", **kwargs
-        ).json()
-        playlist["songs"] = playlist_by_id["songs"]
-        playlist["colabs"] = playlist_by_id["colabs"]
-    return playlists
-
-
-def build_complete_response_for_playlists(test_client, response, **kwargs):
-    if response.status_code > 299:
-        return response
-
-    playlists = response.json()
-    populated_playlists = populate_playlists(test_client, playlists, **kwargs)
-    resp = requests.models.Response()
-    resp.status_code = response.status_code
-    resp._content = json.dumps(populated_playlists, indent=2).encode("utf-8")
-    return resp
-
-
-def match_wrappeable_album_endpoints(endpoint):
-    if endpoint == f"{API_VERSION_PREFIX}/albums/" or endpoint.startswith(
-        f"{API_VERSION_PREFIX}/albums/?"
-    ):
-        return True
-    if endpoint == f"{API_VERSION_PREFIX}/my_albums/":
-        return True
-    return False
-
-
-def match_wrappeable_playlist_endpoints(endpoint):
-    if endpoint == f"{API_VERSION_PREFIX}/playlists/" or endpoint.startswith(
-        f"{API_VERSION_PREFIX}/playlists/?"
-    ):
-        return True
-    if endpoint == f"{API_VERSION_PREFIX}/my_playlists/":
-        return True
-    return False
-
-
-def client_wrapper(test_client, *args, **kwargs):
-    with_pagination = kwargs.pop("with_pagination", False)
-    if with_pagination:
-        return test_client.get(*args, **kwargs)
-    else:
-        endpoint = args[0]
-        response = test_client.get(*args, **kwargs)
-        if response.status_code > 299:
-            return response
-
-        if response.status_code < 299 and "items" in response.json():
-            items = response.json()["items"]
-            resp = requests.models.Response()
-            resp.status_code = response.status_code
-            resp._content = json.dumps(items, indent=2).encode("utf-8")
-            response = resp
-
-        if match_wrappeable_album_endpoints(endpoint):
-            return build_complete_response_for_albums(test_client, response, **kwargs)
-        elif match_wrappeable_playlist_endpoints(endpoint):
-            return build_complete_response_for_playlists(
-                test_client, response, **kwargs
-            )
-
-        return response
-
-
-# Workaround for expecting GET /albums/, /playlists/, /my_albums/ and /my_playlists/
-# to also return the songs
-class ClientPaginationWrapper:
-    def __init__(self, test_client):
-        self.test_client = test_client
-
-    def __getattr__(self, item):
-        if item == "get":
-
-            def wrapper(*args, **kwargs):
-                return client_wrapper(self.test_client, *args, **kwargs)
-
-            return wrapper
-        return getattr(self.test_client, item)
-
-
 # For some reason, nested transactions don't work with playlists tests,
 # so I need to drop the tables and create them again in that module
 @pytest.fixture()
@@ -251,7 +147,7 @@ def client(session):
 
     app.dependency_overrides[get_db] = override_get_db
     try:
-        yield ClientPaginationWrapper(TestClient(app))
+        yield TestClient(app)
     finally:
         del app.dependency_overrides[get_db]
 

@@ -1,3 +1,4 @@
+from tests import utils
 from tests.utils import API_VERSION_PREFIX, post_user, post_streaming
 
 
@@ -27,9 +28,8 @@ def test_post_streaming_with_img(client, custom_requests_mock):
     response_post = post_streaming(client, "streaming_user_id", include_img=True)
     assert response_post.status_code == 200
 
-    response_get = client.get(
-        f"{API_VERSION_PREFIX}/streamings/",
-        headers={"api_key": "key", "uid": "streaming_user_id"},
+    response_get = utils.get_streamings(
+        client
     )
     streamings = response_get.json()
 
@@ -66,9 +66,8 @@ def test_user_post_streaming_twice_should_fail(client, custom_requests_mock):
 def test_get_streamings_without_streamings(client, custom_requests_mock):
     post_user(client, "streaming_user_id", "streaming_user_name")
 
-    response_get = client.get(
-        f"{API_VERSION_PREFIX}/streamings/",
-        headers={"api_key": "key", "uid": "streaming_user_id"},
+    response_get = utils.get_streamings(
+        client
     )
     streamings = response_get.json()
 
@@ -83,9 +82,8 @@ def test_get_streamings_with_one_streaming(client, custom_requests_mock):
     response_post = post_streaming(client, "streaming_user_id")
     assert response_post.status_code == 200
 
-    response_get = client.get(
-        f"{API_VERSION_PREFIX}/streamings/",
-        headers={"api_key": "key", "uid": "listener_user_id"},
+    response_get = utils.get_streamings(
+        client
     )
 
     assert response_post.status_code == 200
@@ -107,9 +105,8 @@ def test_get_streamings_with_two_streamings(client, custom_requests_mock):
     response_post = post_streaming(client, "streaming_user_id_2")
     assert response_post.status_code == 200
 
-    response_get = client.get(
-        f"{API_VERSION_PREFIX}/streamings/",
-        headers={"api_key": "key", "uid": "streaming_user_id"},
+    response_get = utils.get_streamings(
+        client
     )
     streamings = response_get.json()
 
@@ -129,9 +126,8 @@ def test_delete_streaming_deletes_it(client, custom_requests_mock):
     )
     assert response_delete.status_code == 200
 
-    response_get = client.get(
-        f"{API_VERSION_PREFIX}/streamings/",
-        headers={"api_key": "key", "uid": "streaming_user_id"},
+    response_get = utils.get_streamings(
+        client
     )
     streamings = response_get.json()
 
@@ -156,10 +152,8 @@ def test_token_for_streamer_is_not_the_same_as_token_for_listener(
     response_post = post_streaming(client, "streaming_user_id")
     token_streamer = response_post.json()
 
-    response_get = client.get(
-        f"{API_VERSION_PREFIX}/streamings/",
-        headers={"api_key": "key", "uid": "listener_user_id"},
-    )
+    response_get = utils.get_streamings(client)
+
     streamings = response_get.json()
 
     assert response_get.status_code == 200

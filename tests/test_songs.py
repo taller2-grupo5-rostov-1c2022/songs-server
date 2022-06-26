@@ -103,7 +103,7 @@ def test_delete_song(client, custom_requests_mock):
 
     assert response_delete.status_code == 200
 
-    response_get = utils.get_song_by_id(client, song_id, uid="song_creator_id")
+    response_get = utils.get_song(client, song_id)
 
     assert response_get.status_code == 404
 
@@ -130,13 +130,13 @@ def test_get_my_songs_without_results(client, custom_requests_mock):
 
     post_song(client, uid="another_creator_id", name="happy_song")
 
-    response_get = client.get(
-        API_VERSION_PREFIX + "/my_songs/",
-        headers={"api_key": "key", "uid": "song_creator_id"},
+    response_get = utils.get_my_songs(
+        client, uid="song_creator_id"
     )
+    songs = response_get.json()
 
     assert response_get.status_code == 200
-    assert len(response_get.json()) == 0
+    assert len(songs) == 0
 
 
 def test_get_my_songs_should_retrieve_two_songs(client, custom_requests_mock):
@@ -144,9 +144,8 @@ def test_get_my_songs_should_retrieve_two_songs(client, custom_requests_mock):
     post_song(client, uid="song_creator_id", name="happy_song")
     post_song(client, uid="song_creator_id", name="sad_song")
 
-    response_get = client.get(
-        API_VERSION_PREFIX + "/my_songs/",
-        headers={"api_key": "key", "uid": "song_creator_id"},
+    response_get = utils.get_my_songs(
+        client, uid="song_creator_id"
     )
 
     body_songs = response_get.json()

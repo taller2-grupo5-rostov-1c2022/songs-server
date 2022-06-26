@@ -1,4 +1,5 @@
-from typing import Optional, List, Type
+import requests
+from typing import Optional, List, Type, Union
 import json
 from fastapi.testclient import TestClient
 
@@ -250,33 +251,27 @@ def block_song(client, song_id: int):
 
 def post_review(
     client,
-    uid: str,
     album_id: int,
+    uid: Optional[str] = None,
     text: Optional[str] = "review text",
     score: Optional[int] = 5,
+    role: Optional[str] = "listener",
 ):
-    response_post = client.post(
-        f"{API_VERSION_PREFIX}/albums/{album_id}/reviews/",
+    return post_json(
+        client,
+        f"/albums/{album_id}/reviews/",
         json={"text": text, "score": score},
-        headers={"api_key": "key", "uid": uid},
+        uid=uid,
+        role=role,
     )
-    return response_post
 
 
 def add_song_to_favorites(client, uid, song_id):
-    response_post = client.post(
-        f"{API_VERSION_PREFIX}/users/{uid}/favorites/songs/?song_id={song_id}",
-        headers={"api_key": "key", "uid": uid},
-    )
-    return response_post
+    return post(client, f"/users/{uid}/favorites/songs/?song_id={song_id}", uid=uid, data={})
 
 
 def get_favorite_songs(client, uid, role="listener"):
-    response = client.get(
-        f"{API_VERSION_PREFIX}/users/{uid}/favorites/songs/",
-        headers={"api_key": "key", "uid": uid, "role": role},
-    )
-    return response
+    return get(client, f"/users/{uid}/favorites/songs/", uid=uid, role=role)
 
 
 def delete_song_from_favorites(client, uid, song_id):
@@ -288,11 +283,7 @@ def delete_song_from_favorites(client, uid, song_id):
 
 
 def get_favorite_albums(client, uid, role: Optional[str] = "listener"):
-    response = client.get(
-        f"{API_VERSION_PREFIX}/users/{uid}/favorites/albums/",
-        headers={"api_key": "key", "uid": uid, "role": role},
-    )
-    return response
+    return get(client, f"/users/{uid}/favorites/albums/", uid=uid, role=role)
 
 
 def add_album_to_favorites(client, uid, album_id):
@@ -320,37 +311,19 @@ def add_song_to_album(client, uid: str, song_id: int, album_id: int):
 
 def block_album(client, id: int):
     post_user(client, "__blocker__id__", user_name="__blocker__name__")
-    response_put = client.put(
-        f"{API_VERSION_PREFIX}/albums/{id}",
-        data={"blocked": True},
-        headers={"api_key": "key", "uid": "__blocker__id__", "role": "admin"},
-    )
-    assert response_put.status_code == 200
-    return response_put
+    return put(client, f"/albums/{id}", data={"blocked": True}, uid="__blocker__id__", role="admin")
 
 
 def remove_album_from_favorites(client, uid, album_id):
-    response_delete = client.delete(
-        f"{API_VERSION_PREFIX}/users/{uid}/favorites/albums/?album_id={album_id}",
-        headers={"api_key": "key", "uid": uid},
-    )
-    return response_delete
+    return delete(client, f"/users/{uid}/favorites/albums/?album_id={album_id}", uid=uid)
 
 
 def get_favorite_playlists(client, uid, role="listener"):
-    response = client.get(
-        f"{API_VERSION_PREFIX}/users/{uid}/favorites/playlists/",
-        headers={"api_key": "key", "uid": uid, "role": role},
-    )
-    return response
+    return get(client, f"/users/{uid}/favorites/playlists/", uid=uid, role=role)
 
 
 def add_playlist_to_favorites(client, uid, playlist_id, role="listener"):
-    response_post = client.post(
-        f"{API_VERSION_PREFIX}/users/{uid}/favorites/playlists/?playlist_id={playlist_id}",
-        headers={"api_key": "key", "uid": uid, "role": role},
-    )
-    return response_post
+    return post(client, f"/users/{uid}/favorites/playlists/?playlist_id={playlist_id}", uid=uid, role=role, data={})
 
 
 def block_playlist(client, playlist_id: int):
@@ -416,11 +389,7 @@ def post_user_with_sub_level(client, user_id: str, user_name: str, sub_level: in
 
 
 def delete_user(client, user_id: str):
-    response = client.delete(
-        f"{API_VERSION_PREFIX}/users/{user_id}",
-        headers={"api_key": "key", "uid": user_id},
-    )
-    return response
+    return delete(client, f"/users/{user_id}", uid=user_id)
 
 
 def get(
@@ -429,14 +398,33 @@ def get(
     uid: Optional[str] = None,
     role: str = "listener",
     unwrap=False,
+    offset: Optional[Union[int, str]] = None,
+    limit: Optional[Union[int, str]] = None,
 ):
     if uid is None:
         uid = get_uid_or_create(client)
+    headers = {
+        "api_key": "key",
+        "uid": uid,
+        "role": role,
+    }
+    params = {}
+    if limit is not None:
+        params["offset"] = offset
+        params["limit"] = limit
 
     response = client.get(
         f"{API_VERSION_PREFIX}{endpoint}",
-        headers={"api_key": "key", "uid": uid, "role": role},
+        headers=headers,
+        params=params,
     )
+    if limit is None:
+        if response.status_code < 299 and "items" in response.json():
+            items = response.json()["items"]
+            resp = requests.models.Response()
+            resp.status_code = response.status_code
+            resp._content = json.dumps(items, indent=2).encode("utf-8")
+            response = resp
     if unwrap:
         return response.json()
     return response
@@ -574,6 +562,8 @@ def search_albums(
     uid: Optional[str] = None,
     role: str = "listener",
     unwrap=False,
+    offset: Optional[int] = None,
+    limit: Optional[int] = None,
 ):
     endpoint = "/albums/"
     for search_term, value in (
@@ -584,7 +574,8 @@ def search_albums(
     ):
         if value is not None:
             endpoint = add_query(endpoint, f"{search_term}={value}")
-    return get(client, endpoint, uid=uid, role=role, unwrap=unwrap)
+
+    return get(client, endpoint, uid=uid, role=role, unwrap=unwrap, offset=offset, limit=limit)
 
 
 def get_my_albums(client, uid: str, role: str = "listener", unwrap=False):
@@ -627,8 +618,10 @@ def get_my_songs(
     uid: Optional[str] = None,
     role: str = "listener",
     unwrap=False,
+    offset: Optional[int] = None,
+    limit: Optional[int] = None,
 ):
-    return get(client, f"/my_songs/", uid, role, unwrap)
+    return get(client, f"/my_songs/", uid, role, unwrap, offset=offset, limit=limit)
 
 
 def search_songs(
@@ -641,6 +634,8 @@ def search_songs(
     uid: Optional[str] = None,
     role: str = "listener",
     unwrap=False,
+    offset: Optional[int] = None,
+    limit: Optional[int] = None,
 ):
     endpoint = "/songs/"
     for search_term, value in (
@@ -653,7 +648,7 @@ def search_songs(
         if value is not None:
             endpoint = add_query(endpoint, f"{search_term}={value}")
 
-    return get(client, endpoint, uid=uid, role=role, unwrap=unwrap)
+    return get(client, endpoint, uid=uid, role=role, unwrap=unwrap, offset=offset, limit=limit)
 
 
 def put_song(
@@ -713,6 +708,8 @@ def search_playlists(
     creator: Optional[str] = None,
     role: str = "listener",
     unwrap=False,
+    offset: Optional[int] = None,
+    limit: Optional[int] = None,
 ):
     endpoint = "/playlists/"
     for search_term, value in (
@@ -721,7 +718,7 @@ def search_playlists(
     ):
         if value is not None:
             endpoint = add_query(endpoint, f"{search_term}={value}")
-    return get(client, endpoint, uid=uid, role=role, unwrap=unwrap)
+    return get(client, endpoint, uid=uid, role=role, unwrap=unwrap, offset=offset, limit=limit)
 
 
 def put_playlist(
@@ -759,7 +756,7 @@ def add_playlist_song(
         {"song_id": song_id},
         uid,
         role,
-        unwrap,
+        unwrap=unwrap,
     )
 
 
@@ -804,7 +801,7 @@ def post_users(client: Type[TestClient], *users_ids):
 
 
 def get_uid_or_create(client):
-    users = client.get(f"{API_VERSION_PREFIX}/users", headers={"api_key": "key"}).json()
+    users = client.get(f"{API_VERSION_PREFIX}/users", headers={"api_key": "key"}).json()["items"]
     if len(users) == 0:
         uid = "__user_id__"
         post_user(client, uid)
@@ -819,14 +816,16 @@ def get_album_comments(
     uid: Optional[str] = None,
     role: str = "listener",
     unwrap=False,
+    offset: Optional[int] = None,
+    limit: Optional[int] = None,
 ):
-    return get(client, f"/albums/{album_id}/comments/", uid, role, unwrap)
+    return get(client, f"/albums/{album_id}/comments/", uid, role, unwrap, offset, limit)
 
 
 def post_comment(
     client,
     album_id: int,
-    message: str,
+    message: str = "comment_text",
     parent_id: Optional[int] = None,
     uid: Optional[str] = None,
     role: str = "listener",
@@ -847,12 +846,11 @@ def post_comment(
 
 def get_user_comments(
     client,
-    user_id: str,
     uid: Optional[str] = None,
     role: str = "listener",
     unwrap=False,
 ):
-    return get(client, f"/users/{user_id}/comments/", uid, role, unwrap)
+    return get(client, f"/users/comments/", uid, role, unwrap)
 
 
 def put_comment(
@@ -871,3 +869,96 @@ def put_comment(
         role,
         unwrap,
     )
+
+
+def delete_comment(
+    client,
+    comment_id: int,
+    uid: Optional[str] = None,
+    role: str = "listener",
+    unwrap=False,
+):
+    return delete(client, f"/albums/comments/{comment_id}/", uid, role, unwrap)
+
+
+def get_reviews_of_album(
+    client,
+    album_id: int,
+    uid: Optional[str] = None,
+    role: str = "listener",
+    unwrap=False,
+    offset: Optional[str] = None,
+    limit: Optional[int] = None,
+):
+    return get(client, f"/albums/{album_id}/reviews/", uid, role, unwrap, offset, limit)
+
+
+def delete_review_of_album(
+    client,
+    album_id: int,
+    uid: Optional[str] = None,
+    role: str = "listener",
+    unwrap=False,
+):
+    return delete(client, f"/albums/{album_id}/reviews/", uid, role, unwrap)
+
+
+def put_review_of_album(
+    client,
+    album_id: int,
+    text: Optional[str],
+    score: Optional[int],
+    uid: Optional[str] = None,
+    role: str = "listener",
+    unwrap=False,
+):
+    return put_json(
+        client,
+        f"/albums/{album_id}/reviews/",
+        {"text": text, "score": score},
+        uid,
+        role,
+        unwrap,
+    )
+
+
+def get_users(
+    client,
+    uid: Optional[str] = None,
+    role: str = "listener",
+    unwrap=False,
+    offset: Optional[int] = None,
+    limit: Optional[int] = None,
+):
+    return get(client, f"/users/", uid, role, unwrap, offset, limit)
+
+
+def get_user_reviews(
+    client,
+    uid: Optional[str] = None,
+    role: str = "listener",
+    unwrap=False,
+    offset: Optional[int] = None,
+    limit: Optional[int] = None,
+):
+    return get(client, f"/users/{uid}/reviews/", uid, role, unwrap, offset, limit)
+
+
+def get_user(
+    client,
+    uid: Optional[str] = None,
+    role: str = "listener",
+    unwrap=False,
+):
+    return get(client, f"/users/{uid}/", uid, role, unwrap)
+
+
+def get_streamings(
+    client,
+    uid: Optional[str] = None,
+    role: str = "listener",
+    unwrap=False,
+    offset: Optional[int] = None,
+    limit: Optional[int] = None,
+):
+    return get(client, f"/streamings/", uid, role, unwrap, offset, limit)

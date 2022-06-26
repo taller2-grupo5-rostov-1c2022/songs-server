@@ -187,9 +187,7 @@ def test_colab_should_be_able_to_edit_playlist(
     )
     assert response_put.status_code == 200
 
-    response_get = utils.get_playlist(
-        client, playlist_id
-    )
+    response_get = utils.get_playlist(client, playlist_id)
 
     playlist = response_get.json()
 
@@ -204,9 +202,7 @@ def test_owner_should_be_able_to_delete_its_own_playlist(
 ):
     playlist_id = wrap_post_playlist(client)
 
-    response_delete = utils.delete_playlist(
-        client, playlist_id, "user_playlist_owner"
-    )
+    response_delete = utils.delete_playlist(client, playlist_id, "user_playlist_owner")
 
     assert response_delete.status_code == 200
 
@@ -216,9 +212,7 @@ def test_user_should_not_be_able_to_delete_other_users_playlist(
 ):
     playlist_id = wrap_post_playlist(client)
 
-    response_delete = utils.delete_playlist(
-        client, playlist_id, "user_playlist_colab"
-    )
+    response_delete = utils.delete_playlist(client, playlist_id, "user_playlist_colab")
 
     assert response_delete.status_code == 403
 
@@ -227,13 +221,9 @@ def test_owner_should_be_able_to_add_songs_to_its_own_playlist(
     client, custom_requests_mock, drop_tables
 ):
     playlist_id = wrap_post_playlist(client)
-    song_id = post_song(
-        client, uid="user_playlist_owner", name="new_song_for_playlist"
-    )
+    song_id = post_song(client, uid="user_playlist_owner", name="new_song_for_playlist")
 
-    utils.add_playlist_song(
-        client, playlist_id, song_id, "user_playlist_owner"
-    )
+    utils.add_playlist_song(client, playlist_id, song_id, "user_playlist_owner")
 
     response_get = utils.get_playlist(client, playlist_id)
 
@@ -280,9 +270,7 @@ def test_user_can_not_add_songs_to_playlist_if_song_does_not_exist(
 
 def test_owner_can_delete_song_from_playlist(client, custom_requests_mock, drop_tables):
     playlist_id = wrap_post_playlist(client)
-    song_id = post_song(
-        client, uid="user_playlist_owner", name="new_song_for_playlist"
-    )
+    song_id = post_song(client, uid="user_playlist_owner", name="new_song_for_playlist")
 
     # add song to playlist
     response_post = utils.add_playlist_song(
@@ -303,10 +291,8 @@ def test_get_my_playlists_returns_playlists_in_which_i_am_colab(
 ):
     wrap_post_playlist(client)
 
-    response_get = client.get(
-        f"{API_VERSION_PREFIX}/my_playlists/",
-        headers={"api_key": "key", "uid": "user_playlist_colab"},
-    )
+    response_get = utils.get_my_playlists(client, "user_playlist_colab")
+
     assert response_get.status_code == 200
     assert len(response_get.json()) == 1
     assert response_get.json()[0]["name"] == "playlist_name"
@@ -315,9 +301,8 @@ def test_get_my_playlists_returns_playlists_in_which_i_am_colab(
 def test_get_playlists_by_colab(client, custom_requests_mock, drop_tables):
     wrap_post_playlist(client)
 
-    response_get = client.get(
-        f"{API_VERSION_PREFIX}/playlists/?colab=user_playlist_colab",
-        headers={"api_key": "key", "uid": "user_playlist_colab"},
+    response_get = utils.search_playlists(
+        client, colab="user_playlist_colab"
     )
     playlists = response_get.json()
 
@@ -334,9 +319,7 @@ def test_add_playlists_colab(client, custom_requests_mock, drop_tables):
         client, playlist_id, "user_playlist_new_colab", "user_playlist_owner"
     )
 
-    response_get = utils.get_playlist(
-        client, playlist_id
-    )
+    response_get = utils.get_playlist(client, playlist_id)
     playlist = response_get.json()
 
     assert response_get.status_code == 200
@@ -407,9 +390,7 @@ def test_get_playlist_by_id_return_expected_songs(
         client, playlist_name="playlist_name_3", uid="user_playlist_owner"
     )
 
-    response_get = utils.get_playlist(
-        client, playlist_id_2, "user_playlist_owner"
-    )
+    response_get = utils.get_playlist(client, playlist_id_2, "user_playlist_owner")
 
     playlist = response_get.json()
     assert response_get.status_code == 200
@@ -441,9 +422,7 @@ def test_admin_can_add_song_to_playlist_of_another_user(
     )
     assert response_post.status_code == 200
 
-    response_get = utils.get_playlist(
-        client, playlist_id, "user_playlist_owner"
-    )
+    response_get = utils.get_playlist(client, playlist_id, "user_playlist_owner")
     playlist = response_get.json()
 
     assert response_get.status_code == 200

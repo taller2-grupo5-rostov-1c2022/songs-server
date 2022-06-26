@@ -31,9 +31,7 @@ class UserModel(CRUDMixin):
 
     songs = relationship("SongModel", back_populates="creator")
     albums = relationship("AlbumModel", back_populates="creator")
-    comments = relationship(
-        "CommentModel", back_populates="commenter"
-    )
+    comments = relationship("CommentModel", back_populates="commenter")
 
     my_playlists = relationship("PlaylistModel", back_populates="creator")
     other_playlists = relationship(
