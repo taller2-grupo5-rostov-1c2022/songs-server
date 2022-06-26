@@ -1,5 +1,6 @@
+from src.exceptions import MessageException
 import datetime
-from fastapi import HTTPException, status
+from fastapi import status
 from sqlalchemy import Column, ForeignKey, Integer, String, TIMESTAMP
 from sqlalchemy.orm import relationship, Session
 from .crud_template import CRUDMixin
@@ -82,7 +83,7 @@ class CommentModel(CRUDMixin):
             pdb, _id, raise_if_not_found=raise_if_not_found, **kwargs
         )
         if comment.album.blocked and not role.can_see_blocked():
-            raise HTTPException(
+            raise MessageException(
                 status_code=status.HTTP_404_NOT_FOUND, detail="Comment not found"
             )
         return comment

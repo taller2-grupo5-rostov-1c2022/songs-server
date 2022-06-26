@@ -1,7 +1,8 @@
+from src.exceptions import MessageException
 from src import utils, schemas
 from src.database.access import get_db
 from fastapi import APIRouter
-from fastapi import Depends, HTTPException, Query
+from fastapi import Depends, Query
 from sqlalchemy.orm import Session
 from src.database import models
 
@@ -18,7 +19,7 @@ def post_review(
     pdb: Session = Depends(get_db),
 ):
     if review_info.text is None and review_info.score is None:
-        raise HTTPException(
+        raise MessageException(
             status_code=422, detail="Text and score cannot be None at the same time"
         )
 
@@ -26,7 +27,7 @@ def post_review(
         pdb, album=album, reviewer=user, raise_if_not_found=False
     )
     if review:
-        raise HTTPException(
+        raise MessageException(
             status_code=403,
             detail=f"User {user.id} already reviewed in album {album.id}",
         )

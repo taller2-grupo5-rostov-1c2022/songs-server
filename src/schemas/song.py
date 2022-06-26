@@ -1,3 +1,4 @@
+from src.exceptions import MessageException
 from pydantic import BaseModel
 from typing import Optional, List
 
@@ -12,7 +13,7 @@ from .resource import (
 )
 from src.database import models
 from sqlalchemy.orm import Session
-from fastapi import Form, HTTPException, status
+from fastapi import Form, status
 
 
 __all__ = [
@@ -78,7 +79,7 @@ class SongCreate(ResourceCreate):
         **kwargs
     ):
         if not role.can_post_content():
-            raise HTTPException(
+            raise MessageException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="You are not allowed to post content",
             )

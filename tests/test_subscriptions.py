@@ -116,7 +116,7 @@ def test_user_attempts_to_subscribe_to_premium_but_payment_fails(
     )
 
     assert response.status_code == 400
-    assert response.json()["detail"] == '{"error": "Payment failed"}'
+    assert response.json()["message"] == '{"error": "Payment failed"}'
 
     response = client.get(
         f"{API_VERSION_PREFIX}/users/user_id", headers={"api_key": "key"}
@@ -133,7 +133,7 @@ def test_post_user_but_wallet_creation_fails(client, custom_requests_mock):
     response = post_user(client, "user_id", "user_name")
 
     assert response.status_code == 400
-    assert response.json()["detail"] == '{"error": "Wallet creation failed"}'
+    assert response.json()["message"] == '{"error": "Wallet creation failed"}'
 
 
 def test_user_with_free_subscription_cannot_get_premium_song(

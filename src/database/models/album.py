@@ -1,3 +1,4 @@
+from src.exceptions import MessageException
 from typing import Optional
 
 from sqlalchemy import Column, ForeignKey, String
@@ -7,7 +8,7 @@ from . import templates, tables
 from .artist import ArtistModel
 from .song import SongModel
 from sqlalchemy.orm.query import Query
-from fastapi import HTTPException, status
+from fastapi import status
 from sqlalchemy.sql import func
 
 from ...schemas.pagination import CustomPage
@@ -75,7 +76,7 @@ class AlbumModel(templates.ResourceWithFile):
         )
 
         if len(albums) == 0:
-            raise HTTPException(
+            raise MessageException(
                 status_code=status.HTTP_404_NOT_FOUND, detail="Album not found"
             )
         album = albums[0]
@@ -84,7 +85,7 @@ class AlbumModel(templates.ResourceWithFile):
             and not role.can_see_blocked()
             and album.creator_id != requester_id
         ):
-            raise HTTPException(
+            raise MessageException(
                 status_code=status.HTTP_404_NOT_FOUND, detail="Album not found"
             )
         return album

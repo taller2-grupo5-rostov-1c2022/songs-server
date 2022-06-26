@@ -1,9 +1,10 @@
+from src.exceptions import MessageException
 from typing import Type, Any
 from pydantic import BaseModel
 import inspect
 from fastapi import Form
 import json
-from fastapi import HTTPException, Depends
+from fastapi import Depends
 from pydantic.fields import ModelField
 
 
@@ -66,11 +67,11 @@ def decode_json_list(json_string: str, can_be_empty: bool):
     try:
         elements = json.loads(json_string)
         if len(elements) == 0 and not can_be_empty:
-            raise HTTPException(
+            raise MessageException(
                 status_code=422, detail="There must be at least one element"
             )
     except ValueError as e:
-        raise HTTPException(
+        raise MessageException(
             status_code=422, detail="Artists string is not well encoded"
         ) from e
     return elements

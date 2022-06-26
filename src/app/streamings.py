@@ -1,7 +1,8 @@
+from src.exceptions import MessageException
 from src.firebase.access import get_bucket
 from src.database.access import get_db
 from fastapi import APIRouter, UploadFile, File, Form
-from fastapi import Depends, HTTPException, Query
+from fastapi import Depends, Query
 from typing import Optional
 from sqlalchemy.orm import Session
 from src.database import models
@@ -38,12 +39,12 @@ def post_streaming(
     """Create a new streaming and returns the publisher token"""
 
     if not role.can_stream():
-        raise HTTPException(
+        raise MessageException(
             status_code=403, detail="You don't have the permission to stream"
         )
 
     if user.streaming:
-        raise HTTPException(status_code=403, detail="You already have a streaming")
+        raise MessageException(status_code=403, detail="You already have a streaming")
 
     (artist_token, listener_token) = utils.streaming.build_streaming_tokens(user.id)
 
@@ -73,6 +74,6 @@ def delete_streaming(
     streaming = user.streaming
 
     if streaming is None:
-        raise HTTPException(status_code=404, detail="You don't have a streaming")
+        raise MessageException(status_code=404, detail="You don't have a streaming")
 
     streaming.delete(pdb, bucket=bucket)

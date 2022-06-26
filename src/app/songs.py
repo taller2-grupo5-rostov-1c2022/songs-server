@@ -1,6 +1,7 @@
+from src.exceptions import MessageException
 from src import roles, utils, schemas
 from fastapi import APIRouter
-from fastapi import Depends, File, HTTPException, UploadFile, status, Query
+from fastapi import Depends, File, UploadFile, status, Query
 
 from src.firebase.access import get_bucket
 from sqlalchemy.orm import Session
@@ -63,7 +64,7 @@ def update_song(
     """Updates song by its id"""
 
     if song.creator_id != uid and not role.can_edit_everything():
-        raise HTTPException(
+        raise MessageException(
             status_code=403,
             detail=f"User '{uid} attempted to edit song of user with ID {song.creator_id}",
         )
@@ -106,7 +107,7 @@ def delete_song(
     """Deletes a song by its id"""
 
     if song.creator_id != uid and not role.can_delete_everything():
-        raise HTTPException(
+        raise MessageException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail=f"User '{uid} attempted to delete song of user with ID {song.creator_id}",
         )

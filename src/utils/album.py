@@ -1,5 +1,6 @@
+from src.exceptions import MessageException
 from src.database import models
-from fastapi import HTTPException, Depends, status
+from fastapi import Depends, status
 from .. import roles, utils
 from src import schemas
 from src.database.access import get_db
@@ -43,13 +44,13 @@ def validate_songs_for_album(
         for song_id in songs_ids:
             song = models.SongModel.get(pdb, _id=song_id, role=role)
             if song.creator_id != uid:
-                raise HTTPException(
+                raise MessageException(
                     status_code=status.HTTP_403_FORBIDDEN,
                     detail="You can only add songs you created",
                 )
             if album is not None:
                 if song.album_id is not None and song.album_id != album.id:
-                    raise HTTPException(
+                    raise MessageException(
                         status_code=status.HTTP_403_FORBIDDEN,
                         detail="You can only add songs that belong to the same album or none",
                     )

@@ -1,13 +1,13 @@
+from src.exceptions import MessageException
 import datetime
 from typing import Optional
-from google.cloud.storage.bucket import Bucket
 from sqlalchemy import Boolean, Column, Integer, String
 from typing.io import IO
 from src import roles
 from src.constants import SUPPRESS_BLOB_ERRORS
 from src.database.models.crud_template import CRUDMixin
 from sqlalchemy.orm import Session
-from fastapi import HTTPException, status
+from fastapi import status
 from sqlalchemy.orm.query import Query
 
 
@@ -38,7 +38,7 @@ class ResourceModel(CRUDMixin):
         role: roles.Role = kwargs.pop("role")
         resource = super().get(pdb, *args, **kwargs)
         if resource.blocked and not role.can_see_blocked():
-            raise HTTPException(
+            raise MessageException(
                 status_code=status.HTTP_404_NOT_FOUND, detail="Resource not found"
             )
         return resource
@@ -50,7 +50,7 @@ class ResourceModel(CRUDMixin):
         if not role.can_see_blocked():
             for resource in resources:
                 if resource.blocked:
-                    raise HTTPException(
+                    raise MessageException(
                         status_code=status.HTTP_404_NOT_FOUND,
                         detail="Resource not found",
                     )
@@ -80,7 +80,7 @@ class ResourceModel(CRUDMixin):
         blocked = kwargs.get("blocked", None)
         role: roles.Role = kwargs.pop("role")
         if blocked is not None and not role.can_block():
-            raise HTTPException(
+            raise MessageException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="You are not allowed to block this resource",
             )
@@ -122,7 +122,7 @@ class ResourceWithFile(ResourceCreatorModel):
         except Exception as e:
             if not SUPPRESS_BLOB_ERRORS:
                 self.expire(pdb)
-                raise HTTPException(
+                raise MessageException(
                     status_code=status.HTTP_507_INSUFFICIENT_STORAGE,
                     detail=f"Could not upload file for for resource {self.__class__.name} with id {self.id}: {e}",
                 )
@@ -133,7 +133,7 @@ class ResourceWithFile(ResourceCreatorModel):
             blob.delete()
         except Exception as e:
             if not SUPPRESS_BLOB_ERRORS:
-                raise HTTPException(
+                raise MessageException(
                     status_code=status.HTTP_507_INSUFFICIENT_STORAGE,
                     detail=f"Could not delete file for for resource {self.__class__.name} with id {self.id}: {e}",
                 )

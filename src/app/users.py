@@ -1,8 +1,9 @@
+from src.exceptions import MessageException
 from src import roles, utils, schemas
 from src.database.access import get_db
 from typing import Optional
 from fastapi import APIRouter
-from fastapi import Depends, HTTPException, UploadFile, Query
+from fastapi import Depends, UploadFile, Query
 from sqlalchemy.orm import Session
 from src.firebase.access import get_bucket, get_auth
 from src.database import models
@@ -80,7 +81,7 @@ def put_user(
 ):
     """Updates a user and returns its id or 404 if not found or 403 if not authorized to update"""
     if uid != user_to_modify.id:
-        raise HTTPException(
+        raise MessageException(
             status_code=403,
             detail=f"User with id {uid} attempted to modify user of id {user_to_modify.id}",
         )
@@ -110,7 +111,7 @@ def delete_user(
     """Deletes a user given its id or 404 if not found or 403 if not authorized to delete"""
 
     if user.id != uid_to_delete:
-        raise HTTPException(
+        raise MessageException(
             status_code=403,
             detail=f"User with id {user.id} attempted to delete user of id {uid_to_delete}",
         )
@@ -127,6 +128,6 @@ def make_artist(
     auth=Depends(get_auth),
 ):
     if role != roles.Role.listener():
-        raise HTTPException(status_code=405, detail="Not a listener")
+        raise MessageException(status_code=405, detail="Not a listener")
 
     auth.set_custom_user_claims(uid, {"role": str(roles.Role.artist())})

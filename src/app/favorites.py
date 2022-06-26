@@ -1,6 +1,7 @@
+from src.exceptions import MessageException
 from src import roles, utils, schemas
 from src.database.access import get_db
-from fastapi import APIRouter, status, HTTPException, Query
+from fastapi import APIRouter, status, Query
 from fastapi import Depends
 from sqlalchemy.orm import Session
 from src.database import models
@@ -29,7 +30,7 @@ def add_song_to_favorites(
     pdb: Session = Depends(get_db),
 ):
     if song in user.favorite_songs:
-        raise HTTPException(
+        raise MessageException(
             status_code=status.HTTP_409_CONFLICT, detail="Song already in favorites"
         )
     user.add_favorite_song(pdb, song=song)
@@ -43,7 +44,7 @@ def remove_song_from_favorites(
     pdb: Session = Depends(get_db),
 ):
     if song not in user.favorite_songs:
-        raise HTTPException(
+        raise MessageException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Song not in favorites"
         )
     user.remove_favorite_song(pdb, song=song)
@@ -68,7 +69,7 @@ def add_album_to_favorites(
     pdb: Session = Depends(get_db),
 ):
     if album in user.favorite_albums:
-        raise HTTPException(
+        raise MessageException(
             status_code=status.HTTP_409_CONFLICT, detail="Album already in favorites"
         )
     user.add_favorite_album(pdb, album=album)
@@ -82,7 +83,7 @@ def remove_album_from_favorites(
     pdb: Session = Depends(get_db),
 ):
     if album not in user.favorite_albums:
-        raise HTTPException(
+        raise MessageException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Album not in favorites"
         )
     return user.remove_favorite_album(pdb, album=album)
@@ -107,7 +108,7 @@ def add_playlist_to_favorites(
     pdb: Session = Depends(get_db),
 ):
     if playlist in user.favorite_playlists:
-        raise HTTPException(
+        raise MessageException(
             status_code=status.HTTP_409_CONFLICT, detail="Playlist already in favorites"
         )
     user.add_favorite_playlist(pdb, playlist=playlist)
@@ -121,7 +122,7 @@ def remove_playlist_from_favorites(
     pdb: Session = Depends(get_db),
 ):
     if playlist not in user.favorite_playlists:
-        raise HTTPException(
+        raise MessageException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Playlist not in favorites"
         )
     return user.remove_favorite_playlist(pdb, playlist=playlist)

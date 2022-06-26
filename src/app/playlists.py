@@ -1,5 +1,6 @@
+from src.exceptions import MessageException
 from src import roles, utils, schemas
-from fastapi import Depends, HTTPException, status, APIRouter, Query
+from fastapi import Depends, status, APIRouter, Query
 from sqlalchemy.orm import Session
 from src.database.access import get_db
 from src.database import models
@@ -73,7 +74,7 @@ def update_playlist(
     """Updates playlist by its id"""
 
     if not utils.playlist.can_edit_playlist(playlist, role, uid):
-        raise HTTPException(
+        raise MessageException(
             status_code=status.HTTP_403_FORBIDDEN, detail="You can't edit this playlist"
         )
 
@@ -90,7 +91,7 @@ def delete_playlist(
     """Deletes a playlist by its id"""
 
     if playlist.creator_id != uid and not role.can_edit_everything():
-        raise HTTPException(
+        raise MessageException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail=f"User '{uid} attempted to delete playlist of user with ID {playlist.creator_id}",
         )
@@ -108,7 +109,7 @@ def remove_song_from_playlist(
     """Removes a song from a playlist"""
 
     if not utils.playlist.can_edit_playlist(playlist, role, uid):
-        raise HTTPException(
+        raise MessageException(
             status_code=status.HTTP_403_FORBIDDEN, detail="You can't edit this playlist"
         )
 
@@ -126,7 +127,7 @@ def add_song_to_playlist(
     """Adds a song to a playlist"""
 
     if not utils.playlist.can_edit_playlist(playlist, role, uid):
-        raise HTTPException(
+        raise MessageException(
             status_code=status.HTTP_403_FORBIDDEN, detail="You can't edit this playlist"
         )
 
@@ -145,7 +146,7 @@ def add_colab_to_playlist(
     """Adds a song to a playlist"""
 
     if uid != playlist.creator_id:
-        raise HTTPException(
+        raise MessageException(
             status_code=403,
             detail=f"User {uid} attempted to add a colab to playlist of user with ID {playlist.creator_id}",
         )

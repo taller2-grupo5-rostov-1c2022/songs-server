@@ -1,10 +1,9 @@
-from contextvars import ContextVar
+from src.exceptions import MessageException
 
 from sqlalchemy.orm import Session
 from src.database.access import Base
-from fastapi import HTTPException, status
+from fastapi import status
 from sqlalchemy.orm.query import Query
-from fastapi_pagination.ext.sqlalchemy import _to_dict, paginate, paginate_query
 
 from src.schemas.pagination import CustomPage
 
@@ -26,7 +25,7 @@ class CRUDMixin(Base):
         """Get a record by its id."""
         item = pdb.query(cls).get(_id)
         if item is None and raise_if_not_found:
-            raise HTTPException(
+            raise MessageException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"Item of {cls.__name__} with id {_id} not found",
             )
@@ -37,7 +36,7 @@ class CRUDMixin(Base):
         ids = kwargs.pop("ids")
         items = pdb.query(cls).filter(cls.id.in_(ids)).all()
         if len(items) != len(ids):
-            raise HTTPException(
+            raise MessageException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"Some items of {cls.__name__} not found",
             )

@@ -1,5 +1,6 @@
+from src.exceptions import MessageException
 from fastapi import APIRouter
-from fastapi import Depends, File, HTTPException, UploadFile, Query
+from fastapi import Depends, File, UploadFile, Query
 
 from src.firebase.access import get_bucket
 from sqlalchemy.orm import Session
@@ -93,7 +94,7 @@ def update_album(
     """Updates album by its id"""
 
     if album.creator_id != uid and not role.can_edit_everything():
-        raise HTTPException(
+        raise MessageException(
             status_code=403,
             detail=f"User {uid} attempted to edit album of user with ID {album.creator_id}",
         )
@@ -116,7 +117,7 @@ def delete_album(
     """Deletes an album by its id"""
 
     if uid != album.creator_id and not role.can_delete_everything():
-        raise HTTPException(
+        raise MessageException(
             status_code=403,
             detail=f"User '{uid} attempted to delete album of user with ID {album.creator_id}",
         )

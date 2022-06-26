@@ -1,11 +1,11 @@
+from src.exceptions import MessageException
 from sqlalchemy import Column, ForeignKey, Integer, String
 from sqlalchemy.orm import relationship, Session
 
 from . import AlbumModel
 from .crud_template import CRUDMixin
-from fastapi import HTTPException, status
+from fastapi import status
 from .user import UserModel
-from fastapi_pagination import paginate
 
 from ...schemas.pagination import CustomPage
 
@@ -33,7 +33,7 @@ class ReviewModel(CRUDMixin):
 
         review = pdb.query(cls).get((reviewer.id, album.id))
         if raise_if_not_found and review is None:
-            raise HTTPException(
+            raise MessageException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Review not found for this album and user",
             )

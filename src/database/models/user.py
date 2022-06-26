@@ -1,3 +1,4 @@
+from src.exceptions import MessageException
 from datetime import datetime
 
 from sqlalchemy import Column, Integer, String, DateTime
@@ -8,7 +9,7 @@ from . import tables
 from .song import SongModel
 from .album import AlbumModel
 from .crud_template import CRUDMixin
-from fastapi import HTTPException, status
+from fastapi import status
 
 from ... import roles
 from ...constants import SUPPRESS_BLOB_ERRORS
@@ -81,7 +82,7 @@ class UserModel(CRUDMixin):
         except Exception as e:
             if not SUPPRESS_BLOB_ERRORS:
                 self.expire(pdb)
-                raise HTTPException(
+                raise MessageException(
                     status_code=status.HTTP_507_INSUFFICIENT_STORAGE,
                     detail=f"Could not upload pfp for for User with id {self.id}: {e}",
                 )
@@ -92,7 +93,7 @@ class UserModel(CRUDMixin):
             blob.delete()
         except Exception as e:
             if not SUPPRESS_BLOB_ERRORS:
-                raise HTTPException(
+                raise MessageException(
                     status_code=status.HTTP_507_INSUFFICIENT_STORAGE,
                     detail=f"Could not delete pfp for for User with id {self.id}: {e}",
                 )

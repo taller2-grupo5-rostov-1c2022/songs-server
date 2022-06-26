@@ -1,11 +1,11 @@
-import datetime
+from src.exceptions import MessageException
 
 from sqlalchemy import Column, ForeignKey, String
 from sqlalchemy.orm import relationship, Session
 from typing.io import IO
 
 from .crud_template import CRUDMixin
-from fastapi import HTTPException, status
+from fastapi import status
 
 from ...constants import SUPPRESS_BLOB_ERRORS
 
@@ -29,7 +29,7 @@ class StreamingModel(CRUDMixin):
         except Exception as e:
             if not SUPPRESS_BLOB_ERRORS:
                 self.expire(pdb)
-                raise HTTPException(
+                raise MessageException(
                     status_code=status.HTTP_507_INSUFFICIENT_STORAGE,
                     detail=f"Could not upload streaming img: {e}",
                 )
@@ -41,7 +41,7 @@ class StreamingModel(CRUDMixin):
             blob.delete()
         except Exception as e:
             if not SUPPRESS_BLOB_ERRORS:
-                raise HTTPException(
+                raise MessageException(
                     status_code=status.HTTP_507_INSUFFICIENT_STORAGE,
                     detail=f"Could not upload streaming img: {e}",
                 )

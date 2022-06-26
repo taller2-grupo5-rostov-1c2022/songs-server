@@ -1,5 +1,6 @@
-from fastapi import Header, Depends, Form, HTTPException, status
+from fastapi import Header, Depends, Form, status
 from sqlalchemy.orm import Session
+from src.exceptions import MessageException
 
 from src import schemas
 from src.database import models
@@ -24,7 +25,7 @@ def retrieve_user_info(
 
     user = models.UserModel.get(pdb, _id=uid, raise_if_not_found=False)
     if user is not None:
-        raise HTTPException(
+        raise MessageException(
             status_code=status.HTTP_409_CONFLICT, detail="User already exists"
         )
     user_info = schemas.UserCreate(

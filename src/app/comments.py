@@ -1,7 +1,8 @@
+from src.exceptions import MessageException
 from src import utils
 from src import schemas
 from fastapi import APIRouter
-from fastapi import Depends, HTTPException
+from fastapi import Depends
 from sqlalchemy.orm import Session
 from src.database.access import get_db
 from src.database import models
@@ -46,7 +47,7 @@ def edit_album_comment(
     uid: str = Depends(utils.user.retrieve_uid),
 ):
     if comment.commenter_id != uid:
-        raise HTTPException(
+        raise MessageException(
             status_code=403, detail="You are not allowed to edit this comment"
         )
 
@@ -62,7 +63,7 @@ def delete_album_comment(
     pdb: Session = Depends(get_db),
 ):
     if comment.commenter_id != uid:
-        raise HTTPException(
+        raise MessageException(
             status_code=403, detail="You are not allowed to delete this comment"
         )
 

@@ -1,6 +1,7 @@
+from src.exceptions import MessageException
 import datetime
 
-from fastapi import APIRouter, Depends, Body, HTTPException
+from fastapi import APIRouter, Depends, Body
 from typing import List
 
 from src import utils, schemas, roles
@@ -43,7 +44,7 @@ def refresh_subscription(
 ):
     """Refreshes subscription"""
     if not role.can_revoke():
-        raise HTTPException(
+        raise MessageException(
             status_code=403, detail="You are not allowed to revoke subscriptions"
         )
     utils.subscription.revoke_subscription(pdb, now)
