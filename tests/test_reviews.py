@@ -11,8 +11,8 @@ from tests.utils import (
 
 
 def test_post_review(client, custom_requests_mock):
-    post_user(client, uid="creator_id", user_name="creator_name")
-    post_user(client, uid="reviewer_id", user_name="reviewer_name")
+    post_user(client, "creator_id", user_name="creator_name")
+    post_user(client, "reviewer_id", user_name="reviewer_name")
     album_id = post_album(client, uid="creator_id").json()["id"]
 
     response_post = client.post(
@@ -29,8 +29,8 @@ def test_post_review(client, custom_requests_mock):
 
 
 def test_get_reviews_with_zero_reviews(client, custom_requests_mock):
-    post_user(client, uid="creator_id", user_name="creator_name")
-    post_user(client, uid="reviewer_id", user_name="reviewer_name")
+    post_user(client, "creator_id", user_name="creator_name")
+    post_user(client, "reviewer_id", user_name="reviewer_name")
     album_id = post_album(client, uid="creator_id").json()["id"]
 
     response_get = client.get(
@@ -44,8 +44,8 @@ def test_get_reviews_with_zero_reviews(client, custom_requests_mock):
 
 
 def test_get_reviews_with_one_review(client, custom_requests_mock):
-    post_user(client, uid="creator_id", user_name="creator_name")
-    post_user(client, uid="reviewer_id", user_name="reviewer_name")
+    post_user(client, "creator_id", user_name="creator_name")
+    post_user(client, "reviewer_id", user_name="reviewer_name")
     album_id = post_album(client, uid="creator_id").json()["id"]
 
     response_post = post_review(
@@ -72,9 +72,9 @@ def test_get_reviews_with_one_review(client, custom_requests_mock):
 
 
 def test_get_reviews_with_many_reviews(client, custom_requests_mock):
-    post_user(client, uid="creator_id", user_name="creator_name")
-    post_user(client, uid="bad_user_id", user_name="bad_reviewer_name")
-    post_user(client, uid="nice_user_id", user_name="nice_reviewer_name")
+    post_user(client, "creator_id", user_name="creator_name")
+    post_user(client, "bad_user_id", user_name="bad_reviewer_name")
+    post_user(client, "nice_user_id", user_name="nice_reviewer_name")
 
     album_id = post_album(client, uid="creator_id").json()["id"]
 
@@ -104,8 +104,8 @@ def test_get_reviews_with_many_reviews(client, custom_requests_mock):
 
 
 def test_user_cannot_post_more_than_one_review(client, custom_requests_mock):
-    post_user(client, uid="creator_id", user_name="creator_name")
-    post_user(client, uid="reviewer_id", user_name="reviewer_name")
+    post_user(client, "creator_id", user_name="creator_name")
+    post_user(client, "reviewer_id", user_name="reviewer_name")
 
     album_id = post_album(client, uid="creator_id").json()["id"]
 
@@ -119,8 +119,8 @@ def test_user_cannot_post_more_than_one_review(client, custom_requests_mock):
 
 
 def test_post_review_without_text(client, custom_requests_mock):
-    post_user(client, uid="creator_id", user_name="creator_name")
-    post_user(client, uid="reviewer_id", user_name="reviewer_name")
+    post_user(client, "creator_id", user_name="creator_name")
+    post_user(client, "reviewer_id", user_name="reviewer_name")
 
     album_id = post_album(client, uid="creator_id").json()["id"]
     response_post = post_review(
@@ -134,8 +134,8 @@ def test_post_review_without_text(client, custom_requests_mock):
 
 
 def test_post_review_without_score(client, custom_requests_mock):
-    post_user(client, uid="creator_id", user_name="creator_name")
-    post_user(client, uid="reviewer_id", user_name="reviewer_name")
+    post_user(client, "creator_id", user_name="creator_name")
+    post_user(client, "reviewer_id", user_name="reviewer_name")
 
     album_id = post_album(client, uid="creator_id").json()["id"]
     response_post = post_review(
@@ -149,8 +149,8 @@ def test_post_review_without_score(client, custom_requests_mock):
 
 
 def test_post_review_without_text_or_score_should_fail(client, custom_requests_mock):
-    post_user(client, uid="creator_id", user_name="creator_name")
-    post_user(client, uid="reviewer_id", user_name="reviewer_name")
+    post_user(client, "creator_id", user_name="creator_name")
+    post_user(client, "reviewer_id", user_name="reviewer_name")
 
     album_id = post_album(client, uid="creator_id").json()["id"]
     response_post = post_review(
@@ -161,8 +161,8 @@ def test_post_review_without_text_or_score_should_fail(client, custom_requests_m
 
 
 def test_post_review_does_not_affect_another_album(client, custom_requests_mock):
-    post_user(client, uid="creator_id", user_name="creator_name")
-    post_user(client, uid="reviewer_id", user_name="reviewer_name")
+    post_user(client, "creator_id", user_name="creator_name")
+    post_user(client, "reviewer_id", user_name="reviewer_name")
 
     album_id_1 = post_album(client, uid="creator_id").json()["id"]
     album_id_2 = post_album(client, uid="creator_id").json()["id"]
@@ -180,8 +180,8 @@ def test_post_review_does_not_affect_another_album(client, custom_requests_mock)
 
 
 def test_edit_review_without_review_should_fail(client, custom_requests_mock):
-    post_user(client, uid="creator_id", user_name="creator_name")
-    post_user(client, uid="reviewer_id", user_name="reviewer_name")
+    post_user(client, "creator_id", user_name="creator_name")
+    post_user(client, "reviewer_id", user_name="reviewer_name")
 
     album_id = post_album(client, uid="creator_id").json()["id"]
 
@@ -194,8 +194,8 @@ def test_edit_review_without_review_should_fail(client, custom_requests_mock):
 
 
 def test_edit_review_in_album_with_one_review(client, custom_requests_mock):
-    post_user(client, uid="creator_id", user_name="creator_name")
-    post_user(client, uid="reviewer_id", user_name="reviewer_name")
+    post_user(client, "creator_id", user_name="creator_name")
+    post_user(client, "reviewer_id", user_name="reviewer_name")
 
     album_id = post_album(client, uid="creator_id").json()["id"]
     post_review(
@@ -221,9 +221,9 @@ def test_edit_review_in_album_with_one_review(client, custom_requests_mock):
 
 
 def test_edit_review_in_album_with_many_reviews(client, custom_requests_mock):
-    post_user(client, uid="creator_id", user_name="creator_name")
-    post_user(client, uid="first_reviewer_id", user_name="first_reviewer_name")
-    post_user(client, uid="second_reviewer_id", user_name="second_reviewer_name")
+    post_user(client, "creator_id", user_name="creator_name")
+    post_user(client, "first_reviewer_id", user_name="first_reviewer_name")
+    post_user(client, "second_reviewer_id", user_name="second_reviewer_name")
 
     album_id = post_album(client, uid="creator_id").json()["id"]
     post_review(
@@ -253,9 +253,9 @@ def test_edit_review_in_album_with_many_reviews(client, custom_requests_mock):
 
 
 def test_cannot_edit_review_of_another_user(client, custom_requests_mock):
-    post_user(client, uid="creator_id", user_name="creator_name")
-    post_user(client, uid="first_reviewer_id", user_name="first_reviewer_name")
-    post_user(client, uid="second_reviewer_id", user_name="second_reviewer_name")
+    post_user(client, "creator_id", user_name="creator_name")
+    post_user(client, "first_reviewer_id", user_name="first_reviewer_name")
+    post_user(client, "second_reviewer_id", user_name="second_reviewer_name")
 
     album_id = post_album(client, uid="creator_id").json()["id"]
     post_review(
@@ -286,8 +286,8 @@ def test_cannot_edit_review_of_another_user(client, custom_requests_mock):
 def test_delete_review_in_album_with_zero_reviews_should_fail(
     client, custom_requests_mock
 ):
-    post_user(client, uid="creator_id", user_name="creator_name")
-    post_user(client, uid="reviewer_id", user_name="reviewer_name")
+    post_user(client, "creator_id", user_name="creator_name")
+    post_user(client, "reviewer_id", user_name="reviewer_name")
 
     album_id = post_album(client, uid="creator_id").json()["id"]
 
@@ -299,8 +299,8 @@ def test_delete_review_in_album_with_zero_reviews_should_fail(
 
 
 def test_delete_review_in_album_with_review(client, custom_requests_mock):
-    post_user(client, uid="creator_id", user_name="creator_name")
-    post_user(client, uid="reviewer_id", user_name="reviewer_name")
+    post_user(client, "creator_id", user_name="creator_name")
+    post_user(client, "reviewer_id", user_name="reviewer_name")
 
     album_id = post_album(client, uid="creator_id").json()["id"]
     post_review(
@@ -327,8 +327,8 @@ def test_post_review_in_album_with_blocked_songs_should_not_remove_songs(
 ):
     # This is a white box test
 
-    post_user(client, uid="creator_id", user_name="creator_name")
-    post_user(client, uid="reviewer_id", user_name="reviewer_name")
+    post_user(client, "creator_id", user_name="creator_name")
+    post_user(client, "reviewer_id", user_name="reviewer_name")
 
     song_id = post_song(client, uid="creator_id", name="happy_song").json()["id"]
     album_id = post_album(client, uid="creator_id", songs_ids=[song_id]).json()["id"]
@@ -345,8 +345,8 @@ def test_post_review_in_album_with_blocked_songs_should_not_remove_songs(
 
 
 def test_post_one_review_affects_album_score(client, custom_requests_mock):
-    post_user(client, uid="creator_id", user_name="creator_name")
-    post_user(client, uid="reviewer_id", user_name="reviewer_name")
+    post_user(client, "creator_id", user_name="creator_name")
+    post_user(client, "reviewer_id", user_name="reviewer_name")
 
     album_id = post_album(client, uid="creator_id").json()["id"]
     post_review(client, "reviewer_id", album_id, "bad song", 2)
@@ -361,9 +361,9 @@ def test_post_one_review_affects_album_score(client, custom_requests_mock):
 
 
 def test_post_many_reviews_affects_score(client, custom_requests_mock):
-    post_user(client, uid="creator_id", user_name="creator_name")
-    post_user(client, uid="first_reviewer_id", user_name="first_reviewer_name")
-    post_user(client, uid="second_reviewer_id", user_name="second_reviewer_name")
+    post_user(client, "creator_id", user_name="creator_name")
+    post_user(client, "first_reviewer_id", user_name="first_reviewer_name")
+    post_user(client, "second_reviewer_id", user_name="second_reviewer_name")
 
     album_id = post_album(client, uid="creator_id").json()["id"]
     post_review(client, "first_reviewer_id", album_id, "bad song", 2)
@@ -381,8 +381,8 @@ def test_post_many_reviews_affects_score(client, custom_requests_mock):
 def test_user_with_two_reviews_in_different_albums_edits_one_review(
     client, custom_requests_mock
 ):
-    post_user(client, uid="creator_id", user_name="creator_name")
-    post_user(client, uid="reviewer_id", user_name="reviewer_name")
+    post_user(client, "creator_id", user_name="creator_name")
+    post_user(client, "reviewer_id", user_name="reviewer_name")
 
     album_id_1 = post_album(client, uid="creator_id").json()["id"]
     album_id_2 = post_album(client, uid="creator_id").json()["id"]
@@ -409,8 +409,8 @@ def test_user_with_two_reviews_in_different_albums_edits_one_review(
 
 
 def test_delete_album_deletes_reviews(client, custom_requests_mock):
-    post_user(client, uid="creator_id", user_name="creator_name")
-    post_user(client, uid="reviewer_id", user_name="reviewer_name")
+    post_user(client, "creator_id", user_name="creator_name")
+    post_user(client, "reviewer_id", user_name="reviewer_name")
 
     album_id = post_album(client, uid="creator_id").json()["id"]
     post_review(client, "reviewer_id", album_id, "bad song", 2)

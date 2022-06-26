@@ -18,7 +18,7 @@ class CommentModel(CRUDMixin):
     created_at = Column(TIMESTAMP, nullable=False)
 
     commenter = relationship("UserModel", back_populates="comments")
-    commenter_id = Column(String, ForeignKey("users.id"))
+    commenter_id = Column(String, ForeignKey("users.id", ondelete="SET NULL"))
 
     album = relationship("AlbumModel", back_populates="comments")
     album_id = Column(Integer, ForeignKey("albums.id"), nullable=False)

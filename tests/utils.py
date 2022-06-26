@@ -1,5 +1,6 @@
-from typing import Optional, List
+from typing import Optional, List, Type
 import json
+from fastapi.testclient import TestClient
 
 from src.main import API_VERSION_PREFIX
 
@@ -14,7 +15,7 @@ def header(uid, role=None):
 def post_user(
     client,
     uid,
-    user_name,
+    user_name="generic_user_name",
     location="location",
     interests="interests",
     include_pfp=False,
@@ -48,7 +49,7 @@ def post_user(
 
 def post_song(
     client,
-    uid: Optional[str] = "song_creator_id",
+    uid: Optional[str] = None,
     name: Optional[str] = "song_name",
     description: Optional[str] = "song_desc",
     artists: Optional[List[str]] = None,
@@ -59,7 +60,11 @@ def post_song(
     headers: Optional[dict] = None,
     role: Optional[str] = "artist",
     album_id: Optional[int] = None,
+    unwrap_id: bool = True,
 ):
+    if uid is None:
+        uid = get_uid_or_create(client)
+
     if headers is None:
         headers = header(uid, role=role)
     if artists is None:
@@ -83,31 +88,20 @@ def post_song(
         )
 
     if blocked:
-        response_put = client.put(
+        client.put(
             f"{API_VERSION_PREFIX}/songs/{response_post.json()['id']}",
             data={"blocked": True},
             headers={"api_key": "key", "uid": uid, "role": "admin"},
         )
-        assert response_put.status_code == 200
+
+    if unwrap_id:
+        return response_post.json()["id"]
     return response_post
-
-
-def get_song_by_id(
-    client, song_id: int, uid: Optional[str] = None, role: Optional[str] = "listener"
-):
-    if uid is None:
-        uid = post_user(client, "__user_id__", "__user_name__").json()["id"]
-
-    response = client.get(
-        f"{API_VERSION_PREFIX}/songs/{song_id}",
-        headers={"api_key": "key", "uid": uid, "role": role},
-    )
-    return response
 
 
 def post_album(
     client,
-    uid: Optional[str] = "album_creator_id",
+    uid: Optional[str] = None,
     name: Optional[str] = "album_name",
     description: Optional[str] = "album_desc",
     genre: Optional[str] = "album_genre",
@@ -116,7 +110,11 @@ def post_album(
     blocked: bool = False,
     headers: Optional[dict] = None,
     role: Optional[str] = "artist",
+    unwrap_id: bool = True,
 ):
+    if uid is None:
+        uid = get_uid_or_create(client)
+
     if headers is None:
         headers = header(uid, role=role)
     if songs_ids is None:
@@ -144,12 +142,14 @@ def post_album(
             headers={"api_key": "key", "uid": uid, "role": "admin"},
         )
         assert response_put.status_code == 200
+    if unwrap_id:
+        return response_post.json()["id"]
     return response_post
 
 
 def post_album_with_song(
     client,
-    uid="user_id",
+    uid: Optional[str] = None,
     album_name="album_name",
     album_genre="album_genre",
     song_name="song_name",
@@ -158,7 +158,7 @@ def post_album_with_song(
 ):
     song_id = post_song(
         client, uid=uid, name=song_name, genre=song_genre, sub_level=song_sub_level
-    ).json()["id"]
+    )
     return post_album(
         client,
         uid=uid,
@@ -170,15 +170,17 @@ def post_album_with_song(
 
 def post_playlist(
     client,
-    uid: Optional[str] = "playlist_creator_id",
+    uid: Optional[str] = None,
     playlist_name: Optional[str] = "playlist_name",
     description: Optional[str] = "playlist_desc",
     songs_ids: Optional[List[str]] = None,
     colabs_ids: Optional[List[str]] = None,
     blocked: Optional[bool] = False,
     headers: Optional[dict] = None,
+    unwrap_id: bool = True,
 ):
-
+    if uid is None:
+        uid = get_uid_or_create(client)
     if headers is None:
         headers = {
             "api_key": "key",
@@ -207,29 +209,36 @@ def post_playlist(
             headers={"api_key": "key", "uid": uid, "role": "admin"},
         )
         assert response_put.status_code == 200
+
+    if unwrap_id:
+        return response_post.json()["id"]
     return response_post
 
 
-def wrap_post_playlist(client):
-    post_user(client, uid="user_playlist_owner", user_name="Ricardito")
-    post_user(client, uid="user_playlist_colab", user_name="Fernandito")
-    res_1 = post_song(client, uid="user_playlist_owner", name="song_for_playlist1")
-    res_2 = post_song(client, uid="user_playlist_owner", name="song_for_playlist2")
+def wrap_post_playlist(client, unwrap_id: bool = True):
+    post_user(client, "user_playlist_owner", user_name="Ricardito")
+    post_user(client, "user_playlist_colab", user_name="Fernandito")
+    playlist_id_1 = post_song(
+        client, uid="user_playlist_owner", name="song_for_playlist1"
+    )
+    playlist_id_2 = post_song(
+        client, uid="user_playlist_owner", name="song_for_playlist2"
+    )
     colabs_id = ["user_playlist_colab"]
-    songs_id = [res_1.json()["id"], res_2.json()["id"]]
-    response_post = post_playlist(
+    songs_id = [playlist_id_1, playlist_id_2]
+    return post_playlist(
         client,
         uid="user_playlist_owner",
         playlist_name="playlist_name",
         description="playlist_description",
         colabs_ids=colabs_id,
         songs_ids=songs_id,
+        unwrap_id=unwrap_id,
     )
-    return response_post
 
 
 def block_song(client, song_id: int):
-    post_user(client, uid="__blocker__id__", user_name="__blocker__name__")
+    post_user(client, "__blocker__id__", user_name="__blocker__name__")
     response_put = client.put(
         f"{API_VERSION_PREFIX}/songs/{song_id}",
         data={"blocked": True},
@@ -310,7 +319,7 @@ def add_song_to_album(client, uid: str, song_id: int, album_id: int):
 
 
 def block_album(client, id: int):
-    post_user(client, uid="__blocker__id__", user_name="__blocker__name__")
+    post_user(client, "__blocker__id__", user_name="__blocker__name__")
     response_put = client.put(
         f"{API_VERSION_PREFIX}/albums/{id}",
         data={"blocked": True},
@@ -345,7 +354,7 @@ def add_playlist_to_favorites(client, uid, playlist_id, role="listener"):
 
 
 def block_playlist(client, playlist_id: int):
-    post_user(client, uid="__blocker__id__", user_name="__blocker__name__")
+    post_user(client, "__blocker__id__", user_name="__blocker__name__")
     response_put = client.put(
         f"{API_VERSION_PREFIX}/playlists/{playlist_id}",
         data={"blocked": True},
@@ -361,15 +370,6 @@ def remove_playlist_from_favorites(client, uid, playlist_id):
         headers={"api_key": "key", "uid": uid},
     )
     return response_delete
-
-
-def post_comment(client, uid: str, album_id: int, text: str, parent_id: int = None):
-    response_post = client.post(
-        f"{API_VERSION_PREFIX}/albums/{album_id}/comments/",
-        json={"text": text, "parent_id": parent_id},
-        headers={"api_key": "key", "uid": uid},
-    )
-    return response_post
 
 
 def post_streaming(client, uid: str, name="streaming_name", include_img=False):
@@ -421,3 +421,453 @@ def delete_user(client, user_id: str):
         headers={"api_key": "key", "uid": user_id},
     )
     return response
+
+
+def get(
+    client,
+    endpoint: str,
+    uid: Optional[str] = None,
+    role: str = "listener",
+    unwrap=False,
+):
+    if uid is None:
+        uid = get_uid_or_create(client)
+
+    response = client.get(
+        f"{API_VERSION_PREFIX}{endpoint}",
+        headers={"api_key": "key", "uid": uid, "role": role},
+    )
+    if unwrap:
+        return response.json()
+    return response
+
+
+def post(
+    client,
+    endpoint: str,
+    data: dict,
+    uid: Optional[str] = None,
+    role: str = "listener",
+    files: Optional[dict] = None,
+    unwrap: bool = False,
+):
+    if uid is None:
+        uid = get_uid_or_create(client)
+
+    response = client.post(
+        f"{API_VERSION_PREFIX}{endpoint}",
+        headers={"api_key": "key", "uid": uid, "role": role},
+        data=data,
+        files=files,
+    )
+    if unwrap:
+        return response.json()
+    return response
+
+
+def post_json(
+    client,
+    endpoint: str,
+    json: dict,
+    uid: Optional[str] = None,
+    role: str = "listener",
+    files: Optional[dict] = None,
+    unwrap: bool = False,
+):
+    if uid is None:
+        uid = get_uid_or_create(client)
+
+    response = client.post(
+        f"{API_VERSION_PREFIX}{endpoint}",
+        headers={"api_key": "key", "uid": uid, "role": role},
+        json=json,
+        files=files,
+    )
+    if unwrap:
+        return response.json()
+    return response
+
+
+def delete(
+    client,
+    endpoint: str,
+    uid: Optional[str] = None,
+    role: str = "listener",
+    unwrap=False,
+):
+    if uid is None:
+        uid = get_uid_or_create(client)
+
+    response = client.delete(
+        f"{API_VERSION_PREFIX}{endpoint}",
+        headers={"api_key": "key", "uid": uid, "role": role},
+    )
+    if unwrap:
+        return response.json()
+    return response
+
+
+def put(
+    client,
+    endpoint: str,
+    data: dict,
+    uid: Optional[str] = None,
+    role: str = "listener",
+    unwrap=False,
+):
+    if uid is None:
+        uid = get_uid_or_create(client)
+
+    response = client.put(
+        f"{API_VERSION_PREFIX}{endpoint}",
+        data=data,
+        headers={"api_key": "key", "uid": uid, "role": role},
+    )
+    if unwrap:
+        return response.json()
+    return response
+
+
+def put_json(
+    client,
+    endpoint: str,
+    json: dict,
+    uid: Optional[str] = None,
+    role: str = "listener",
+    unwrap=False,
+):
+    if uid is None:
+        uid = get_uid_or_create(client)
+
+    response = client.put(
+        f"{API_VERSION_PREFIX}{endpoint}",
+        json=json,
+        headers={"api_key": "key", "uid": uid, "role": role},
+    )
+    if unwrap:
+        return response.json()
+    return response
+
+
+def get_album(
+    client,
+    album_id: int,
+    uid: Optional[str] = None,
+    role: str = "listener",
+    unwrap=False,
+):
+    return get(client, f"/albums/{album_id}", uid, role, unwrap)
+
+
+def add_query(endpoint: str, query: str):
+    if "?" in endpoint:
+        return f"{endpoint}&{query}"
+    return f"{endpoint}?{query}"
+
+
+def search_albums(
+    client,
+    artist: Optional[str] = None,
+    genre: Optional[str] = None,
+    name: Optional[str] = None,
+    creator: Optional[str] = None,
+    uid: Optional[str] = None,
+    role: str = "listener",
+    unwrap=False,
+):
+    endpoint = "/albums/"
+    for search_term, value in (
+        ("artist", artist),
+        ("genre", genre),
+        ("name", name),
+        ("creator", creator),
+    ):
+        if value is not None:
+            endpoint = add_query(endpoint, f"{search_term}={value}")
+    return get(client, endpoint, uid=uid, role=role, unwrap=unwrap)
+
+
+def get_my_albums(client, uid: str, role: str = "listener", unwrap=False):
+    return get(client, f"/my_albums/", uid, role, unwrap)
+
+
+def put_album(
+    client,
+    album_id: int,
+    data: dict,
+    uid: Optional[str] = None,
+    role: str = "listener",
+    unwrap=False,
+):
+    return put(client, f"/albums/{album_id}", data, uid, role, unwrap)
+
+
+def delete_album(
+    client,
+    album_id: int,
+    uid: Optional[str] = None,
+    role: str = "listener",
+    unwrap=False,
+):
+    return delete(client, f"/albums/{album_id}", uid, role, unwrap)
+
+
+def get_song(
+    client,
+    song_id: int,
+    uid: Optional[str] = None,
+    role: Optional[str] = "listener",
+    unwrap=False,
+):
+    return get(client, f"/songs/{song_id}", uid, role, unwrap)
+
+
+def get_my_songs(
+    client,
+    uid: Optional[str] = None,
+    role: str = "listener",
+    unwrap=False,
+):
+    return get(client, f"/my_songs/", uid, role, unwrap)
+
+
+def search_songs(
+    client,
+    artist: Optional[str] = None,
+    genre: Optional[str] = None,
+    name: Optional[str] = None,
+    creator: Optional[str] = None,
+    sub_level: Optional[int] = None,
+    uid: Optional[str] = None,
+    role: str = "listener",
+    unwrap=False,
+):
+    endpoint = "/songs/"
+    for search_term, value in (
+        ("artist", artist),
+        ("genre", genre),
+        ("name", name),
+        ("creator", creator),
+        ("sub_level", sub_level),
+    ):
+        if value is not None:
+            endpoint = add_query(endpoint, f"{search_term}={value}")
+
+    return get(client, endpoint, uid=uid, role=role, unwrap=unwrap)
+
+
+def put_song(
+    client,
+    song_id: int,
+    data: dict,
+    uid: Optional[str] = None,
+    role: str = "listener",
+    unwrap=False,
+):
+    return put(client, f"/songs/{song_id}", data, uid, role, unwrap)
+
+
+def delete_song(
+    client,
+    song_id: int,
+    uid: Optional[str] = None,
+    role: str = "listener",
+    unwrap=False,
+):
+    return delete(client, f"/songs/{song_id}", uid, role, unwrap)
+
+
+def get_songs_by_creator(
+    client,
+    creator_id: str,
+    uid: Optional[str] = None,
+    role: str = "listener",
+    unwrap=False,
+):
+    return get(client, f"/songs/?creator={creator_id}", uid, role, unwrap)
+
+
+def get_playlist(
+    client,
+    playlist_id: int,
+    uid: Optional[str] = None,
+    role: str = "listener",
+    unwrap=False,
+):
+    return get(client, f"/playlists/{playlist_id}", uid, role, unwrap)
+
+
+def get_my_playlists(
+    client,
+    uid: Optional[str] = None,
+    role: str = "listener",
+    unwrap=False,
+):
+    return get(client, f"/my_playlists/", uid, role, unwrap)
+
+
+def search_playlists(
+    client,
+    uid: Optional[str] = None,
+    colab: Optional[str] = None,
+    creator: Optional[str] = None,
+    role: str = "listener",
+    unwrap=False,
+):
+    endpoint = "/playlists/"
+    for search_term, value in (
+        ("colab", colab),
+        ("creator", creator),
+    ):
+        if value is not None:
+            endpoint = add_query(endpoint, f"{search_term}={value}")
+    return get(client, endpoint, uid=uid, role=role, unwrap=unwrap)
+
+
+def put_playlist(
+    client,
+    playlist_id: int,
+    data: dict,
+    uid: Optional[str] = None,
+    role: str = "listener",
+    unwrap=False,
+):
+    return put(client, f"/playlists/{playlist_id}", data, uid, role, unwrap)
+
+
+def delete_playlist(
+    client,
+    playlist_id: int,
+    uid: Optional[str] = None,
+    role: str = "listener",
+    unwrap=False,
+):
+    return delete(client, f"/playlists/{playlist_id}", uid, role, unwrap)
+
+
+def add_playlist_song(
+    client,
+    playlist_id: int,
+    song_id: int,
+    uid: Optional[str] = None,
+    role: str = "listener",
+    unwrap=False,
+):
+    return post(
+        client,
+        f"/playlists/{playlist_id}/songs/",
+        {"song_id": song_id},
+        uid,
+        role,
+        unwrap,
+    )
+
+
+def remove_playlist_song(
+    client,
+    playlist_id: int,
+    song_id: int,
+    uid: Optional[str] = None,
+    role: str = "listener",
+    unwrap=False,
+):
+    return delete(
+        client,
+        f"/playlists/{playlist_id}/songs/{song_id}/",
+        uid,
+        role,
+        unwrap,
+    )
+
+
+def add_playlist_colab(
+    client,
+    playlist_id: int,
+    colab_id: str,
+    uid: Optional[str] = None,
+    role: str = "listener",
+    unwrap=False,
+):
+    return post(
+        client,
+        f"/playlists/{playlist_id}/colabs/",
+        {"colab_id": colab_id},
+        uid,
+        role,
+        unwrap=unwrap,
+    )
+
+
+def post_users(client: Type[TestClient], *users_ids):
+    for user_id in users_ids:
+        post_user(client, user_id)
+
+
+def get_uid_or_create(client):
+    users = client.get(f"{API_VERSION_PREFIX}/users", headers={"api_key": "key"}).json()
+    if len(users) == 0:
+        uid = "__user_id__"
+        post_user(client, uid)
+    else:
+        uid = users[0]["id"]
+    return uid
+
+
+def get_album_comments(
+    client,
+    album_id: int,
+    uid: Optional[str] = None,
+    role: str = "listener",
+    unwrap=False,
+):
+    return get(client, f"/albums/{album_id}/comments/", uid, role, unwrap)
+
+
+def post_comment(
+    client,
+    album_id: int,
+    message: str,
+    parent_id: Optional[int] = None,
+    uid: Optional[str] = None,
+    role: str = "listener",
+    unwrap_id=True,
+):
+    response = post_json(
+        client,
+        f"/albums/{album_id}/comments/",
+        {"text": message, "parent_id": parent_id},
+        uid,
+        role,
+        unwrap=unwrap_id,
+    )
+    if unwrap_id:
+        return response["id"]
+    return response
+
+
+def get_user_comments(
+    client,
+    user_id: str,
+    uid: Optional[str] = None,
+    role: str = "listener",
+    unwrap=False,
+):
+    return get(client, f"/users/{user_id}/comments/", uid, role, unwrap)
+
+
+def put_comment(
+    client,
+    comment_id: int,
+    message: str,
+    uid: Optional[str] = None,
+    role: str = "listener",
+    unwrap=False,
+):
+    return put_json(
+        client,
+        f"/albums/comments/{comment_id}/",
+        {"text": message},
+        uid,
+        role,
+        unwrap,
+    )
