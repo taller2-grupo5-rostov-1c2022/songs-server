@@ -1,9 +1,7 @@
 [![Pipeline](https://github.com/taller2-grupo5-rostov-1c2022/songs-server/actions/workflows/pipeline.yml/badge.svg?branch=master)](https://github.com/taller2-grupo5-rostov-1c2022/songs-server/actions/workflows/pipeline.yml)
 [![codecov](https://codecov.io/gh/taller2-grupo5-rostov-1c2022/songs-server/branch/master/graph/badge.svg?token=LJIu1T1HQr)](https://codecov.io/gh/taller2-grupo5-rostov-1c2022/songs-server)
-[![](https://img.shields.io/badge/license-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 [![](https://img.shields.io/badge/python-3.6-blue.svg)](https://www.python.org/downloads/)
 [![](https://img.shields.io/badge/docs-fastapi-blue.svg)](https://fastapi.tiangolo.com/)
-![](https://img.shields.io/badge/version-0.1-blue.svg)
 
 # Spotifiuby Songs Server
 
@@ -140,45 +138,13 @@ and storage for testing purposes.
 
 ## Postgres
 
-- [postgresql](https://www.postgresql.org/)
-  > postgresql may be optional, im not sure. check & ammend this
-- [pgadmin](https://www.pgadmin.org/)
-
-### Credentials
-
-- Go to: Songs Server > Resources > Heroku Postgres > Settings [[Link](https://data.heroku.com/datastores/3666c9aa-cd88-4790-84e2-545a4857f0b0#administration)]
-- View Credentials
-
-### pgAdmin
-
-#### Set Up
-
-- Add New Server
-- When registering , copy the following from Heroku Postgres Credentials ([Tut](https://www.youtube.com/watch?v=MLow0gI6oNY&ab_channel=SinRuedaTecnol%C3%B3gica))
-  - Connection > Host Name <- Host
-  - Connection > Maintenance Database <- Database
-  - Advanced > DB Restrictions <- Database
-  - Connection > Username <- User
-  - Connection > Password <- Password
-
-#### SQL
-
-- [Tutorial](https://www.w3schools.com/sql/default.asp)
-
-### Environment Variables
-
 ```
 POSTGRES_URL="postgresql://{username}:{password}@{host}:{port}/{database}"
 ```
 
-### Links
+### Development
 
-- https://dev.to/andre347/how-to-easily-create-a-postgres-database-in-docker-4moj
-- https://levelup.gitconnected.com/creating-and-filling-a-postgres-db-with-docker-compose-e1607f6f882f
-
-#### Development
-
-##### Running Test Container and database
+#### Running Test Container and database
 
 ```
 sudo ./scripts/test-container.sh
@@ -186,14 +152,13 @@ sudo ./scripts/test-container.sh
 
 server needs to be stopped and rebuilt when making changes, the database persists.
 
-##### Altering database schema
+#### Altering database schema
 
 - edit
-  - `docker/sql/create_tables.sql`
   - `src/postgres/models.py`
 - delete `docker/postgres-data`
 
-##### Running test
+#### Running test
 
 ```
 sudo ./scripts/coverage-container.sh
