@@ -1,6 +1,5 @@
 import time
 
-from src.constants import STORAGE_PATH
 from tests import utils
 from tests.utils import post_song, post_user, post_album
 from tests.utils import API_VERSION_PREFIX
@@ -19,13 +18,12 @@ def test_get_songs(client, custom_requests_mock):
 
 
 def test_post_song(client, custom_requests_mock):
-    post_user(client, "song_creator_id", "song_creator")
-    response_post = post_song(client)
+    post_user(client, "song_creator_id")
+    response_post = post_song(client, unwrap_id=False)
     assert response_post.status_code == 200
     song_id = response_post.json()["id"]
 
-    response_get = utils.get_song_by_id(client, song_id, uid="song_creator_id")
-    song = response_get.json()
+    song = utils.get_song(client, song_id, "song_creator_id", unwrap=True)
 
     assert song["id"] == song_id
     assert song["name"] == "song_name"
@@ -38,126 +36,91 @@ def test_post_song(client, custom_requests_mock):
 
 
 def test_cannot_post_song_with_not_created_user(client, custom_requests_mock):
-    response_post = post_song(client)
+    response_post = post_song(client, uid="not_created_user_id", unwrap_id=False)
     assert response_post.status_code == 404
 
 
 def test_put_song(client, custom_requests_mock):
     post_user(client, "song_creator_id", "song_creator")
-    response_post = post_song(client)
-    assert response_post.status_code == 200
+    song_id = post_song(client)
 
-    response_update = client.put(
-        API_VERSION_PREFIX + "/songs/" + str(response_post.json()["id"]),
-        data={
-            "name": "updated_test_song",
-            "artists": '["updated_test_artists"]',
-        },
-        headers={
-            "api_key": "key",
-            "uid": "song_creator_id",
-        },
+    response_put = utils.put_song(
+        client,
+        song_id,
+        {"name": "updated_test_song", "artists": '["updated_test_artists"]'},
     )
-    assert response_update.status_code == 200
+    assert response_put.status_code == 200
 
-    response_get = client.get(
-        f"{API_VERSION_PREFIX}/songs/{response_post.json()['id']}",
-        headers={
-            "api_key": "key",
-            "uid": "song_creator_id",
-        },
-    )
+    song = utils.get_song(client, song_id, uid="song_creator_id", unwrap=True)
 
-    assert str(response_get.json()["id"]) == str(response_post.json()["id"])
-    assert response_get.json()["name"] == "updated_test_song"
-    assert response_get.json()["description"] == "song_desc"
-    assert response_get.json()["artists"] == [{"name": "updated_test_artists"}]
+    assert str(song["id"]) == str(song_id)
+    assert song["name"] == "updated_test_song"
+    assert song["description"] == "song_desc"
+    assert song["artists"] == [{"name": "updated_test_artists"}]
 
 
 def test_cannot_put_song_of_another_user(client, custom_requests_mock):
-    post_user(client, "song_creator_id", "song_creator")
-    post_user(client, "another_creator_id", "another_creator_name")
-    response_post = post_song(client)
+    utils.post_users(client, "song_creator_id", "another_creator_id")
 
-    response_update = client.put(
-        API_VERSION_PREFIX + "/songs/" + str(response_post.json()["id"]),
-        data={
-            "name": "updated_test_song",
-        },
-        headers={
-            "api_key": "key",
-            "uid": "another_creator_id",
-        },
+    song_id = post_song(client, uid="song_creator_id")
+
+    response_update = utils.put_song(
+        client, song_id, {"name": "updated_test_song"}, uid="another_creator_id"
     )
+
     assert response_update.status_code == 403
 
 
 def test_get_song_by_creator(client, custom_requests_mock):
-    post_user(client, "byCreator_test_user_id", "byCreator_test_user_name")
-    post_user(client, "notByCreator_test_user_id", "notByCreator_test_user_name")
+    utils.post_users(client, "song_creator_id", "another_creator_id")
 
     for i in range(3):
-        response_post = post_song(
-            client, "byCreator_test_user_id", "byCreator_test_song" + str(i)
+        response_post = utils.post_song(
+            client, uid="song_creator_id", name=f"song_{i}", unwrap_id=False
         )
         assert response_post.status_code == 200
 
     for i in range(3):
-        response_post = post_song(
-            client, "notByCreator_test_user_id", "notByCreator_test_song" + str(i)
+        response_post = utils.post_song(
+            client, uid="another_creator_id", name=f"song_another_{i}", unwrap_id=False
         )
         assert response_post.status_code == 200
 
-    response_get = client.get(
-        API_VERSION_PREFIX + "/songs/?creator=byCreator_test_user_id",
-        headers={"api_key": "key"},
-    )
-    assert len(response_get.json()) == 3
-    for i, song in enumerate(response_get.json()):
-        assert song["name"] == "byCreator_test_song" + str(i)
+    songs = utils.get_songs_by_creator(client, "song_creator_id", unwrap=True)
+
+    assert len(songs) == 3
+    for i, song in enumerate(songs):
+        assert song["name"] == f"song_{i}"
 
 
 def test_delete_song(client, custom_requests_mock):
-    post_user(client, "song_creator_id", "song_creator")
-    response_post = post_song(client)
+    post_user(client, "song_creator_id")
+    response_post = post_song(client, unwrap_id=False)
     assert response_post.status_code == 200
     song_id = response_post.json()["id"]
 
-    response_delete = client.delete(
-        API_VERSION_PREFIX + f"/songs/{str(response_post.json()['id'])}",
-        headers={
-            "api_key": "key",
-            "uid": "song_creator_id",
-        },
-    )
+    response_delete = utils.delete_song(client, song_id)
 
     assert response_delete.status_code == 200
 
-    response_get = utils.get_song_by_id(client, song_id, uid="song_creator_id")
+    response_get = utils.get_song(client, song_id)
 
     assert response_get.status_code == 404
 
 
 def test_cannot_delete_song_of_another_user(client, custom_requests_mock):
-    post_user(client, "song_creator_id", "song_creator")
-    post_user(client, "another_creator_id", "another_creator_name")
-    response_post = post_song(client)
-    response_delete = client.delete(
-        API_VERSION_PREFIX + f"/songs/{str(response_post.json()['id'])}",
-        headers={"api_key": "key", "uid": "another_creator_id"},
-    )
+    utils.post_users(client, "song_creator_id", "another_creator_id")
+    song_id = post_song(client, uid="song_creator_id")
+    response_delete = utils.delete_song(client, song_id, uid="another_creator_id")
 
     assert response_delete.status_code == 403
 
 
 def test_cannot_delete_song_that_does_not_exist(client, custom_requests_mock):
-    post_user(client, "song_creator_id", "song_creator")
-    post_user(client, "another_creator_id", "another_creator")
+    post_user(client, "song_creator_id")
 
-    response_delete = client.delete(
-        API_VERSION_PREFIX + "/songs/1",
-        headers={"api_key": "key", "uid": "another_creator_id"},
-    )
+    response_delete = utils.delete_song(client, 1, uid="song_creator_id")
+
     assert response_delete.status_code == 404
 
 
@@ -167,13 +130,11 @@ def test_get_my_songs_without_results(client, custom_requests_mock):
 
     post_song(client, uid="another_creator_id", name="happy_song")
 
-    response_get = client.get(
-        API_VERSION_PREFIX + "/my_songs/",
-        headers={"api_key": "key", "uid": "song_creator_id"},
-    )
+    response_get = utils.get_my_songs(client, uid="song_creator_id")
+    songs = response_get.json()
 
     assert response_get.status_code == 200
-    assert len(response_get.json()) == 0
+    assert len(songs) == 0
 
 
 def test_get_my_songs_should_retrieve_two_songs(client, custom_requests_mock):
@@ -181,10 +142,7 @@ def test_get_my_songs_should_retrieve_two_songs(client, custom_requests_mock):
     post_song(client, uid="song_creator_id", name="happy_song")
     post_song(client, uid="song_creator_id", name="sad_song")
 
-    response_get = client.get(
-        API_VERSION_PREFIX + "/my_songs/",
-        headers={"api_key": "key", "uid": "song_creator_id"},
-    )
+    response_get = utils.get_my_songs(client, uid="song_creator_id")
 
     body_songs = response_get.json()
 
@@ -217,10 +175,10 @@ def test_post_with_invalid_artists_format_should_fail(client, custom_requests_mo
 
 
 def test_update_song_updates_song_timestamp(client, custom_requests_mock):
-    post_user(client, "song_creator_id", "album_creator_name")
-    song_id = post_song(client, uid="song_creator_id").json()["id"]
+    post_user(client, "song_creator_id")
+    song_id = post_song(client, uid="song_creator_id")
 
-    response_get_1 = utils.get_song_by_id(client, song_id, uid="song_creator_id")
+    response_get_1 = utils.get_song(client, song_id)
 
     time.sleep(1)
     with open("./new_song.img", "wb") as f:
@@ -233,7 +191,7 @@ def test_update_song_updates_song_timestamp(client, custom_requests_mock):
         )
         assert response_put.status_code == 200
 
-    response_get_2 = utils.get_song_by_id(client, song_id, uid="song_creator_id")
+    response_get_2 = utils.get_song(client, song_id)
 
     url_1 = response_get_1.json()["file"]
     url_2 = response_get_2.json()["file"]
@@ -245,48 +203,39 @@ def test_update_song_updates_song_timestamp(client, custom_requests_mock):
 
 
 def test_listener_cannot_post_song(client, custom_requests_mock):
-    post_user(client, "listener_id", "listener_name")
-    response_post = post_song(client, uid="listener_id", role="listener")
+    post_user(client, "listener_id")
+    response_post = post_song(
+        client, uid="listener_id", role="listener", unwrap_id=False
+    )
 
     assert response_post.status_code == 403
 
 
 def test_admin_can_delete_song_of_another_user(client, custom_requests_mock):
-    post_user(client, "song_creator_id", "song_creator")
-    post_user(client, "admin_id", "admin_name")
-    response_post = post_song(client)
-    response_delete = client.delete(
-        API_VERSION_PREFIX + f"/songs/{str(response_post.json()['id'])}",
-        headers={"api_key": "key", "uid": "admin_id", "role": "admin"},
-    )
+    utils.post_users(client, "song_creator_id", "admin_id")
+    song_id = post_song(client)
+    response_delete = utils.delete_song(client, song_id, uid="admin_id", role="admin")
 
     assert response_delete.status_code == 200
 
 
 def test_admin_can_edit_song_of_another_user(client, custom_requests_mock):
-    post_user(client, "song_creator_id", "song_creator")
-    post_user(client, "admin_id", "admin_name")
-    response_post = post_song(client)
-    response_put = client.put(
-        API_VERSION_PREFIX + f"/songs/{str(response_post.json()['id'])}",
-        data={"name": "new_name"},
-        headers={"api_key": "key", "uid": "admin_id", "role": "admin"},
+    utils.post_users(client, "song_creator_id", "admin_id")
+
+    song_id = post_song(client)
+    response_put = utils.put_song(
+        client, song_id, {"name": "new_name"}, uid="admin_id", role="admin"
     )
 
     assert response_put.status_code == 200
 
 
 def test_post_song_with_album(client, custom_requests_mock):
-    post_user(client, "song_creator_id", "song_creator")
-    album_id = post_album(client, uid="song_creator_id").json()["id"]
+    post_user(client, "song_creator_id")
+    album_id = post_album(client)
+    song_id = post_song(client, album_id=album_id)
 
-    response = post_song(client, uid="song_creator_id", album_id=album_id)
-
-    assert response.status_code == 200
-
-    response = utils.get_song_by_id(
-        client, response.json()["id"], uid="song_creator_id"
-    )
+    response = utils.get_song(client, song_id)
     song = response.json()
 
     assert response.status_code == 200

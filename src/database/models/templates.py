@@ -1,14 +1,13 @@
+from src.exceptions import MessageException
 import datetime
 from typing import Optional
-from google.cloud.storage.bucket import Bucket
-from sqlalchemy import Boolean, Column, Integer, String, TIMESTAMP
+from sqlalchemy import Boolean, Column, Integer, String
 from typing.io import IO
-
 from src import roles
 from src.constants import SUPPRESS_BLOB_ERRORS
 from src.database.models.crud_template import CRUDMixin
 from sqlalchemy.orm import Session
-from fastapi import HTTPException, status
+from fastapi import status
 from sqlalchemy.orm.query import Query
 
 
@@ -39,7 +38,7 @@ class ResourceModel(CRUDMixin):
         role: roles.Role = kwargs.pop("role")
         resource = super().get(pdb, *args, **kwargs)
         if resource.blocked and not role.can_see_blocked():
-            raise HTTPException(
+            raise MessageException(
                 status_code=status.HTTP_404_NOT_FOUND, detail="Resource not found"
             )
         return resource
@@ -51,7 +50,7 @@ class ResourceModel(CRUDMixin):
         if not role.can_see_blocked():
             for resource in resources:
                 if resource.blocked:
-                    raise HTTPException(
+                    raise MessageException(
                         status_code=status.HTTP_404_NOT_FOUND,
                         detail="Resource not found",
                     )
@@ -81,7 +80,7 @@ class ResourceModel(CRUDMixin):
         blocked = kwargs.get("blocked", None)
         role: roles.Role = kwargs.pop("role")
         if blocked is not None and not role.can_block():
-            raise HTTPException(
+            raise MessageException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="You are not allowed to block this resource",
             )
@@ -108,18 +107,22 @@ class ResourceCreatorModel(ResourceModel):
 class ResourceWithFile(ResourceCreatorModel):
     __abstract__ = True
 
-    file_last_update = Column(TIMESTAMP, nullable=False)
+    file_url = Column(String, nullable=True)
 
     def upload_file(self, pdb: Session, file: IO, bucket):
         try:
             blob = bucket.blob(f"{self.__tablename__}/{self.id}")
             blob.upload_from_file(file)
             blob.make_public()
+            timestamp = (
+                f"?t={str(int(datetime.datetime.timestamp(datetime.datetime.now())))}"
+            )
+            self.file_url = blob.public_url + timestamp
 
         except Exception as e:
             if not SUPPRESS_BLOB_ERRORS:
                 self.expire(pdb)
-                raise HTTPException(
+                raise MessageException(
                     status_code=status.HTTP_507_INSUFFICIENT_STORAGE,
                     detail=f"Could not upload file for for resource {self.__class__.name} with id {self.id}: {e}",
                 )
@@ -130,29 +133,18 @@ class ResourceWithFile(ResourceCreatorModel):
             blob.delete()
         except Exception as e:
             if not SUPPRESS_BLOB_ERRORS:
-                raise HTTPException(
+                raise MessageException(
                     status_code=status.HTTP_507_INSUFFICIENT_STORAGE,
                     detail=f"Could not delete file for for resource {self.__class__.name} with id {self.id}: {e}",
                 )
 
-    def url(self, bucket: Bucket):
-        if self.file_last_update is not None:
-            return (
-                bucket.blob(f"{self.__tablename__}/{self.id}").public_url
-                + f"?t={str(int(datetime.datetime.timestamp(self.file_last_update)))}"
-            )
-        return None
-
     @classmethod
     def create(cls, pdb: Session, **kwargs):
-        file_last_update = datetime.datetime.now()
         bucket = kwargs.pop("bucket")
         file = kwargs.pop("file")
         commit = kwargs.pop("commit", True)
 
-        resource = super().create(
-            pdb, file_last_update=file_last_update, commit=False, **kwargs
-        )
+        resource = super().create(pdb, commit=False, **kwargs)
         resource.upload_file(pdb, file, bucket)
         resource.save(pdb, commit=commit)
         return resource
@@ -161,7 +153,6 @@ class ResourceWithFile(ResourceCreatorModel):
         file: Optional[IO] = kwargs.pop("file", None)
         if file is not None:
             bucket = kwargs.pop("bucket")
-            self.file_last_update = datetime.datetime.now()
             self.upload_file(pdb, file, bucket)
         return super().update(pdb, **kwargs)
 

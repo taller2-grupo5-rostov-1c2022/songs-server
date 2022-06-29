@@ -3,10 +3,12 @@ from typing import List
 from fastapi import HTTPException
 
 from sqlalchemy import Column, ForeignKey, Integer, String, TIMESTAMP
-from sqlalchemy.orm import relationship, Session
+from sqlalchemy.orm import relationship, Session, contains_eager, joinedload
 from . import templates, tables
 from .artist import ArtistModel
 from sqlalchemy.orm.query import Query
+
+from ...schemas.pagination import CustomPage
 
 
 class SongModel(templates.ResourceWithFile):
@@ -14,12 +16,11 @@ class SongModel(templates.ResourceWithFile):
 
     sub_level = Column(Integer, nullable=False)
 
-    file_last_update = Column(TIMESTAMP, nullable=False)
-
     artists = relationship(
         "ArtistModel",
         secondary=tables.song_artist_association_table,
         back_populates="songs",
+        lazy="joined",
     )
 
     album = relationship("AlbumModel", back_populates="songs", lazy="joined")
@@ -47,8 +48,10 @@ class SongModel(templates.ResourceWithFile):
         if sub_level is not None:
             query = query.filter(cls.sub_level == sub_level)
         if artist is not None:
-            query = query.join(cls.artists).filter(
-                ArtistModel.name.ilike(f"%{artist}%")
+            query = (
+                query.distinct()
+                .join(cls.artists)
+                .filter(ArtistModel.name.ilike(f"%{artist}%"))
             )
 
         return super().search(pdb, query=query, **kwargs)

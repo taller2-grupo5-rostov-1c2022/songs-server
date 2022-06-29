@@ -1,5 +1,6 @@
+from src.exceptions import MessageException
 from typing import Optional
-from fastapi import HTTPException, Form
+from fastapi import Form
 import json
 
 
@@ -8,11 +9,11 @@ def retrieve_artists_names_update(artists: Optional[str] = Form(None)):
         try:
             artists = json.loads(artists)
             if len(artists) == 0:
-                raise HTTPException(
+                raise MessageException(
                     status_code=422, detail="There must be at least one artist"
                 )
         except ValueError as e:
-            raise HTTPException(
+            raise MessageException(
                 status_code=422, detail="Artists string is not well encoded"
             ) from e
     return artists

@@ -1,11 +1,13 @@
+from src.exceptions import MessageException
 import datetime
-from fastapi import HTTPException, status
+from fastapi import status
 from sqlalchemy import Column, ForeignKey, Integer, String, TIMESTAMP
 from sqlalchemy.orm import relationship, Session
 from .crud_template import CRUDMixin
 from .user import UserModel
 from .album import AlbumModel
 from ... import roles
+from ...schemas.pagination import CustomPage
 
 
 class CommentModel(CRUDMixin):
@@ -16,7 +18,7 @@ class CommentModel(CRUDMixin):
     created_at = Column(TIMESTAMP, nullable=False)
 
     commenter = relationship("UserModel", back_populates="comments")
-    commenter_id = Column(String, ForeignKey("users.id"))
+    commenter_id = Column(String, ForeignKey("users.id", ondelete="SET NULL"))
 
     album = relationship("AlbumModel", back_populates="comments")
     album_id = Column(Integer, ForeignKey("albums.id"), nullable=False)
@@ -49,15 +51,17 @@ class CommentModel(CRUDMixin):
         return comment
 
     @classmethod
-    def get_roots_by_album(cls, pdb: Session, album: AlbumModel):
-        return (
-            pdb.query(cls)
-            .filter(
-                cls.album_id == album.id,
-                cls.parent_id == None,
-            )
-            .all()
-        )
+    def get_roots_by_album(cls, pdb: Session, album: AlbumModel, **kwargs):
+        query = pdb.query(cls).filter(cls.album_id == album.id, cls.parent_id == None)
+
+        limit = kwargs.pop("limit")
+        offset = kwargs.pop("offset")
+        total = query.count()
+        items = query.order_by(cls.id).filter(cls.id > offset).limit(limit).all()
+
+        offset = items[-1].id if items else None
+
+        return CustomPage(items=items, limit=limit, offset=offset, total=total)
 
     @classmethod
     def search(cls, pdb: Session, **kwargs):
@@ -79,7 +83,7 @@ class CommentModel(CRUDMixin):
             pdb, _id, raise_if_not_found=raise_if_not_found, **kwargs
         )
         if comment.album.blocked and not role.can_see_blocked():
-            raise HTTPException(
+            raise MessageException(
                 status_code=status.HTTP_404_NOT_FOUND, detail="Comment not found"
             )
         return comment

@@ -6,13 +6,6 @@ from src import utils
 from src.database import models
 
 
-def get_reviews_by_uid(pdb, uid: str):
-    reviewer = models.UserModel.get(pdb, _id=uid)
-
-    reviews = models.ReviewModel.get_by_reviewer(pdb, reviewer=reviewer)
-    return reviews
-
-
 def get_review(
     album: models.AlbumModel = Depends(utils.album.get_album),
     pdb: Session = Depends(get_db),

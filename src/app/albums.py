@@ -1,21 +1,21 @@
-from typing import List
-
+from src.exceptions import MessageException
 from fastapi import APIRouter
-from fastapi import Depends, File, HTTPException, UploadFile, Query
+from fastapi import Depends, File, UploadFile, Query
 
 from src.firebase.access import get_bucket
 from sqlalchemy.orm import Session
 from src.database.access import get_db
 from src.database import models
-from src import roles, utils
+from src import roles, utils, schemas
 from src.roles import get_role
-from src.schemas import Album, AlbumCreate, AlbumGet, AlbumUpdate
+from src.schemas import AlbumCreate, AlbumGet, AlbumUpdate
 
+from src.schemas.pagination import CustomPage
 
 router = APIRouter(tags=["albums"])
 
 
-@router.get("/albums/", response_model=List[Album])
+@router.get("/albums/", response_model=CustomPage[schemas.AlbumBase])
 def get_albums(
     creator: str = None,
     role: roles.Role = Depends(get_role),
@@ -23,11 +23,10 @@ def get_albums(
     genre: str = None,
     name: str = None,
     pdb: Session = Depends(get_db),
-    page: int = Query(0, ge=0),
-    size: int = Query(50, ge=1, le=100),
+    limit: int = Query(50, ge=1, le=100),
+    offset: int = Query(0, ge=0),
 ):
     """Returns all Albums"""
-
     albums = models.AlbumModel.search(
         pdb,
         role=role,
@@ -35,34 +34,24 @@ def get_albums(
         artist=artist,
         genre=genre,
         name=name,
-        page=page,
-        size=size,
+        limit=limit,
+        offset=offset,
     )
-
-    for album in albums:
-        album.cover = utils.album.cover_url(album)
-        album.score = utils.album.calculate_score(pdb, album)
-        album.scores_amount = utils.album.calculate_scores_amount(pdb, album)
 
     return albums
 
 
-@router.get("/my_albums/", response_model=List[Album])
+@router.get("/my_albums/", response_model=CustomPage[schemas.AlbumBase])
 def get_my_albums(
     uid: str = Depends(utils.user.retrieve_uid),
     pdb: Session = Depends(get_db),
-    page: int = Query(0, ge=0),
-    size: int = Query(50, ge=1, le=100),
+    limit: int = Query(50, ge=1, le=100),
+    offset: int = Query(0, ge=0),
 ):
 
     albums = models.AlbumModel.search(
-        pdb, role=roles.Role.admin(), creator_id=uid, page=page, size=size
+        pdb, role=roles.Role.admin(), creator_id=uid, limit=limit, offset=offset
     )
-
-    for album in albums:
-        album.cover = utils.album.cover_url(album)
-        album.score = utils.album.calculate_score(pdb, album)
-        album.scores_amount = utils.album.calculate_scores_amount(pdb, album)
 
     return albums
 
@@ -70,13 +59,8 @@ def get_my_albums(
 @router.get("/albums/{album_id}", response_model=AlbumGet)
 def get_album_by_id(
     album: models.AlbumModel = Depends(utils.album.get_album),
-    pdb: Session = Depends(get_db),
 ):
     """Returns an album by its id or 404 if not found"""
-
-    album.cover = utils.album.cover_url(album)
-    album.score = utils.album.calculate_score(pdb, album)
-    album.scores_amount = utils.album.calculate_scores_amount(pdb, album)
 
     return album
 
@@ -94,9 +78,6 @@ def post_album(
         pdb, **album_create.dict(), role=role, file=cover.file, bucket=bucket
     )
 
-    album.score = utils.album.calculate_score(pdb, album)
-    album.scores_amount = utils.album.calculate_scores_amount(pdb, album)
-    album.cover = utils.album.cover_url(album)
     return album
 
 
@@ -113,7 +94,7 @@ def update_album(
     """Updates album by its id"""
 
     if album.creator_id != uid and not role.can_edit_everything():
-        raise HTTPException(
+        raise MessageException(
             status_code=403,
             detail=f"User {uid} attempted to edit album of user with ID {album.creator_id}",
         )
@@ -136,7 +117,7 @@ def delete_album(
     """Deletes an album by its id"""
 
     if uid != album.creator_id and not role.can_delete_everything():
-        raise HTTPException(
+        raise MessageException(
             status_code=403,
             detail=f"User '{uid} attempted to delete album of user with ID {album.creator_id}",
         )

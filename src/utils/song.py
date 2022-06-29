@@ -1,6 +1,7 @@
+from src.exceptions import MessageException
 import json
 from src.database import models
-from fastapi import HTTPException, Depends, Form
+from fastapi import Depends, Form
 from src import schemas
 from sqlalchemy.orm import Session
 from .. import roles, utils
@@ -17,7 +18,7 @@ def retrieve_songs_ids(songs_ids: Optional[str] = Form(None)):
         songs_ids = json.loads(songs_ids)
         return songs_ids
     except ValueError:
-        raise HTTPException(
+        raise MessageException(
             status_code=422, detail="Songs ids string is not well encoded"
         )
 
@@ -47,9 +48,9 @@ def get_song(
     song = models.SongModel.get(pdb, role=role, _id=song_id)
 
     if song.sub_level > user.sub_level and not role.ignore_sub_level():
-        raise HTTPException(
+        raise MessageException(
             status_code=403,
-            detail=f"You are not allowed to see this song, expected at least level {song.sub_level}, you have level {user.sub_level}",
+            detail=f"You need a {utils.subscription.sub_level_name(song.sub_level)} subscription",
         )
     return song
 

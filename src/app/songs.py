@@ -1,7 +1,7 @@
+from src.exceptions import MessageException
 from src import roles, utils, schemas
-from typing import List
 from fastapi import APIRouter
-from fastapi import Depends, File, HTTPException, UploadFile, status, Query
+from fastapi import Depends, File, UploadFile, status, Query
 
 from src.firebase.access import get_bucket
 from sqlalchemy.orm import Session
@@ -9,10 +9,12 @@ from src.database.access import get_db
 from src.database import models
 from src.roles import get_role
 
+from src.schemas.pagination import CustomPage
+
 router = APIRouter(tags=["songs"])
 
 
-@router.get("/songs/", response_model=List[schemas.SongBase])
+@router.get("/songs/", response_model=CustomPage[schemas.SongBase])
 def get_songs(
     creator: str = None,
     role: roles.Role = Depends(get_role),
@@ -21,8 +23,8 @@ def get_songs(
     sub_level: int = None,
     name: str = None,
     pdb: Session = Depends(get_db),
-    page: int = Query(0, ge=0),
-    size: int = Query(50, ge=1, le=100),
+    offset: int = Query(0, ge=0),
+    limit: int = Query(50, ge=1, le=100),
 ):
     """Returns all songs"""
 
@@ -34,21 +36,17 @@ def get_songs(
         genre=genre,
         sub_level=sub_level,
         name=name,
-        page=page,
-        size=size,
+        limit=limit,
+        offset=offset,
     )
-
     return songs
 
 
 @router.get("/songs/{song_id}", response_model=schemas.SongGet)
 def get_song_by_id(
     song: models.SongModel = Depends(utils.song.get_song),
-    bucket=Depends(get_bucket),
 ):
     """Returns a song by its id or 404 if not found"""
-
-    song.file = song.url(bucket)
 
     return song
 
@@ -66,7 +64,7 @@ def update_song(
     """Updates song by its id"""
 
     if song.creator_id != uid and not role.can_edit_everything():
-        raise HTTPException(
+        raise MessageException(
             status_code=403,
             detail=f"User '{uid} attempted to edit song of user with ID {song.creator_id}",
         )
@@ -109,7 +107,7 @@ def delete_song(
     """Deletes a song by its id"""
 
     if song.creator_id != uid and not role.can_delete_everything():
-        raise HTTPException(
+        raise MessageException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail=f"User '{uid} attempted to delete song of user with ID {song.creator_id}",
         )
@@ -117,13 +115,13 @@ def delete_song(
     song.delete(pdb, bucket=bucket, role=role)
 
 
-@router.get("/my_songs/", response_model=List[schemas.SongBase])
+@router.get("/my_songs/", response_model=CustomPage[schemas.SongBase])
 def get_my_songs(
     uid: str = Depends(utils.user.retrieve_uid),
     pdb: Session = Depends(get_db),
-    page: int = Query(0, ge=0),
-    size: int = Query(50, ge=1, le=100),
+    offset: int = Query(0, ge=0),
+    limit: int = Query(50, ge=1, le=100),
 ):
     return models.SongModel.search(
-        pdb, creator_id=uid, role=roles.Role.admin(), page=page, size=size
+        pdb, creator_id=uid, role=roles.Role.admin(), limit=limit, offset=offset
     )

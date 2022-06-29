@@ -1,3 +1,4 @@
+from src.exceptions import MessageException
 import json
 
 from src.database.access import get_db
@@ -5,7 +6,7 @@ from src.database import models
 from src import roles, utils
 from src import schemas
 from typing import Optional, List
-from fastapi import HTTPException, Depends, Form
+from fastapi import Depends, Form
 from sqlalchemy.orm import Session
 
 from src.roles import get_role
@@ -22,7 +23,7 @@ def retrieve_colabs_ids(colabs_ids: Optional[str] = Form(None)):
         try:
             colabs_ids = json.loads(colabs_ids)
         except ValueError as e:
-            raise HTTPException(
+            raise MessageException(
                 status_code=422, detail="Colabs string is not well encoded"
             ) from e
     return colabs_ids

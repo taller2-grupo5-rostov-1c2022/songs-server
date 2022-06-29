@@ -1,6 +1,7 @@
+from src.exceptions import MessageException
 import datetime
 from sqlalchemy.orm import Session
-from fastapi import HTTPException, status
+from fastapi import status
 import requests
 
 from src.constants import PAYMENTS_API_KEY
@@ -36,16 +37,23 @@ def get_subscriptions():
     return SUBSCRIPTIONS
 
 
+def sub_level_name(sub_level: int):
+    for subscription in SUBSCRIPTIONS:
+        if subscription["level"] == sub_level:
+            return subscription["name"]
+
+    raise MessageException(
+        status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid subscription level"
+    )
+
+
 def create_wallet(uid: str):
     response = requests.post(
         f"{CREATE_WALLET_ENDPOINT}/{uid}", headers={"api_key": PAYMENTS_API_KEY}
     )
 
     if response.status_code != status.HTTP_200_OK:
-        raise HTTPException(
-            status_code=response.status_code,
-            detail=response.text,
-        )
+        raise MessageException(status_code=response.status_code, detail=response.text)
     return response.json()["address"]
 
 
@@ -63,11 +71,10 @@ def get_sub_price(sub_level: int):
 
     for subscription in SUBSCRIPTIONS:
         if subscription["level"] == sub_level:
-            return subscription["price"]
+            return subscription["price"].upper()
 
-    raise HTTPException(
-        status_code=status.HTTP_400_BAD_REQUEST,
-        detail="Invalid subscription level",
+    raise MessageException(
+        status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid subscription level"
     )
 
 
@@ -79,9 +86,8 @@ def _make_payment(user: models.UserModel, sub_level: int):
     )
 
     if payment_response.status_code != status.HTTP_200_OK:
-        raise HTTPException(
-            status_code=payment_response.status_code,
-            detail=payment_response.text,
+        raise MessageException(
+            status_code=payment_response.status_code, detail=payment_response.text
         )
 
 
@@ -95,7 +101,7 @@ def subscribe(user: models.UserModel, sub_level: int, pdb: Session) -> models.Us
 
 
 def revoke_subscription(pdb: Session, now: datetime.datetime):
-    users = models.UserModel.search(pdb, expiration_date=now)
+    users = models.UserModel.search(pdb, expiration_date=now, do_pagination=False)
 
     for user in users:
         user.update(

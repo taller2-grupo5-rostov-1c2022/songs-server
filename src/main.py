@@ -1,7 +1,4 @@
-from fastapi import (
-    FastAPI,
-    Depends,
-)
+from fastapi import FastAPI, Depends, Request
 from src.app import (
     songs,
     albums,
@@ -13,8 +10,9 @@ from src.app import (
     streamings,
     subscriptions,
 )
+from src.exceptions import MessageException
 from src.middleware.utils import get_api_key
-from fastapi_pagination import add_pagination
+from fastapi.responses import JSONResponse
 
 API_VERSION_PREFIX = "/api/v3"
 
@@ -35,4 +33,10 @@ app.include_router(comments.router, prefix=API_VERSION_PREFIX)
 app.include_router(streamings.router, prefix=API_VERSION_PREFIX)
 app.include_router(subscriptions.router, prefix=API_VERSION_PREFIX)
 
-add_pagination(app)
+
+@app.exception_handler(MessageException)
+async def message_exception_handler(_request: Request, exc: MessageException):
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={"message": exc.message},
+    )

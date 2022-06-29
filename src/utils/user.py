@@ -1,10 +1,8 @@
-import datetime
-
-from fastapi import Header, Depends, Form, HTTPException, status
+from fastapi import Header, Depends, Form, status
 from sqlalchemy.orm import Session
+from src.exceptions import MessageException
 
 from src import schemas
-from src.constants import STORAGE_PATH
 from src.database import models
 from src.database.access import get_db
 
@@ -27,7 +25,7 @@ def retrieve_user_info(
 
     user = models.UserModel.get(pdb, _id=uid, raise_if_not_found=False)
     if user is not None:
-        raise HTTPException(
+        raise MessageException(
             status_code=status.HTTP_409_CONFLICT, detail="User already exists"
         )
     user_info = schemas.UserCreate(
@@ -37,9 +35,7 @@ def retrieve_user_info(
 
 
 def retrieve_user_update(
-    name: str = Form(None),
-    location: str = Form(None),
-    interests: str = Form(None),
+    name: str = Form(None), location: str = Form(None), interests: str = Form(None)
 ):
     user_update = schemas.UserUpdate(name=name, location=location, interests=interests)
     return user_update
@@ -49,17 +45,6 @@ def retrieve_user_to_modify(uid_to_modify: str, pdb: Session = Depends(get_db)):
     user_to_modify = models.UserModel.get(pdb, _id=uid_to_modify)
 
     return user_to_modify
-
-
-def pfp_url(user: models.UserModel):
-    if user.pfp_last_update is not None:
-        return (
-            STORAGE_PATH
-            + "pfp/"
-            + str(user.id)
-            + "?t="
-            + str(int(datetime.datetime.timestamp(user.pfp_last_update)))
-        )
 
 
 def give_ownership_of_playlists_to_colabs(user: models.UserModel):

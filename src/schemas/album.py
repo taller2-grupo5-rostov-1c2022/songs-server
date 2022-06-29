@@ -1,4 +1,8 @@
+from src.exceptions import MessageException
 from typing import Optional, List
+
+from pydantic.fields import Field
+
 from .resource import (
     ResourceBase,
     ResourceUpdate,
@@ -7,7 +11,7 @@ from .resource import (
     ResourceCreate,
 )
 from sqlalchemy.orm import Session
-from fastapi import Form, HTTPException, status
+from fastapi import Form, status
 
 
 __all__ = [
@@ -33,9 +37,12 @@ class AlbumBase(ResourceBase):
 
 
 class Album(AlbumBase):
-    cover: str
+    file_url: str = Field(alias="cover")
     score: float
     scores_amount: int
+
+    class Config:
+        allow_population_by_field_name = True
 
 
 class AlbumGet(Album):
@@ -65,7 +72,7 @@ class AlbumCreate(ResourceCreate):
         **kwargs
     ):
         if not role.can_post_content():
-            raise HTTPException(
+            raise MessageException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="You are not allowed to post content",
             )
@@ -75,7 +82,7 @@ class AlbumCreate(ResourceCreate):
         for song_id in songs_ids:
             song = models.SongModel.get(pdb, song_id, role=role)
             if song.creator_id != creator_id:
-                raise HTTPException(
+                raise MessageException(
                     status_code=status.HTTP_403_FORBIDDEN,
                     detail="You can't add songs from other users",
                 )
@@ -117,12 +124,12 @@ class AlbumUpdate(ResourceUpdate):
             for song_id in songs_ids:
                 song = models.SongModel.get(pdb, _id=song_id, role=role)
                 if song.creator_id != creator_id:
-                    raise HTTPException(
+                    raise MessageException(
                         status_code=status.HTTP_403_FORBIDDEN,
                         detail="You can't add songs from other users",
                     )
                 if song.album_id is not None and song.album_id != album.id:
-                    raise HTTPException(
+                    raise MessageException(
                         status_code=status.HTTP_403_FORBIDDEN,
                         detail="You can't add songs that belong to another album",
                     )

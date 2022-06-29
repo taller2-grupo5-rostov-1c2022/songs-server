@@ -1,21 +1,18 @@
+from src.exceptions import MessageException
 from sqlalchemy import Column, ForeignKey, String
-from sqlalchemy.orm import relationship, Session, contains_eager, joinedload
+from sqlalchemy.orm import relationship, Session, contains_eager
 from sqlalchemy.orm.query import Query
 from sqlalchemy.sql import or_
-from fastapi import HTTPException, status
+from fastapi import status
 from . import templates, tables
 from .song import SongModel
 from .user import UserModel
-from ... import roles
 
 
 class PlaylistModel(templates.ResourceModel):
     __tablename__ = "playlists"
 
-    songs = relationship(
-        "SongModel",
-        secondary=tables.song_playlist_association_table,
-    )
+    songs = relationship("SongModel", secondary=tables.song_playlist_association_table)
 
     colabs = relationship(
         "UserModel",
@@ -65,7 +62,7 @@ class PlaylistModel(templates.ResourceModel):
             .all()
         )
         if len(playlists) == 0:
-            raise HTTPException(
+            raise MessageException(
                 status_code=status.HTTP_404_NOT_FOUND, detail="Playlist not found"
             )
         playlist = playlists[0]
@@ -74,7 +71,7 @@ class PlaylistModel(templates.ResourceModel):
             and not role.can_see_blocked()
             and playlist.creator_id != requester_id
         ):
-            raise HTTPException(
+            raise MessageException(
                 status_code=status.HTTP_404_NOT_FOUND, detail="Playlist not found"
             )
         return playlist
@@ -84,7 +81,7 @@ class PlaylistModel(templates.ResourceModel):
             self.songs.append(song)
             self.save(pdb)
         else:
-            raise HTTPException(
+            raise MessageException(
                 status_code=status.HTTP_409_CONFLICT, detail="Song already in playlist"
             )
 
@@ -93,7 +90,7 @@ class PlaylistModel(templates.ResourceModel):
             self.songs.remove(song)
             self.save(pdb)
         else:
-            raise HTTPException(
+            raise MessageException(
                 status_code=status.HTTP_409_CONFLICT, detail="Song not in playlist"
             )
 
@@ -102,7 +99,7 @@ class PlaylistModel(templates.ResourceModel):
             self.colabs.append(colab)
             self.save(pdb)
         else:
-            raise HTTPException(
+            raise MessageException(
                 status_code=status.HTTP_409_CONFLICT, detail="Colab already in playlist"
             )
 
@@ -111,6 +108,6 @@ class PlaylistModel(templates.ResourceModel):
             self.colabs.remove(colab)
             self.save(pdb)
         else:
-            raise HTTPException(
+            raise MessageException(
                 status_code=status.HTTP_409_CONFLICT, detail="Colab not in playlist"
             )

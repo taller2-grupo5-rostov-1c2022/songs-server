@@ -1,20 +1,26 @@
+from src.exceptions import MessageException
 from src import roles, utils, schemas
 from src.database.access import get_db
-from typing import List
-from fastapi import APIRouter, status, HTTPException
+from fastapi import APIRouter, status, Query
 from fastapi import Depends
 from sqlalchemy.orm import Session
 from src.database import models
 
+from src.schemas.pagination import CustomPage
+
 router = APIRouter(tags=["favorites"])
 
 
-@router.get("/users/{uid}/favorites/songs/", response_model=List[schemas.SongBase])
+@router.get(
+    "/users/{uid}/favorites/songs/", response_model=CustomPage[schemas.SongBase]
+)
 def get_favorite_songs(
     user: models.UserModel = Depends(utils.user.retrieve_user),
     role: roles.Role = Depends(roles.get_role),
+    offset: int = Query(0, ge=0),
+    limit: int = Query(50, ge=1, le=100),
 ):
-    return user.get_favorite_songs(role=role)
+    return user.get_favorite_songs(role=role, offset=offset, limit=limit)
 
 
 @router.post("/users/{uid}/favorites/songs/", response_model=schemas.SongBase)
@@ -24,7 +30,7 @@ def add_song_to_favorites(
     pdb: Session = Depends(get_db),
 ):
     if song in user.favorite_songs:
-        raise HTTPException(
+        raise MessageException(
             status_code=status.HTTP_409_CONFLICT, detail="Song already in favorites"
         )
     user.add_favorite_song(pdb, song=song)
@@ -38,24 +44,20 @@ def remove_song_from_favorites(
     pdb: Session = Depends(get_db),
 ):
     if song not in user.favorite_songs:
-        raise HTTPException(
+        raise MessageException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Song not in favorites"
         )
     user.remove_favorite_song(pdb, song=song)
 
 
-@router.get("/users/{uid}/favorites/albums/", response_model=List[schemas.AlbumGet])
+@router.get("/users/{uid}/favorites/albums/", response_model=CustomPage[schemas.Album])
 def get_favorite_albums(
     user: models.UserModel = Depends(utils.user.retrieve_user),
     role: roles.Role = Depends(roles.get_role),
-    pdb: Session = Depends(get_db),
+    offset: int = Query(0, ge=0),
+    limit: int = Query(50, ge=1, le=100),
 ):
-    favorite_albums = user.get_favorite_albums(role=role)
-
-    for album in favorite_albums:
-        album.cover = utils.album.cover_url(album)
-        album.score = utils.album.calculate_score(pdb, album)
-        album.scores_amount = utils.album.calculate_scores_amount(pdb, album)
+    favorite_albums = user.get_favorite_albums(role=role, offset=offset, limit=limit)
 
     return favorite_albums
 
@@ -67,7 +69,7 @@ def add_album_to_favorites(
     pdb: Session = Depends(get_db),
 ):
     if album in user.favorite_albums:
-        raise HTTPException(
+        raise MessageException(
             status_code=status.HTTP_409_CONFLICT, detail="Album already in favorites"
         )
     user.add_favorite_album(pdb, album=album)
@@ -81,33 +83,32 @@ def remove_album_from_favorites(
     pdb: Session = Depends(get_db),
 ):
     if album not in user.favorite_albums:
-        raise HTTPException(
+        raise MessageException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Album not in favorites"
         )
     return user.remove_favorite_album(pdb, album=album)
 
 
 @router.get(
-    "/users/{uid}/favorites/playlists/", response_model=List[schemas.PlaylistBase]
+    "/users/{uid}/favorites/playlists/", response_model=CustomPage[schemas.PlaylistBase]
 )
 def get_favorite_playlists(
     user: models.UserModel = Depends(utils.user.retrieve_user),
     role: roles.Role = Depends(roles.get_role),
+    offset: int = Query(0, ge=0),
+    limit: int = Query(50, ge=1, le=100),
 ):
-    return user.get_favorite_playlists(role=role)
+    return user.get_favorite_playlists(role=role, offset=offset, limit=limit)
 
 
-@router.post(
-    "/users/{uid}/favorites/playlists/",
-    response_model=schemas.PlaylistBase,
-)
+@router.post("/users/{uid}/favorites/playlists/", response_model=schemas.PlaylistBase)
 def add_playlist_to_favorites(
     playlist: models.PlaylistModel = Depends(utils.playlist.get_playlist),
     user: models.UserModel = Depends(utils.user.retrieve_user),
     pdb: Session = Depends(get_db),
 ):
     if playlist in user.favorite_playlists:
-        raise HTTPException(
+        raise MessageException(
             status_code=status.HTTP_409_CONFLICT, detail="Playlist already in favorites"
         )
     user.add_favorite_playlist(pdb, playlist=playlist)
@@ -121,7 +122,7 @@ def remove_playlist_from_favorites(
     pdb: Session = Depends(get_db),
 ):
     if playlist not in user.favorite_playlists:
-        raise HTTPException(
+        raise MessageException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Playlist not in favorites"
         )
     return user.remove_favorite_playlist(pdb, playlist=playlist)

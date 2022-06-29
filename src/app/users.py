@@ -1,23 +1,27 @@
+from src.exceptions import MessageException
 from src import roles, utils, schemas
 from src.database.access import get_db
-from typing import List, Optional
+from typing import Optional
 from fastapi import APIRouter
-from fastapi import Depends, HTTPException, UploadFile
+from fastapi import Depends, UploadFile, Query
 from sqlalchemy.orm import Session
 from src.firebase.access import get_bucket, get_auth
 from src.database import models
 
+from src.schemas.pagination import CustomPage
+
 router = APIRouter(tags=["users"])
 
 
-@router.get("/users/", response_model=List[schemas.UserGet])
-def get_all_users(pdb: Session = Depends(get_db), bucket=Depends(get_bucket)):
+@router.get("/users/", response_model=CustomPage[schemas.UserGet])
+def get_all_users(
+    pdb: Session = Depends(get_db),
+    limit: int = Query(50, ge=1, le=100),
+    offset: Optional[str] = Query(None),
+):
     """Returns all users"""
 
-    users = models.UserModel.search(pdb)
-
-    for user in users:
-        user.pfp = user.url(bucket)
+    users = models.UserModel.search(pdb, limit=limit, offset=offset)
 
     return users
 
@@ -28,16 +32,12 @@ def get_user_by_id(uid: str, pdb: Session = Depends(get_db)):
 
     user = models.UserModel.get(pdb, _id=uid)
 
-    user.pfp = utils.user.pfp_url(user)
-
     return user
 
 
 @router.get("/my_user/", response_model=schemas.UserGetById)
 def get_my_user(user: models.UserModel = Depends(utils.user.retrieve_user)):
     """Returns own user"""
-
-    user.pfp = utils.user.pfp_url(user)
 
     return user
 
@@ -61,9 +61,7 @@ def post_user(
         user = models.UserModel.create(
             pdb, **user_info, wallet=wallet, pfp=img.file, bucket=bucket
         )
-        pfp_url = utils.user.pfp_url(user)
-        auth.update_user(uid=user_info["id"], photo_url=pfp_url)
-        user.pfp = pfp_url
+        auth.update_user(uid=user_info["id"], photo_url=user.pfp_url)
     else:
         user = models.UserModel.create(pdb, **user_info, wallet=wallet)
 
@@ -83,7 +81,7 @@ def put_user(
 ):
     """Updates a user and returns its id or 404 if not found or 403 if not authorized to update"""
     if uid != user_to_modify.id:
-        raise HTTPException(
+        raise MessageException(
             status_code=403,
             detail=f"User with id {uid} attempted to modify user of id {user_to_modify.id}",
         )
@@ -92,9 +90,7 @@ def put_user(
         modified_user = user_to_modify.update(
             pdb, **user_update.dict(exclude_none=True), pfp=img.file, bucket=bucket
         )
-        pfp_url = utils.user.pfp_url(modified_user)
-        modified_user.pfp = pfp_url
-        auth.update_user(uid=uid, photo_url=pfp_url)
+        auth.update_user(uid=uid, photo_url=modified_user.pfp_url)
     else:
         modified_user = user_to_modify.update(
             pdb, **user_update.dict(exclude_none=True)
@@ -115,7 +111,7 @@ def delete_user(
     """Deletes a user given its id or 404 if not found or 403 if not authorized to delete"""
 
     if user.id != uid_to_delete:
-        raise HTTPException(
+        raise MessageException(
             status_code=403,
             detail=f"User with id {user.id} attempted to delete user of id {uid_to_delete}",
         )
@@ -132,6 +128,6 @@ def make_artist(
     auth=Depends(get_auth),
 ):
     if role != roles.Role.listener():
-        raise HTTPException(status_code=405, detail="Not a listener")
+        raise MessageException(status_code=405, detail="Not a listener")
 
     auth.set_custom_user_claims(uid, {"role": str(roles.Role.artist())})

@@ -9,7 +9,7 @@ class CommentGet(BaseModel):
     id: int
     text: Optional[str]
     created_at: datetime
-    commenter: UserBase
+    commenter: Optional[UserBase]
     responses: List["CommentGet"]
     album: AlbumBase
 
