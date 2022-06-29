@@ -54,7 +54,6 @@ if not TESTING:
     real_bucket = storage.bucket("rostov-spotifiuby.appspot.com")
     bucket = BucketMuxDemux()
     bucket._bucket = real_bucket
-    bucket = storage.bucket("rostov-spotifiuby.appspot.com")
     _auth = auth
 
 
