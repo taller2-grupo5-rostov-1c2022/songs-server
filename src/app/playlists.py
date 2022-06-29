@@ -14,6 +14,7 @@ router = APIRouter(tags=["playlists"])
 @router.get("/playlists/", response_model=CustomPage[schemas.PlaylistBase])
 def get_playlists(
     colab: str = None,
+    name: str = None,
     role: roles.Role = Depends(get_role),
     pdb: Session = Depends(get_db),
     limit: int = Query(50, ge=1, le=100),
@@ -22,7 +23,7 @@ def get_playlists(
     """Returns playlists either filtered by colab or all playlists"""
 
     return models.PlaylistModel.search(
-        pdb, role=role, colab=colab, limit=limit, offset=offset
+        pdb, role=role, colab=colab, limit=limit, offset=offset, name=name
     )
 
 

@@ -15,7 +15,7 @@ from src.schemas.pagination import CustomPage
 router = APIRouter(tags=["albums"])
 
 
-@router.get("/albums/", response_model=CustomPage[schemas.AlbumBase])
+@router.get("/albums/", response_model=CustomPage[schemas.Album])
 def get_albums(
     creator: str = None,
     role: roles.Role = Depends(get_role),
@@ -41,7 +41,7 @@ def get_albums(
     return albums
 
 
-@router.get("/my_albums/", response_model=CustomPage[schemas.AlbumBase])
+@router.get("/my_albums/", response_model=CustomPage[schemas.Album])
 def get_my_albums(
     uid: str = Depends(utils.user.retrieve_uid),
     pdb: Session = Depends(get_db),
