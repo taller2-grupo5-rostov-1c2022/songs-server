@@ -52,7 +52,7 @@ def post_streaming(
         models.StreamingModel.create(
             pdb,
             name=name,
-            img=img,
+            img=img.file,
             artist=user,
             bucket=bucket,
             listener_token=listener_token,

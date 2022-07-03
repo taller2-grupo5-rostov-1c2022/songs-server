@@ -115,7 +115,7 @@ def delete_song(
     song.delete(pdb, bucket=bucket, role=role)
 
 
-@router.get("/my_songs/", response_model=CustomPage[schemas.SongBase])
+@router.get("/my_songs/", response_model=CustomPage[schemas.SongMySongs])
 def get_my_songs(
     uid: str = Depends(utils.user.retrieve_uid),
     pdb: Session = Depends(get_db),
