@@ -2,13 +2,11 @@ from typing import List
 
 from fastapi import HTTPException
 
-from sqlalchemy import Column, ForeignKey, Integer, String, TIMESTAMP
-from sqlalchemy.orm import relationship, Session, contains_eager, joinedload
+from sqlalchemy import Column, ForeignKey, Integer, String
+from sqlalchemy.orm import relationship, Session
 from . import templates, tables
 from .artist import ArtistModel
 from sqlalchemy.orm.query import Query
-
-from ...schemas.pagination import CustomPage
 
 
 class SongModel(templates.ResourceWithFile):

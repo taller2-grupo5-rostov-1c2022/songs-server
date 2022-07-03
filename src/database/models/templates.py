@@ -15,7 +15,7 @@ class ResourceModel(CRUDMixin):
     __abstract__ = True
     id = Column(Integer, primary_key=True, nullable=False, index=True)
     name = Column(String, nullable=False, index=True)
-    description = Column(String, nullable=False, index=True)
+    description = Column(String, nullable=False)
     blocked = Column(Boolean, nullable=False, index=True)
 
     @classmethod

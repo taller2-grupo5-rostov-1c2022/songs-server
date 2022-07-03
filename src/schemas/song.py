@@ -19,6 +19,7 @@ from fastapi import Form, status
 __all__ = [
     "SongBase",
     "SongGet",
+    "SongMySongs",
     "SongCreate",
     "SongCreateCollector",
     "SongUpdate",
@@ -28,6 +29,14 @@ __all__ = [
 
 from .utils import as_form, decode_json_list
 from .. import roles
+
+
+class AlbumInfo(BaseModel):
+    id: int
+    name: str
+
+    class Config:
+        orm_mode = True
 
 
 class ArtistBase(BaseModel):
@@ -41,6 +50,10 @@ class SongBase(ResourceBase):
     artists: List[ArtistBase]
     sub_level: int
     genre: str
+
+
+class SongMySongs(SongBase):
+    album: Optional[AlbumInfo]
 
 
 class SongGet(SongBase):

@@ -30,9 +30,6 @@ from ..database import models
 
 
 class AlbumBase(ResourceBase):
-    id: int
-    name: str
-    description: str
     genre: str
 
 
