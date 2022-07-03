@@ -1,6 +1,6 @@
 [![Pipeline](https://github.com/taller2-grupo5-rostov-1c2022/songs-server/actions/workflows/pipeline.yml/badge.svg?branch=master)](https://github.com/taller2-grupo5-rostov-1c2022/songs-server/actions/workflows/pipeline.yml)
 [![codecov](https://codecov.io/gh/taller2-grupo5-rostov-1c2022/songs-server/branch/master/graph/badge.svg?token=LJIu1T1HQr)](https://codecov.io/gh/taller2-grupo5-rostov-1c2022/songs-server)
-[![](https://img.shields.io/badge/python-3.6-blue.svg)](https://www.python.org/downloads/)
+[![](https://img.shields.io/badge/python-3.9-blue.svg)](https://www.python.org/downloads/)
 [![](https://img.shields.io/badge/docs-fastapi-blue.svg)](https://fastapi.tiangolo.com/)
 
 # Spotifiuby Songs Server
@@ -142,26 +142,30 @@ and storage for testing purposes.
 POSTGRES_URL="postgresql://{username}:{password}@{host}:{port}/{database}"
 ```
 
-### Development
+## Docker
 
-#### Running Test Container and database
+You need [docker-compose](https://docs.docker.com/compose/) and [docker](https://docs.docker.com/) to run the following containers
+and commands.
+
+### Developing with container and database
 
 ```
 sudo ./scripts/test-container.sh
 ```
 
-server needs to be stopped and rebuilt when making changes, the database persists.
+### Altering database schema
 
-#### Altering database schema
+When changing the database schema (i.e. updating database tables), you will have to:
 
-- edit
-  - `src/postgres/models.py`
-- delete `docker/postgres-data`
+- edit: `src/postgres/models.py`
+- delete: `docker/postgres-data`
 
-#### Running test
+### Running tests within container
+
+You have two options here, one is simple running:
 
 ```
 sudo ./scripts/coverage-container.sh
 ```
 
-you can also run a test-container and run the tests from the cli
+Alternately, you can also run a `test-container` and run the tests from the CLI.
