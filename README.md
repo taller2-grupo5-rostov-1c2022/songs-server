@@ -179,7 +179,38 @@ Save the file as `google-credentials.json` in the root directory of the reposito
 You can also set `TESTING=1` as an environment variable to use mocks of the database
 and storage for testing purposes.
 
+In order to load the credentials in Heroku, set `GOOGLE_CREDENTIALS` as an environment variable in Heroku, and paste the content of the `google-credentials.json` file.
+
 ## Postgres
+
+You'll need to set `POSTGRES_URL` as an environment variable (locally or on heroku) or `HD_POSTGRES_URL` as an action secret
+
+Useful links:
+- [postgresql](https://www.postgresql.org/)
+- [pgadmin](https://www.pgadmin.org/)
+
+### Credentials
+
+- Go to: Songs Server > Resources > Heroku Postgres > Settings [[Link](https://data.heroku.com/datastores/3666c9aa-cd88-4790-84e2-545a4857f0b0#administration)]
+- View Credentials
+
+### pgAdmin
+
+#### Set Up
+
+- Add New Server
+- When registering , copy the following from Heroku Postgres Credentials ([Tut](https://www.youtube.com/watch?v=MLow0gI6oNY&ab_channel=SinRuedaTecnol%C3%B3gica))
+  - Connection > Host Name <- Host
+  - Connection > Maintenance Database <- Database
+  - Advanced > DB Restrictions <- Database
+  - Connection > Username <- User
+  - Connection > Password <- Password
+
+#### SQL
+
+- [Tutorial](https://www.w3schools.com/sql/default.asp)
+
+### Environment Variables
 
 ```
 POSTGRES_URL="postgresql://{username}:{password}@{host}:{port}/{database}"
