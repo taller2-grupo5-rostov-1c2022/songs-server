@@ -138,10 +138,13 @@ Save the file as `google-credentials.json` in the root directory of the reposito
 You can also set `TESTING=1` as an environment variable to use mocks of the database
 and storage for testing purposes.
 
+In order to load the credentials in Heroku, set `GOOGLE_CREDENTIALS` as an environment variable in Heroku, and paste the content of the `google-credentials.json` file.
 ## Postgres
 
+You'll need to set `POSTGRES_URL` as an environment variable (locally or on heroku) or `HD_POSTGRES_URL` as an action secret
+
+Useful links:
 - [postgresql](https://www.postgresql.org/)
-  > postgresql may be optional, im not sure. check & ammend this
 - [pgadmin](https://www.pgadmin.org/)
 
 ### Credentials
