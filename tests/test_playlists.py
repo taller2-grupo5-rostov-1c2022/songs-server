@@ -511,15 +511,18 @@ def test_admin_can_edit_playlist_of_another_user(
     assert playlist["name"] == "new_playlist_name"
 
 
-def test_edit_playlist_colabs(client):
+def test_update_playlist_songs(client):
     playlist_id = wrap_post_playlist(client)
+
+    song_id = utils.post_song(
+        client, uid="user_playlist_owner", name="new_song_for_playlist"
+    )
 
     response_put = utils.put_playlist(
         client,
         playlist_id,
-        {"colabs": []},
+        {"songs_ids": f"[{song_id}]"},
         uid="user_playlist_owner",
-        role="admin",
     )
     assert response_put.status_code == 200
 
@@ -527,4 +530,53 @@ def test_edit_playlist_colabs(client):
     playlist = response_get.json()
 
     assert response_get.status_code == 200
-    assert len(playlist["colabs"])
+    assert len(playlist["songs"]) == 1
+
+    response_put = utils.put_playlist(
+        client,
+        playlist_id,
+        {"songs_ids": []},
+        uid="user_playlist_owner",
+    )
+    assert response_put.status_code == 200
+
+    response_get = utils.get_playlist(client, playlist_id, uid="user_playlist_owner")
+    playlist = response_get.json()
+
+    assert response_get.status_code == 200
+    assert len(playlist["songs"]) == 0
+
+
+def test_update_playlist_colabs(client):
+    playlist_id = wrap_post_playlist(client)
+
+    utils.post_user(client, uid="new_colab_id")
+
+    response_put = utils.put_playlist(
+        client,
+        playlist_id,
+        {"colabs_ids": '["new_colab_id"]'},
+        uid="user_playlist_owner",
+    )
+    assert response_put.status_code == 200
+
+    response_get = utils.get_playlist(client, playlist_id, uid="user_playlist_owner")
+    playlist = response_get.json()
+
+    assert response_get.status_code == 200
+    assert len(playlist["colabs"]) == 1
+    assert playlist["colabs"][0]["id"] == "new_colab_id"
+
+    response_put = utils.put_playlist(
+        client,
+        playlist_id,
+        {"colabs_ids": "[]"},
+        uid="user_playlist_owner",
+    )
+    assert response_put.status_code == 200
+
+    response_get = utils.get_playlist(client, playlist_id, uid="user_playlist_owner")
+    playlist = response_get.json()
+
+    assert response_get.status_code == 200
+    assert len(playlist["colabs"]) == 0

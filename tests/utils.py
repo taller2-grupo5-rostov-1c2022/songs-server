@@ -219,14 +219,10 @@ def post_playlist(
 def wrap_post_playlist(client, unwrap_id: bool = True):
     post_user(client, "user_playlist_owner", user_name="Ricardito")
     post_user(client, "user_playlist_colab", user_name="Fernandito")
-    playlist_id_1 = post_song(
-        client, uid="user_playlist_owner", name="song_for_playlist1"
-    )
-    playlist_id_2 = post_song(
-        client, uid="user_playlist_owner", name="song_for_playlist2"
-    )
+    song_id_1 = post_song(client, uid="user_playlist_owner", name="song_for_playlist1")
+    song_id_2 = post_song(client, uid="user_playlist_owner", name="song_for_playlist2")
     colabs_id = ["user_playlist_colab"]
-    songs_id = [playlist_id_1, playlist_id_2]
+    songs_id = [song_id_1, song_id_2]
     return post_playlist(
         client,
         uid="user_playlist_owner",

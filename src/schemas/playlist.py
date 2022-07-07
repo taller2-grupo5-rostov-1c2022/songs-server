@@ -89,6 +89,7 @@ class PlaylistUpdate(ResourceUpdate):
     def __init__(
         self,
         pdb: Session,
+        role: roles.Role,
         songs_ids: Optional[List[str]] = None,
         colabs_ids: Optional[List[str]] = None,
         **kwargs
@@ -96,7 +97,7 @@ class PlaylistUpdate(ResourceUpdate):
         if songs_ids is not None:
             songs = []
             for song_id in songs_ids:
-                song = models.SongModel.get(pdb, _id=song_id)
+                song = models.SongModel.get(pdb, _id=song_id, role=role)
                 songs.append(song)
             self.songs = songs
         if colabs_ids is not None:
@@ -106,3 +107,16 @@ class PlaylistUpdate(ResourceUpdate):
                 colabs.append(colab)
             self.colabs = colabs
         super().__init__(**kwargs)
+
+    def dict(self, exclude_none=False):
+        _dict = super().dict(exclude_none)
+
+        if exclude_none:
+            if self.songs is not None:
+                _dict["songs"] = self.songs
+            if self.colabs is not None:
+                _dict["colabs"] = self.colabs
+        else:
+            _dict["songs"] = self.songs
+            _dict["colabs"] = self.colabs
+        return _dict

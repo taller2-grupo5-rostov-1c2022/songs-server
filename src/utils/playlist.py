@@ -66,10 +66,11 @@ def retrieve_playlist_update(
     songs_ids: Optional[List[int]] = Depends(utils.song.retrieve_songs_ids_update),
     colabs_ids: Optional[List[str]] = Depends(retrieve_colabs_ids),
     pdb: Session = Depends(get_db),
+    role: roles.Role = Depends(get_role),
 ):
-
     return schemas.PlaylistUpdate(
         pdb,
+        role=role,
         songs_ids=songs_ids,
         colabs_ids=colabs_ids,
         **playlist_update_collector.dict()
