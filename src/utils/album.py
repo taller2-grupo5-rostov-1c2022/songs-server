@@ -1,10 +1,8 @@
-from src.exceptions import MessageException
 from src.database import models
-from fastapi import Depends, status
+from fastapi import Depends
 from .. import roles, utils
 from src import schemas
 from src.database.access import get_db
-from typing import List, Optional
 from sqlalchemy.orm import Session
 
 from ..roles import get_role
