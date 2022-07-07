@@ -509,3 +509,22 @@ def test_admin_can_edit_playlist_of_another_user(
 
     assert response_get.status_code == 200
     assert playlist["name"] == "new_playlist_name"
+
+
+def test_edit_playlist_colabs(client):
+    playlist_id = wrap_post_playlist(client)
+
+    response_put = utils.put_playlist(
+        client,
+        playlist_id,
+        {"colabs": []},
+        uid="user_playlist_owner",
+        role="admin",
+    )
+    assert response_put.status_code == 200
+
+    response_get = utils.get_playlist(client, playlist_id, uid="user_playlist_owner")
+    playlist = response_get.json()
+
+    assert response_get.status_code == 200
+    assert len(playlist["colabs"])

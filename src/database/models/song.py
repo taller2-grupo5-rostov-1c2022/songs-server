@@ -63,13 +63,3 @@ class SongModel(templates.ResourceWithFile):
                 artist = ArtistModel.create(pdb, name=artist_name, commit=False)
             artists.append(artist)
         self.artists = artists
-
-    def update(self, pdb: Session, **kwargs):
-        artists_names = kwargs.pop("artists_names", None)
-        sub_level = kwargs.pop("sub_level", None)
-        if artists_names is not None:
-            self._update_artists(pdb, artists_names)
-        if sub_level is not None:
-            self.sub_level = sub_level
-
-        return super().update(pdb, **kwargs)

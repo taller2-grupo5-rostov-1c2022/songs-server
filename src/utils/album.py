@@ -33,29 +33,6 @@ def retrieve_album_update(
     )
 
 
-def validate_songs_for_album(
-    album: Optional[models.AlbumModel],
-    songs_ids: List[int],
-    uid: str,
-    role: roles.Role,
-    pdb: Session,
-):
-    if songs_ids is not None:
-        for song_id in songs_ids:
-            song = models.SongModel.get(pdb, _id=song_id, role=role)
-            if song.creator_id != uid:
-                raise MessageException(
-                    status_code=status.HTTP_403_FORBIDDEN,
-                    detail="You can only add songs you created",
-                )
-            if album is not None:
-                if song.album_id is not None and song.album_id != album.id:
-                    raise MessageException(
-                        status_code=status.HTTP_403_FORBIDDEN,
-                        detail="You can only add songs that belong to the same album or none",
-                    )
-
-
 def retrieve_album(
     album_create_collector: schemas.AlbumCreateCollector = Depends(
         schemas.AlbumCreateCollector.as_form
